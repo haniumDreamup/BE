@@ -1,0 +1,100 @@
+# Task ID: 2
+# Title: Implement Database Schema and JPA Entities
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Create comprehensive database schema with all entities defined in PRD including Users, Devices, Guardians, and related tables with proper relationships and constraints
+# Details:
+1. Create JPA entities with proper annotations:
+   - Users (cognitive_level as enum, guardian relationship)
+   - Devices (MAC address validation, battery tracking)
+   - Guardians (contact info as embedded object)
+   - CapturedImages (S3 URL storage, location as embedded GPS)
+   - AnalysisResults (JSON storage for flexible AI responses)
+   - Schedules (recurrence pattern using Cron expressions)
+   - Notifications (polymorphic type handling)
+   - ActivityLogs (event sourcing pattern)
+   - MedicationRecords (compliance tracking)
+   - EmergencyEvents (state machine for response status)
+2. Implement audit fields (created_at, updated_at) using @EntityListeners
+3. Create database migration scripts using Flyway
+4. Setup cascade rules and orphan removal
+5. Implement soft delete where applicable
+6. Create indexes for performance-critical queries
+7. Add database constraints and validation annotations
+
+# Test Strategy:
+1. Repository layer tests with @DataJpaTest
+2. Verify cascade operations and relationship integrity
+3. Test constraint violations and exception handling
+4. Performance tests for complex queries
+5. Flyway migration rollback testing
+6. Data integrity tests with concurrent operations
+
+# Subtasks:
+## 1. Implement User and Guardian Entities [pending]
+### Dependencies: None
+### Description: Create JPA entities for User and Guardian with proper relationships, validation, and embedded objects
+### Details:
+1. Create User entity with fields for personal info, cognitive level (enum), authentication details, and preferences
+2. Implement Guardian entity with contact information as embedded object
+3. Establish bidirectional relationship between User and Guardian entities
+4. Add proper cascade rules and fetch strategies
+5. Implement validation constraints for email, phone numbers
+6. Create repository interfaces with custom query methods
+
+## 2. Develop Device and Connectivity Entities [pending]
+### Dependencies: 2.1
+### Description: Implement entities for device management, connectivity tracking, and location data
+### Details:
+1. Create Device entity with MAC address validation, registration date, and status fields
+2. Implement BatteryStatus tracking with history
+3. Create ConnectivityLog entity for tracking online/offline status
+4. Implement Location entity as an embeddable type with GPS coordinates
+5. Establish relationship between User and Device entities
+6. Add indexing for device lookup by identifier and status
+
+## 3. Create Content Storage Entities [pending]
+### Dependencies: 2.1, 2.2
+### Description: Implement entities for storing captured images, analysis results, and related metadata
+### Details:
+1. Create CapturedImage entity with S3 URL storage and embedded location data
+2. Implement AnalysisResult entity with JSON storage for flexible AI responses
+3. Create ContentMetadata entity for storing EXIF and other metadata
+4. Establish relationships between content entities and User entity
+5. Implement proper cascade rules for content deletion
+6. Add indexing strategies for content retrieval by timestamp and type
+
+## 4. Implement Schedule and Notification Entities [pending]
+### Dependencies: 2.1
+### Description: Create entities for managing schedules, reminders, and notification delivery
+### Details:
+1. Implement Schedule entity with recurrence pattern using Cron expressions
+2. Create Notification entity with polymorphic type handling
+3. Implement NotificationDelivery entity to track delivery status
+4. Create ReminderTemplate entity for reusable notifications
+5. Establish relationships between scheduling entities and User entity
+6. Add indexing for schedule lookup by date and status
+
+## 5. Develop Activity and Medication Tracking Entities [pending]
+### Dependencies: 2.1, 2.4
+### Description: Implement entities for tracking activities, medications, and health-related data
+### Details:
+1. Create ActivityLog entity using event sourcing pattern
+2. Implement Medication entity with dosage, schedule, and tracking fields
+3. Create MedicationAdherence entity for tracking compliance
+4. Implement HealthMetric entity for storing various health indicators
+5. Establish relationships with User and Schedule entities
+6. Add appropriate indexing for querying activity history and medication adherence
+
+## 6. Implement Database Migration and Indexing Strategy [pending]
+### Dependencies: 2.1, 2.2, 2.3, 2.4, 2.5
+### Description: Create database migration scripts, indexing strategy, and performance optimization
+### Details:
+1. Implement Flyway migration scripts for schema evolution
+2. Create composite indexes for frequently queried fields
+3. Implement database partitioning strategy for large tables
+4. Create database constraints and foreign key relationships
+5. Implement audit logging for entity changes
+6. Add performance optimization for common query patterns
+
