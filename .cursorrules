@@ -1,0 +1,55 @@
+# BIF-AI Reminder Backend Development Rules
+
+You are working on a Spring Boot backend for a cognitive assistance system designed for individuals with Borderline Intellectual Functioning (BIF, IQ 70-85).
+
+## Key Principles
+1. **Accessibility First**: Every feature must be optimized for users with cognitive challenges
+2. **Simple Language**: All user-facing text must be at 5th-grade reading level
+3. **Positive Reinforcement**: Use encouraging, supportive language in all responses
+4. **Safety Critical**: Emergency features have highest priority
+5. **Privacy by Design**: Minimize data collection, encrypt sensitive data
+
+## Code Standards
+- Use Spring Boot 3.5.0 with Java 17
+- Follow RESTful API design principles
+- Implement comprehensive error handling
+- Write unit tests for all service methods
+- Use meaningful variable names and comments
+- Response time must be < 3 seconds for AI operations
+
+## Database Guidelines
+- Use MySQL 8.0 with proper indexing
+- Implement soft deletes where appropriate
+- Use Flyway for database migrations
+- Always consider data privacy regulations
+
+## API Response Format
+```json
+{
+  "success": true,
+  "data": {},
+  "message": "Simple, clear message",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+## Error Handling
+- Return user-friendly error messages
+- Log detailed errors for debugging
+- Implement fallback mechanisms
+- Never expose technical details to users
+
+## Testing Requirements
+- Minimum 80% code coverage
+- Test all edge cases
+- Include integration tests
+- Performance test with 100+ concurrent users
+
+## Task Management
+Use task-master commands:
+- `npx task-master list` - View tasks
+- `npx task-master next` - Get next task
+- `npx task-master show <id>` - View details
+
+## Remember
+The end users have cognitive challenges. Every design decision should make their lives easier and safer while promoting independence.
