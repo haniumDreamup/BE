@@ -1,0 +1,24 @@
+# WebMvcTest를 위한 설정
+spring:
+  test:
+    mockmvc:
+      print: true
+  
+  # 보안 설정
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://example.com/.well-known/jwks.json
+
+# JWT 설정
+jwt:
+  secret: testSecretKeyForJWTTokenGenerationAndValidation1234567890
+  access-token-expiration: 900000 # 15분
+  refresh-token-expiration: 604800000 # 7일
+
+# 로깅 설정
+logging:
+  level:
+    com.bifai.reminder: DEBUG
+    org.springframework.security: DEBUG

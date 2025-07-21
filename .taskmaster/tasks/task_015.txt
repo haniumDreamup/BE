@@ -1,0 +1,43 @@
+# Task ID: 15
+# Title: Integrate OpenAI API for Context Analysis
+# Status: pending
+# Dependencies: 11
+# Priority: high
+# Description: Set up OpenAI API integration for situation interpretation and guidance generation
+# Details:
+Configure OpenAI client with secure API key management, implement prompt engineering for BIF-optimized responses (5th grade reading level), create context analysis service with image-to-text capabilities, implement response caching to reduce API costs, add fallback mechanisms for API failures
+
+# Test Strategy:
+Test prompt responses for appropriate reading level, measure API response times, test caching effectiveness, verify fallback behavior during outages
+
+# Subtasks:
+## 1. Set up OpenAI Client Configuration and Security [pending]
+### Dependencies: None
+### Description: Create secure OpenAI client configuration with API key management using environment variables and implement authentication middleware
+### Details:
+Create OpenAIConfig class in config package with @Configuration annotation. Use @Value to inject API key from environment variables. Implement OpenAI client bean with proper timeout settings (30s). Create OpenAIService interface and implementation with error handling. Add API key validation on startup. Implement secure key rotation mechanism using AWS Secrets Manager or similar. Configure retry logic with exponential backoff for API failures.
+
+## 2. Implement BIF-Optimized Prompt Engineering Service [pending]
+### Dependencies: 15.1
+### Description: Create prompt templates and engineering service that ensures all AI responses meet 5th-grade reading level requirements for BIF users
+### Details:
+Create PromptTemplateService with predefined templates for different contexts (navigation, medication, daily tasks). Implement readability scoring using Flesch-Kincaid grade level. Create prompt wrapper that adds instructions for simple language, short sentences, and positive tone. Build template categories: emergency_assistance, medication_reminder, navigation_help, task_guidance. Add Korean language support with simple vocabulary. Implement prompt versioning for A/B testing.
+
+## 3. Build Context Analysis Service with Image Support [pending]
+### Dependencies: 15.1, 15.2
+### Description: Implement service layer for analyzing situational context including image-to-text capabilities using OpenAI Vision API
+### Details:
+Create ContextAnalysisService with methods for text and image analysis. Implement image preprocessing (resize, format conversion) for API optimization. Build context extraction from images using GPT-4 Vision. Create ContextAnalysisRequest/Response DTOs with validation. Implement context categorization (emergency, routine, navigation, medication). Add metadata extraction for better context understanding. Build request queuing system for rate limiting compliance.
+
+## 4. Implement Response Caching with Redis [pending]
+### Dependencies: 15.3
+### Description: Create intelligent caching layer for OpenAI responses to reduce API costs and improve response times
+### Details:
+Implement CacheKey generation based on context hash and prompt template. Create ResponseCacheService using Redis with TTL based on content type (emergency: 5min, routine: 1hour). Build cache warming for common scenarios. Implement cache invalidation strategy for updated contexts. Add cache hit rate monitoring. Create fallback to cache for API failures. Implement response similarity matching for near-miss cache hits.
+
+## 5. Create Fallback Mechanism and Monitoring [pending]
+### Dependencies: 15.3, 15.4
+### Description: Implement comprehensive fallback system for API failures and monitoring for service health
+### Details:
+Build FallbackService with pre-defined responses for common scenarios. Implement circuit breaker pattern using Resilience4j for API calls. Create offline response templates for critical features (emergency, basic navigation). Add health check endpoint for OpenAI service status. Implement metrics collection (API usage, response times, error rates). Build alerting for service degradation. Create fallback response quality scoring to ensure BIF compliance even in degraded mode.
+

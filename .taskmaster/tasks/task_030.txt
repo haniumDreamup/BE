@@ -1,0 +1,43 @@
+# Task ID: 30
+# Title: Build Health Check and Monitoring Endpoints
+# Status: pending
+# Dependencies: 28
+# Priority: medium
+# Description: Create comprehensive health monitoring for all services
+# Details:
+Implement Spring Boot Actuator endpoints, create custom health indicators for external services (OpenAI, Redis, MySQL), develop service dependency monitoring, implement graceful degradation indicators, create monitoring dashboard integration
+
+# Test Strategy:
+Test health check accuracy, verify external service monitoring, test graceful degradation triggers, validate monitoring integration
+
+# Subtasks:
+## 1. Configure Spring Boot Actuator with Custom Health Endpoints [pending]
+### Dependencies: None
+### Description: Set up Spring Boot Actuator with security configuration and create base health check infrastructure
+### Details:
+Add Spring Boot Actuator dependency to build.gradle, configure actuator endpoints in application.yml with appropriate security settings, create custom HealthIndicator base class for standardized health check responses, set up management endpoints on separate port for security isolation, configure metrics collection with Micrometer for monitoring integration
+
+## 2. Implement MySQL Database Health Indicator [pending]
+### Dependencies: 30.1
+### Description: Create custom health indicator for MySQL database connectivity and performance monitoring
+### Details:
+Create MySQLHealthIndicator class implementing HealthIndicator interface, implement connection pool status monitoring using HikariCP metrics, add query performance checks with configurable threshold, monitor database replication lag if applicable, include detailed error messages in BIF-friendly format when database is unhealthy
+
+## 3. Implement Redis Cache Health Indicator [pending]
+### Dependencies: 30.1
+### Description: Create health indicator for Redis cache service monitoring and availability
+### Details:
+Create RedisHealthIndicator implementing custom health checks, monitor Redis connection status and response times, implement memory usage monitoring with warning thresholds, check Redis cluster status if using clustering, add cache hit/miss ratio metrics for performance insights
+
+## 4. Implement OpenAI API Health Indicator [pending]
+### Dependencies: 30.1
+### Description: Create health indicator for OpenAI API availability and quota monitoring
+### Details:
+Create OpenAIHealthIndicator with API connectivity checks, implement API quota usage monitoring and remaining credits check, add response time tracking for AI service calls, create circuit breaker status monitoring for graceful degradation, implement fallback status when AI service is unavailable
+
+## 5. Create Composite Health Dashboard and Monitoring Integration [pending]
+### Dependencies: 30.2, 30.3, 30.4
+### Description: Build aggregated health status endpoint and integrate with monitoring systems
+### Details:
+Create composite health endpoint aggregating all service statuses, implement service dependency graph visualization data, add Prometheus metrics export for external monitoring, create simplified health status API for BIF mobile app with traffic light indicators (green/yellow/red), implement webhook notifications for critical health status changes
+

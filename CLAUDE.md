@@ -54,15 +54,7 @@ mysql -u bifai_user -p bifai_db                  # Connect to DB
 - Use complex language in user-facing messages
 - Create endpoints without authentication
 
-## Current Focus
 
-### Task #1: Initialize Spring Boot Backend Infrastructure [PENDING]
-Subtasks:
-1. Core Spring Boot Project Setup [PENDING]
-2. Database and Cache Configuration [PENDING - depends on 1]
-3. AWS Integration Setup [PENDING - depends on 1]
-4. Security and Environment Configuration [PENDING - depends on 1,2]
-5. Docker and Deployment Setup [PENDING - depends on 1,2,3,4]
 
 ## BIF Requirements
 - All text responses: 5th-grade reading level
@@ -140,3 +132,13 @@ JWT_EXPIRATION=86400000
 - Data privacy: Encrypt PII, minimize collection
 - Accessibility: WCAG 2.1 AA compliance
 - Performance: <500ms API response, <3s AI analysis
+
+## Korean Language Context
+This is a korean-focused projects
+- All UI text is in korean
+- using korean
+
+## implementation consideration
+- write researched best practice in text or md file to use as reference
+- reference /Users/ihojun/Desktop/javaWorkSpace/BE/.cursor/rules/taskmaster/dev_workflow.mdc
+- keep SOLID principle

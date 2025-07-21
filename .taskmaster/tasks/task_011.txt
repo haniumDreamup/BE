@@ -1,0 +1,43 @@
+# Task ID: 11
+# Title: Configure Spring Security and JWT Authentication
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement secure authentication system with JWT tokens for BIF users and guardians
+# Details:
+Configure Spring Security with JWT filter chain, implement JwtTokenProvider for token generation/validation with 24-hour expiration, create custom UserDetailsService for BIF user authentication, implement refresh token mechanism for seamless user experience, add role-based access control (USER, GUARDIAN, ADMIN roles)
+
+# Test Strategy:
+Unit tests for JWT token generation/validation, integration tests for authentication endpoints, security tests for role-based access, test token expiration and refresh mechanism
+
+# Subtasks:
+## 1. Create JWT Token Provider and Security Constants [pending]
+### Dependencies: None
+### Description: Implement the core JWT token generation and validation logic with secure key management
+### Details:
+Create JwtTokenProvider class in security.jwt package with methods for generateToken(), validateToken(), and extractUsername(). Define security constants including JWT_SECRET (from environment), TOKEN_VALIDITY (24 hours), REFRESH_TOKEN_VALIDITY (7 days). Implement secure key generation using Keys.hmacShaKeyFor() and store in application.yml. Add token parsing with proper exception handling for expired/malformed tokens.
+
+## 2. Implement Custom UserDetailsService for BIF Users [pending]
+### Dependencies: None
+### Description: Create user authentication service that loads BIF users with their roles and permissions
+### Details:
+Create BifUserDetailsService implementing UserDetailsService in security.userdetails package. Implement loadUserByUsername() to fetch users from UserRepository. Create BifUserDetails class implementing UserDetails with proper authority mapping for USER, GUARDIAN, ADMIN roles. Include user status checks (enabled, accountNonExpired, etc.). Handle user not found scenarios with proper exceptions.
+
+## 3. Configure Spring Security Filter Chain with JWT [pending]
+### Dependencies: 11.1, 11.2
+### Description: Set up the security configuration with JWT authentication filter and proper endpoint protection
+### Details:
+Create SecurityConfig class with @EnableWebSecurity and @EnableMethodSecurity. Define SecurityFilterChain bean with proper matcher rules: permitAll() for /api/auth/**, /api/health/**, authenticated() for all other endpoints. Create JwtAuthenticationFilter extending OncePerRequestFilter to validate tokens on each request. Configure exception handling with custom AuthenticationEntryPoint returning BIF-friendly error messages. Disable CSRF for stateless JWT authentication.
+
+## 4. Implement Authentication Controller with Login/Register [pending]
+### Dependencies: 11.1, 11.2, 11.3
+### Description: Create REST endpoints for user authentication including login, registration, and token refresh
+### Details:
+Create AuthController in controller package with endpoints: POST /api/auth/login accepting LoginRequest DTO, POST /api/auth/register for new user registration, POST /api/auth/refresh for token refresh. Implement AuthService to handle business logic including password validation, user creation with BCrypt encoding, and token generation. Create DTOs: LoginRequest, RegisterRequest, AuthResponse (containing accessToken, refreshToken, expiresIn). Add input validation with @Valid annotations.
+
+## 5. Implement Refresh Token Mechanism and Role-Based Access [pending]
+### Dependencies: 11.4
+### Description: Create refresh token storage/validation and implement method-level security for role-based access control
+### Details:
+Implement RefreshTokenService using Redis for token storage with TTL matching REFRESH_TOKEN_VALIDITY. Create refresh token generation with UUID and user mapping. Add @PreAuthorize annotations on service methods for role-based access (e.g., @PreAuthorize('hasRole("GUARDIAN")')). Implement token rotation on refresh for enhanced security. Create RevokeTokenService for logout functionality. Add rate limiting for auth endpoints to prevent brute force attacks.
+

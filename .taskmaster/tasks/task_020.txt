@@ -1,0 +1,43 @@
+# Task ID: 20
+# Title: Develop Activity Pattern Learning Service
+# Status: pending
+# Dependencies: 12, 19
+# Priority: medium
+# Description: Create ML service to learn and predict user daily routines
+# Details:
+Implement activity data collection framework, develop pattern recognition using time-series analysis, create routine prediction algorithms, implement anomaly detection for unusual behaviors, generate automated schedule suggestions based on patterns
+
+# Test Strategy:
+Test pattern recognition accuracy over time, validate anomaly detection thresholds, test schedule suggestion relevance, verify privacy-preserving data processing
+
+# Subtasks:
+## 1. Design Activity Data Collection Framework [pending]
+### Dependencies: None
+### Description: Design and implement the data collection infrastructure for capturing user activities including location changes, app usage, medication events, and daily routines
+### Details:
+Create ActivityData entity with fields for activity type, timestamp, location, duration, and metadata. Implement ActivityDataRepository with batch insert capabilities. Design data collection service that aggregates events from various sources (location service, medication adherence, app interactions). Implement privacy-preserving data anonymization before storage. Create configurable data retention policies (default 90 days)
+
+## 2. Implement Time-Series Pattern Recognition Engine [pending]
+### Dependencies: 20.1
+### Description: Develop the core pattern recognition engine using time-series analysis to identify recurring daily and weekly activity patterns
+### Details:
+Implement sliding window algorithm for pattern detection with configurable window sizes (hourly, daily, weekly). Create feature extraction for activity sequences including frequency, duration, and time-of-day patterns. Implement pattern clustering using DBSCAN or K-means for grouping similar activities. Develop pattern confidence scoring based on consistency and recurrence. Store identified patterns in PatternRepository with user association
+
+## 3. Create Routine Prediction Algorithm [pending]
+### Dependencies: 20.2
+### Description: Build prediction algorithms that forecast user's likely activities based on learned patterns, time of day, and historical data
+### Details:
+Implement Markov Chain model for sequential activity prediction. Create time-weighted prediction algorithm that considers day of week, time of day, and recent activities. Develop confidence threshold system for predictions (only show predictions above 70% confidence). Implement prediction caching for frequently accessed timeframes. Create PredictionService with methods for next activity, daily schedule, and weekly routine predictions
+
+## 4. Develop Anomaly Detection System [pending]
+### Dependencies: 20.2, 20.3
+### Description: Implement anomaly detection to identify unusual behaviors or deviations from established patterns that might indicate issues
+### Details:
+Create statistical anomaly detection using z-score analysis for activity duration and frequency deviations. Implement isolation forest algorithm for detecting complex anomalies in multi-dimensional activity data. Develop severity scoring for anomalies (minor, moderate, severe). Create configurable alert thresholds per user based on their needs. Implement AnomalyEvent entity to track detected anomalies with guardian notification preferences
+
+## 5. Build Automated Schedule Suggestion Service [pending]
+### Dependencies: 20.3, 20.4
+### Description: Create service that generates personalized schedule suggestions based on learned patterns and optimization for user well-being
+### Details:
+Implement schedule generation algorithm that considers medication times, meal patterns, and activity preferences. Create schedule optimization for balanced daily routines including rest periods. Develop suggestion ranking based on pattern confidence and user feedback. Implement ScheduleSuggestion entity with acceptance tracking. Create feedback loop to improve suggestions based on user acceptance/rejection. Add Korean language generation for schedule descriptions using simple vocabulary
+

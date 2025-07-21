@@ -1,0 +1,43 @@
+# Task ID: 31
+# Title: Implement User Onboarding Flow
+# Status: pending
+# Dependencies: 13, 24
+# Priority: medium
+# Description: Create simplified onboarding process optimized for BIF users
+# Details:
+Design step-by-step onboarding with visual guides, implement cognitive assessment questionnaire, create personalized settings based on cognitive level, develop tutorial mode for core features, implement progress tracking for onboarding completion
+
+# Test Strategy:
+Test onboarding completion rates, verify cognitive assessment accuracy, test tutorial effectiveness, validate settings personalization
+
+# Subtasks:
+## 1. Design Onboarding UI Components and Flow [pending]
+### Dependencies: None
+### Description: Create accessible UI components for the step-by-step onboarding process with visual guides optimized for BIF users
+### Details:
+Create OnboardingController with endpoints for each onboarding step. Design DTOs: OnboardingStepRequest, OnboardingProgressResponse. Implement visual guide metadata structure supporting images, icons, and simple text. Create responsive layouts with minimum 48dp touch targets. Design flow with maximum 5 steps, each with clear visual progress indicators. Implement skip/back navigation with confirmation dialogs.
+
+## 2. Implement Cognitive Assessment Service [pending]
+### Dependencies: 31.1
+### Description: Build the cognitive assessment questionnaire system to evaluate user's cognitive level and personalize the experience
+### Details:
+Create CognitiveAssessmentService with assessment logic. Design entities: CognitiveAssessment, AssessmentQuestion, AssessmentResult. Implement 10-15 simple questions testing memory, attention, and comprehension. Use 5th-grade reading level for all questions. Create scoring algorithm mapping results to cognitive levels (70-85 IQ range). Store results encrypted in database. Integrate with user profile to set initial cognitive level.
+
+## 3. Create Personalized Settings Configuration [pending]
+### Dependencies: 31.2
+### Description: Develop system to automatically configure user settings based on cognitive assessment results
+### Details:
+Create PersonalizationService to map cognitive levels to settings. Implement settings templates for different cognitive levels: text size, UI complexity, notification frequency, reminder intervals. Design UserPreferenceTemplate entity with predefined configurations. Create API endpoints for settings preview and confirmation. Implement gradual complexity introduction based on user progress. Allow guardian override for critical settings.
+
+## 4. Develop Interactive Tutorial System [pending]
+### Dependencies: 31.3
+### Description: Build tutorial mode that teaches users core features through guided interactions
+### Details:
+Create TutorialService with step-by-step guidance system. Design Tutorial, TutorialStep, and TutorialProgress entities. Implement interactive tutorials for: setting reminders, responding to alerts, using emergency features. Use visual demonstrations with highlighted UI elements. Add voice guidance option for each step. Implement retry mechanism for failed tutorial steps. Create achievement system for completed tutorials.
+
+## 5. Implement Onboarding Analytics and Progress Tracking [pending]
+### Dependencies: 31.4
+### Description: Create comprehensive tracking system for onboarding completion and user engagement metrics
+### Details:
+Create OnboardingAnalyticsService for tracking user progress. Design OnboardingMetrics entity tracking: step completion times, retry counts, skip patterns, assessment scores. Implement real-time progress API for UI updates. Create dashboard endpoints for guardian monitoring. Add automatic alerts for incomplete onboarding after 24 hours. Generate onboarding completion certificate for user motivation. Store analytics data for improving onboarding flow.
+

@@ -1,0 +1,43 @@
+# Task ID: 28
+# Title: Implement API Rate Limiting and Monitoring
+# Status: pending
+# Dependencies: 11
+# Priority: medium
+# Description: Set up API protection and monitoring infrastructure
+# Details:
+Configure Spring Cloud Gateway for rate limiting, implement per-user and per-endpoint limits, set up Prometheus metrics collection, create CloudWatch dashboards for monitoring, implement alerting for anomalous usage patterns
+
+# Test Strategy:
+Test rate limiting enforcement, verify metrics accuracy, test alert triggering conditions, validate monitoring dashboard functionality
+
+# Subtasks:
+## 1. Configure Spring Cloud Gateway with Rate Limiting [pending]
+### Dependencies: None
+### Description: Set up Spring Cloud Gateway as the API gateway and configure Redis-based rate limiting using RequestRateLimiter filter
+### Details:
+Add Spring Cloud Gateway and Redis Reactive dependencies to build.gradle. Create gateway configuration with route definitions for all API endpoints. Configure RequestRateLimiter filter with Redis backend. Set up KeyResolver beans for user-based and IP-based rate limiting. Configure rate limiter properties in application.yml with replenish rate and burst capacity settings. Implement custom rate limiter configuration for different endpoint categories (public, authenticated, admin).
+
+## 2. Implement Per-User and Per-Endpoint Rate Limiting Logic [pending]
+### Dependencies: 28.1
+### Description: Create custom rate limiting strategies that apply different limits based on user roles and specific API endpoints
+### Details:
+Create custom KeyResolver implementations to extract user ID from JWT tokens for authenticated requests. Implement endpoint-specific rate limiting by creating route-specific configurations. Define rate limit tiers (basic user: 100/hour, premium: 1000/hour, API endpoints: varying limits). Create RateLimitingService to manage dynamic rate limits based on user subscription levels. Implement rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset) in responses. Add rate limit bypass for internal service-to-service communication.
+
+## 3. Set Up Prometheus Metrics Collection [pending]
+### Dependencies: 28.2
+### Description: Configure Prometheus metrics exporters to collect API usage, performance, and rate limiting metrics
+### Details:
+Add micrometer-registry-prometheus dependency to enable Prometheus metrics export. Configure actuator endpoints to expose /actuator/prometheus. Create custom metrics for API request counts, response times, rate limit hits, and error rates. Implement metric tags for endpoint, method, status code, and user type. Configure histogram buckets for response time distribution. Create custom gauge metrics for active connections and queue sizes. Set up metric aggregation for per-user usage tracking.
+
+## 4. Create CloudWatch Dashboards and Metrics Publishing [pending]
+### Dependencies: 28.3
+### Description: Implement CloudWatch integration for centralized monitoring and create comprehensive dashboards for API health visualization
+### Details:
+Add AWS CloudWatch SDK and micrometer-registry-cloudwatch dependencies. Configure CloudWatch metrics publisher with appropriate namespace (BifAI/API). Create CloudWatch dashboard using CDK or Terraform with widgets for request rate, error rate, latency percentiles, and rate limit violations. Implement custom CloudWatch metric filters for log-based metrics. Set up dashboard panels for real-time monitoring of API health, user activity patterns, and system resource utilization. Configure metric retention policies and aggregation periods.
+
+## 5. Implement Alerting for Anomalous Usage Patterns [pending]
+### Dependencies: 28.3, 28.4
+### Description: Create intelligent alerting system that detects and responds to unusual API usage patterns and potential security threats
+### Details:
+Create AlertingService that analyzes metrics for anomaly detection. Implement CloudWatch alarms for high error rates, excessive rate limiting, and unusual traffic spikes. Configure SNS topics for alert notifications (email, SMS, Slack). Implement anomaly detection algorithms for identifying DDoS attempts, credential stuffing, and API abuse. Create automatic response mechanisms like temporary IP blocking for detected threats. Set up alert escalation policies based on severity levels. Implement alert aggregation to prevent notification spam.
+

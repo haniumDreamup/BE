@@ -1,0 +1,2103 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 11,
+        "title": "Configure Spring Security and JWT Authentication",
+        "description": "Implement secure authentication system with JWT tokens for BIF users and guardians",
+        "details": "Configure Spring Security with JWT filter chain, implement JwtTokenProvider for token generation/validation with 24-hour expiration, create custom UserDetailsService for BIF user authentication, implement refresh token mechanism for seamless user experience, add role-based access control (USER, GUARDIAN, ADMIN roles)",
+        "testStrategy": "Unit tests for JWT token generation/validation, integration tests for authentication endpoints, security tests for role-based access, test token expiration and refresh mechanism",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create JWT Token Provider and Security Constants",
+            "description": "Implement the core JWT token generation and validation logic with secure key management",
+            "dependencies": [],
+            "details": "Create JwtTokenProvider class in security.jwt package with methods for generateToken(), validateToken(), and extractUsername(). Define security constants including JWT_SECRET (from environment), TOKEN_VALIDITY (24 hours), REFRESH_TOKEN_VALIDITY (7 days). Implement secure key generation using Keys.hmacShaKeyFor() and store in application.yml. Add token parsing with proper exception handling for expired/malformed tokens.",
+            "status": "done",
+            "testStrategy": "Unit test token generation with valid/invalid inputs, test expiration validation, verify signature verification, test malformed token handling"
+          },
+          {
+            "id": 2,
+            "title": "Implement Custom UserDetailsService for BIF Users",
+            "description": "Create user authentication service that loads BIF users with their roles and permissions",
+            "dependencies": [],
+            "details": "Create BifUserDetailsService implementing UserDetailsService in security.userdetails package. Implement loadUserByUsername() to fetch users from UserRepository. Create BifUserDetails class implementing UserDetails with proper authority mapping for USER, GUARDIAN, ADMIN roles. Include user status checks (enabled, accountNonExpired, etc.). Handle user not found scenarios with proper exceptions.",
+            "status": "done",
+            "testStrategy": "Mock UserRepository to test user loading, verify role mapping correctness, test exception handling for non-existent users, validate password encoding"
+          },
+          {
+            "id": 3,
+            "title": "Configure Spring Security Filter Chain with JWT",
+            "description": "Set up the security configuration with JWT authentication filter and proper endpoint protection",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create SecurityConfig class with @EnableWebSecurity and @EnableMethodSecurity. Define SecurityFilterChain bean with proper matcher rules: permitAll() for /api/auth/**, /api/health/**, authenticated() for all other endpoints. Create JwtAuthenticationFilter extending OncePerRequestFilter to validate tokens on each request. Configure exception handling with custom AuthenticationEntryPoint returning BIF-friendly error messages. Disable CSRF for stateless JWT authentication.",
+            "status": "done",
+            "testStrategy": "Integration test for protected/public endpoints, verify JWT filter execution order, test unauthorized access responses, validate CORS configuration"
+          },
+          {
+            "id": 4,
+            "title": "Implement Authentication Controller with Login/Register",
+            "description": "Create REST endpoints for user authentication including login, registration, and token refresh",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create AuthController in controller package with endpoints: POST /api/auth/login accepting LoginRequest DTO, POST /api/auth/register for new user registration, POST /api/auth/refresh for token refresh. Implement AuthService to handle business logic including password validation, user creation with BCrypt encoding, and token generation. Create DTOs: LoginRequest, RegisterRequest, AuthResponse (containing accessToken, refreshToken, expiresIn). Add input validation with @Valid annotations.",
+            "status": "pending",
+            "testStrategy": "Integration test all auth endpoints, verify token format in responses, test validation constraints, measure response times under 500ms requirement"
+          },
+          {
+            "id": 5,
+            "title": "Implement Refresh Token Mechanism and Role-Based Access",
+            "description": "Create refresh token storage/validation and implement method-level security for role-based access control",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement RefreshTokenService using Redis for token storage with TTL matching REFRESH_TOKEN_VALIDITY. Create refresh token generation with UUID and user mapping. Add @PreAuthorize annotations on service methods for role-based access (e.g., @PreAuthorize('hasRole(\"GUARDIAN\")')). Implement token rotation on refresh for enhanced security. Create RevokeTokenService for logout functionality. Add rate limiting for auth endpoints to prevent brute force attacks.",
+            "status": "pending",
+            "testStrategy": "Test refresh token flow end-to-end, verify Redis storage and expiration, test role-based method access, validate token revocation on logout"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Design and Implement Core Database Schema",
+        "description": "Create comprehensive database schema for users, guardians, devices, and activity tracking",
+        "details": "Design tables for users (with cognitive profile fields), guardians (with relationship types), devices (wearable camera metadata), locations (GPS tracking), activities (daily routine patterns), medications (schedule and adherence), emergency_contacts, notifications. Implement proper indexes for performance, add audit columns (created_at, updated_at)",
+        "testStrategy": "Validate schema with Flyway migrations, test foreign key constraints, verify index performance with explain plans, test data integrity rules",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Core User and Guardian Entity Schema",
+            "description": "Create the foundational database tables for users and guardians with cognitive profile fields and relationship management",
+            "dependencies": [],
+            "details": "Create users table with fields: id, username, email, password_hash, phone_number, full_name, date_of_birth, cognitive_level, language_preference, emergency_mode_enabled, profile_image_url, last_activity_at, is_active, created_at, updated_at. Create guardians table with fields: id, user_id, guardian_user_id, relationship_type (enum: parent, sibling, caregiver, doctor), is_primary, can_modify_settings, can_view_location, can_receive_alerts, approval_status, approved_at, created_at, updated_at. Add unique constraints on email/phone for users, composite unique on user_id + guardian_user_id",
+            "status": "done",
+            "testStrategy": "Validate foreign key constraints between users and guardians, test cascade operations, verify unique constraints work correctly, test enum validation for relationship types"
+          },
+          {
+            "id": 2,
+            "title": "Implement Device and Location Tracking Schema",
+            "description": "Design tables for wearable device management and GPS location tracking with proper indexing for performance",
+            "dependencies": [
+              1
+            ],
+            "details": "Create devices table: id, user_id, device_type, device_model, serial_number, firmware_version, battery_level, last_sync_at, is_active, pairing_code, paired_at, created_at, updated_at. Create locations table: id, user_id, device_id, latitude, longitude, accuracy, altitude, speed, heading, location_type, address, captured_at, created_at. Add indexes: (user_id, last_sync_at) on devices, (user_id, captured_at DESC) on locations for efficient queries, spatial index on (latitude, longitude)",
+            "status": "done",
+            "testStrategy": "Test spatial queries performance with EXPLAIN, verify location data precision, test device pairing uniqueness, validate battery level constraints (0-100)"
+          },
+          {
+            "id": 3,
+            "title": "Create Activity and Medication Management Schema",
+            "description": "Implement tables for tracking daily activities, routines, medications, and adherence with proper temporal indexing",
+            "dependencies": [
+              1
+            ],
+            "details": "Create activities table: id, user_id, activity_type, activity_name, description, start_time, end_time, location_id, confidence_score, is_routine, created_at, updated_at. Create medications table: id, user_id, medication_name, dosage, frequency, time_of_day, instructions, prescriber, start_date, end_date, is_active, created_at, updated_at. Create medication_adherence table: id, medication_id, scheduled_time, taken_time, status (enum: taken, missed, delayed), reminder_sent, notes, created_at. Add indexes on temporal fields for efficient range queries",
+            "status": "pending",
+            "testStrategy": "Test medication schedule calculations, verify adherence status transitions, test activity duration constraints, validate time-based queries performance"
+          },
+          {
+            "id": 4,
+            "title": "Design Notification and Emergency Contact Schema",
+            "description": "Create comprehensive notification system tables and emergency contact management with delivery tracking",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create emergency_contacts table: id, user_id, contact_name, phone_number, relationship, priority_order, is_active, created_at, updated_at. Create notifications table: id, user_id, type (enum: reminder, alert, emergency, system), title, message, priority, scheduled_for, expires_at, metadata (JSON), created_at. Create notification_deliveries table: id, notification_id, channel (enum: push, sms, email), recipient, status (enum: pending, sent, delivered, failed), sent_at, delivered_at, failure_reason, created_at. Add indexes for notification queries by user and status",
+            "status": "pending",
+            "testStrategy": "Test notification delivery workflow, verify priority ordering for emergency contacts, test JSON metadata storage and retrieval, validate notification expiration logic"
+          },
+          {
+            "id": 5,
+            "title": "Implement Audit and Performance Optimization",
+            "description": "Add comprehensive audit columns, create database indexes for all foreign keys and common query patterns, implement Flyway migration scripts",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Add audit columns to all tables: created_by, updated_by (user IDs), deleted_at (soft delete), version (optimistic locking). Create composite indexes for common queries: (user_id, created_at) on all user-related tables, (user_id, is_active) where applicable. Create Flyway migration scripts: V1__initial_schema.sql with all table definitions, V2__performance_indexes.sql with optimization indexes. Add database triggers for updated_at auto-update. Configure table partitioning for locations and activities by created_at for historical data management",
+            "status": "pending",
+            "testStrategy": "Run EXPLAIN on common queries to verify index usage, test soft delete functionality, verify optimistic locking prevents concurrent updates, test Flyway migration rollback scenarios"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Implement User Registration and Profile Management",
+        "description": "Create registration flow optimized for BIF users with simplified interface",
+        "details": "Implement registration endpoint with minimal required fields, create user profile with cognitive level settings (IQ range 70-85), add guardian linkage during registration, implement password recovery with SMS/email options, store user preferences for notification methods",
+        "testStrategy": "Test registration with various cognitive profiles, validate guardian-user relationships, test password recovery flow, verify data encryption for sensitive fields",
+        "priority": "high",
+        "dependencies": [
+          11,
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement User Registration DTO and Validation",
+            "description": "Create registration request/response DTOs with simplified fields optimized for BIF users, implementing comprehensive validation rules",
+            "dependencies": [],
+            "details": "Create RegisterRequest DTO with minimal fields (username, password, phoneNumber, cognitiveLevel, guardianContact). Implement custom validators for password strength appropriate for cognitive level (simple patterns allowed), phone number format validation, and cognitive level range validation (70-85). Create RegisterResponse DTO with user profile data and JWT token. Use @Valid annotations and create custom constraint validators. Ensure all validation messages use simple, positive language at 5th-grade reading level.",
+            "status": "pending",
+            "testStrategy": "Unit test all validators with edge cases, test DTO serialization/deserialization, verify validation messages are user-friendly"
+          },
+          {
+            "id": 2,
+            "title": "Implement User Registration Service with Cognitive Profile Support",
+            "description": "Create service layer for user registration handling cognitive level settings and secure password storage",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement UserRegistrationService with methods for creating users with cognitive profiles. Hash passwords using BCrypt with appropriate strength factor. Generate unique user IDs and handle duplicate username/phone checks. Create UserProfile entity with cognitiveLevel field (IQ range 70-85) and associated preferences. Implement transaction management for atomicity. Store initial user preferences with default notification methods (SMS preferred over email). Create audit trail for registration events.",
+            "status": "pending",
+            "testStrategy": "Test registration with various cognitive levels, verify password hashing, test duplicate detection, validate transaction rollback on errors"
+          },
+          {
+            "id": 3,
+            "title": "Create Guardian Linkage System During Registration",
+            "description": "Implement guardian relationship management allowing users to register with guardian support",
+            "dependencies": [
+              2
+            ],
+            "details": "Create Guardian entity and repository with relationship mapping to User. Implement GuardianService for managing guardian-user relationships with verification workflow. Add optional guardian fields to registration (guardianName, guardianPhone, relationship, verificationCode). Create guardian invitation system with SMS/email verification codes. Implement guardian consent tracking and relationship validation. Store guardian permissions for accessing user data. Create API for guardian to approve/reject linkage requests.",
+            "status": "pending",
+            "testStrategy": "Test guardian invitation flow, verify relationship validation, test permission boundaries, validate verification code generation and expiry"
+          },
+          {
+            "id": 4,
+            "title": "Implement Password Recovery with Multi-Channel Support",
+            "description": "Create accessible password recovery system supporting both SMS and email channels",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement PasswordRecoveryService with SMS and email recovery options. Create recovery token generation with 6-digit numeric codes (easier for BIF users than complex strings). Implement rate limiting to prevent abuse (max 3 attempts per hour). Store recovery tokens in Redis with 15-minute expiration. Create simplified recovery flow with step-by-step visual guides. Implement SMS integration using AWS SNS or Twilio. Add email templates with simple language and clear instructions. Create recovery completion notification to user and guardian.",
+            "status": "pending",
+            "testStrategy": "Test SMS and email delivery, verify token expiration, test rate limiting, validate recovery completion flow"
+          },
+          {
+            "id": 5,
+            "title": "Build User Registration and Profile Management REST APIs",
+            "description": "Create REST endpoints for registration, profile management, and password recovery with proper authentication",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Implement POST /api/v1/auth/register endpoint accepting RegisterRequest DTO. Create GET/PUT /api/v1/users/profile endpoints for profile management with JWT authentication. Implement POST /api/v1/auth/recovery/initiate and POST /api/v1/auth/recovery/complete endpoints. Add guardian linkage endpoints: POST /api/v1/guardian/link and POST /api/v1/guardian/verify. Implement proper error handling with user-friendly messages. Add request/response logging with sensitive data masking. Ensure all responses follow standardized ApiResponse format. Implement rate limiting on registration endpoint.",
+            "status": "pending",
+            "testStrategy": "Integration test all endpoints, verify JWT authentication, test error scenarios, validate response formats"
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Create Guardian Dashboard API",
+        "description": "Develop comprehensive API for guardian monitoring and management features",
+        "details": "Implement endpoints for guardian registration/login, create APIs for viewing linked BIF users, develop real-time location tracking endpoints, add activity summary endpoints (daily/weekly reports), implement emergency notification subscription APIs",
+        "testStrategy": "Test guardian access permissions, verify real-time data updates, test notification delivery, validate data privacy between different guardians",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Guardian Authentication and Registration API",
+            "description": "Create secure authentication endpoints for guardians including registration, login, JWT token generation, and password reset functionality",
+            "dependencies": [],
+            "details": "Create GuardianAuthController with endpoints: POST /api/guardians/register (validate guardian relationship proof), POST /api/guardians/login (JWT authentication), POST /api/guardians/refresh-token, POST /api/guardians/reset-password. Implement GuardianService with BCrypt password hashing, JWT token generation with guardian-specific claims, and relationship verification logic. Create Guardian entity with fields: id, email, password, name, phoneNumber, relationshipType, verificationStatus. Add GuardianRepository extending JpaRepository. Implement custom @GuardianAuth annotation for securing guardian-specific endpoints",
+            "status": "pending",
+            "testStrategy": "Unit test password hashing and JWT generation, integration test authentication flow, test invalid credentials handling, verify relationship verification process, test token expiration and refresh"
+          },
+          {
+            "id": 2,
+            "title": "Create Guardian-User Relationship Management API",
+            "description": "Develop endpoints for managing relationships between guardians and BIF users, including linking, unlinking, and viewing linked users with proper authorization",
+            "dependencies": [
+              1
+            ],
+            "details": "Create GuardianRelationshipController with endpoints: GET /api/guardians/linked-users (paginated list of linked BIF users), POST /api/guardians/link-user (with verification code from BIF user), DELETE /api/guardians/unlink-user/{userId}, GET /api/guardians/pending-requests. Implement relationship verification using time-limited codes sent to BIF users. Create GuardianUserRelationship entity with fields: guardianId, userId, relationshipType, linkedDate, permissions (view-only, emergency-contact, full-access). Add relationship status tracking and audit logging for all relationship changes",
+            "status": "pending",
+            "testStrategy": "Test authorization for viewing only linked users, verify linking process with valid/invalid codes, test unlinking permissions, validate audit trail creation"
+          },
+          {
+            "id": 3,
+            "title": "Implement Real-time Location Tracking API",
+            "description": "Build WebSocket-based real-time location tracking endpoints for guardians to monitor their linked BIF users' locations with privacy controls",
+            "dependencies": [
+              2
+            ],
+            "details": "Create LocationWebSocketController using Spring WebSocket with STOMP protocol. Implement endpoints: WebSocket /ws/location/subscribe/{userId} for real-time updates, GET /api/guardians/users/{userId}/location/current, GET /api/guardians/users/{userId}/location/history (with date range). Create LocationUpdateService to handle location broadcasts only to authorized guardians. Implement privacy controls: location sharing permissions per user, time-based restrictions, accuracy level settings. Add Redis pub/sub for scalable real-time updates across multiple server instances",
+            "status": "pending",
+            "testStrategy": "Test WebSocket connection authorization, verify location updates only go to authorized guardians, test location history retrieval with date filters, validate privacy settings enforcement"
+          },
+          {
+            "id": 4,
+            "title": "Develop Activity Summary and Reports API",
+            "description": "Create comprehensive activity reporting endpoints for guardians to view daily, weekly, and monthly summaries of their linked users' activities",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create ActivityReportController with endpoints: GET /api/guardians/users/{userId}/activities/summary (with period parameter: daily/weekly/monthly), GET /api/guardians/users/{userId}/activities/detailed (paginated activity logs), GET /api/guardians/reports/export (PDF/CSV export). Implement ActivityAggregationService to compile: medication adherence rates, location patterns, emergency events, health metrics trends, app usage statistics. Create scheduled jobs for pre-calculating summaries. Add caching layer for frequently accessed reports. Include simplified visual representations suitable for guardians",
+            "status": "pending",
+            "testStrategy": "Test summary calculation accuracy, verify report generation for different time periods, test export functionality in multiple formats, validate data aggregation logic"
+          },
+          {
+            "id": 5,
+            "title": "Implement Emergency Notification Subscription System",
+            "description": "Build real-time emergency notification system allowing guardians to subscribe to alerts and configure notification preferences for their linked users",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create EmergencyNotificationController with endpoints: POST /api/guardians/notifications/subscribe (with notification preferences), GET /api/guardians/notifications/preferences, PUT /api/guardians/notifications/preferences, GET /api/guardians/notifications/history. Implement multi-channel notification delivery: push notifications (FCM), SMS (Twilio), email, in-app notifications. Create NotificationPreference entity with customizable alert types: emergency SOS, medication missed, unusual location, health metric anomaly. Add real-time notification using WebSocket for instant alerts. Implement notification batching and priority queuing for reliable delivery",
+            "status": "pending",
+            "testStrategy": "Test notification delivery across all channels, verify subscription preferences are respected, test emergency notification priority and delivery speed, validate notification history tracking"
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Integrate OpenAI API for Context Analysis",
+        "description": "Set up OpenAI API integration for situation interpretation and guidance generation",
+        "details": "Configure OpenAI client with secure API key management, implement prompt engineering for BIF-optimized responses (5th grade reading level), create context analysis service with image-to-text capabilities, implement response caching to reduce API costs, add fallback mechanisms for API failures",
+        "testStrategy": "Test prompt responses for appropriate reading level, measure API response times, test caching effectiveness, verify fallback behavior during outages",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up OpenAI Client Configuration and Security",
+            "description": "Create secure OpenAI client configuration with API key management using environment variables and implement authentication middleware",
+            "dependencies": [],
+            "details": "Create OpenAIConfig class in config package with @Configuration annotation. Use @Value to inject API key from environment variables. Implement OpenAI client bean with proper timeout settings (30s). Create OpenAIService interface and implementation with error handling. Add API key validation on startup. Implement secure key rotation mechanism using AWS Secrets Manager or similar. Configure retry logic with exponential backoff for API failures.",
+            "status": "pending",
+            "testStrategy": "Test API key injection from environment variables, verify client initialization with mock API key, test timeout configurations, validate error handling for invalid keys"
+          },
+          {
+            "id": 2,
+            "title": "Implement BIF-Optimized Prompt Engineering Service",
+            "description": "Create prompt templates and engineering service that ensures all AI responses meet 5th-grade reading level requirements for BIF users",
+            "dependencies": [
+              1
+            ],
+            "details": "Create PromptTemplateService with predefined templates for different contexts (navigation, medication, daily tasks). Implement readability scoring using Flesch-Kincaid grade level. Create prompt wrapper that adds instructions for simple language, short sentences, and positive tone. Build template categories: emergency_assistance, medication_reminder, navigation_help, task_guidance. Add Korean language support with simple vocabulary. Implement prompt versioning for A/B testing.",
+            "status": "pending",
+            "testStrategy": "Test readability scores for generated responses, validate prompt template injection, verify Korean language simplification, test emergency vs normal prompt differentiation"
+          },
+          {
+            "id": 3,
+            "title": "Build Context Analysis Service with Image Support",
+            "description": "Implement service layer for analyzing situational context including image-to-text capabilities using OpenAI Vision API",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create ContextAnalysisService with methods for text and image analysis. Implement image preprocessing (resize, format conversion) for API optimization. Build context extraction from images using GPT-4 Vision. Create ContextAnalysisRequest/Response DTOs with validation. Implement context categorization (emergency, routine, navigation, medication). Add metadata extraction for better context understanding. Build request queuing system for rate limiting compliance.",
+            "status": "pending",
+            "testStrategy": "Test image analysis with various scenarios, verify context categorization accuracy, test rate limiting behavior, validate response time < 3 seconds"
+          },
+          {
+            "id": 4,
+            "title": "Implement Response Caching with Redis",
+            "description": "Create intelligent caching layer for OpenAI responses to reduce API costs and improve response times",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement CacheKey generation based on context hash and prompt template. Create ResponseCacheService using Redis with TTL based on content type (emergency: 5min, routine: 1hour). Build cache warming for common scenarios. Implement cache invalidation strategy for updated contexts. Add cache hit rate monitoring. Create fallback to cache for API failures. Implement response similarity matching for near-miss cache hits.",
+            "status": "pending",
+            "testStrategy": "Test cache key generation uniqueness, verify TTL settings per content type, test cache hit/miss scenarios, validate fallback behavior during API outages"
+          },
+          {
+            "id": 5,
+            "title": "Create Fallback Mechanism and Monitoring",
+            "description": "Implement comprehensive fallback system for API failures and monitoring for service health",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Build FallbackService with pre-defined responses for common scenarios. Implement circuit breaker pattern using Resilience4j for API calls. Create offline response templates for critical features (emergency, basic navigation). Add health check endpoint for OpenAI service status. Implement metrics collection (API usage, response times, error rates). Build alerting for service degradation. Create fallback response quality scoring to ensure BIF compliance even in degraded mode.",
+            "status": "pending",
+            "testStrategy": "Test circuit breaker triggers and recovery, verify fallback response quality, test offline mode functionality, validate monitoring metrics accuracy"
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Implement WebSocket Real-time Communication",
+        "description": "Set up WebSocket infrastructure for real-time video streaming and instant notifications",
+        "details": "Configure Spring WebSocket with STOMP protocol, implement WebSocket security with JWT authentication, create channels for video streaming, location updates, and emergency alerts, implement connection pooling and heartbeat mechanism, add reconnection logic for network interruptions",
+        "testStrategy": "Load test with 100+ concurrent connections, test message delivery reliability, verify reconnection after network drops, measure latency for emergency alerts",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Spring WebSocket Infrastructure with STOMP",
+            "description": "Set up the core WebSocket configuration with STOMP protocol support, including message broker configuration and endpoint mapping",
+            "dependencies": [],
+            "details": "Create WebSocketConfig class extending WebSocketMessageBrokerConfigurer, configure STOMP endpoints at /ws with SockJS fallback, set up message broker with /topic and /queue destinations, configure thread pool for WebSocket handling, add CORS configuration for allowed origins, implement WebSocket interceptor for connection logging",
+            "status": "pending",
+            "testStrategy": "Unit test configuration beans, integration test STOMP endpoint connectivity, verify SockJS fallback mechanism, test CORS headers for different origins"
+          },
+          {
+            "id": 2,
+            "title": "Implement JWT-based WebSocket Security",
+            "description": "Add authentication and authorization layer for WebSocket connections using JWT tokens from the existing security infrastructure",
+            "dependencies": [
+              1
+            ],
+            "details": "Create WebSocketSecurityConfig extending AbstractSecurityWebSocketMessageBrokerConfigurer, implement ChannelInterceptor to validate JWT tokens from STOMP headers, integrate with existing JwtTokenProvider for token validation, configure channel-level security for different message destinations, implement user principal resolution from JWT claims, add rate limiting per authenticated user",
+            "status": "pending",
+            "testStrategy": "Test connection rejection with invalid tokens, verify token expiration handling, test authorization for different channel subscriptions, validate rate limiting effectiveness"
+          },
+          {
+            "id": 3,
+            "title": "Create Real-time Communication Channels",
+            "description": "Implement dedicated STOMP channels for video streaming, location updates, and emergency alerts with appropriate message formats",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create WebSocketController with @MessageMapping endpoints, implement /topic/video/{userId} for video frame streaming with binary message support, create /topic/location/{userId} for GPS coordinate updates, implement /topic/emergency/{userId} for high-priority alerts, define message DTOs for each channel type, implement message validation and sanitization, add message acknowledgment mechanism for critical alerts",
+            "status": "pending",
+            "testStrategy": "Test message delivery to specific user channels, verify binary data handling for video frames, test emergency alert priority delivery, validate message format compliance"
+          },
+          {
+            "id": 4,
+            "title": "Implement Connection Management and Heartbeat",
+            "description": "Set up connection pooling, heartbeat mechanism, and session management for reliable WebSocket connections",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Configure WebSocket heartbeat interval at 20 seconds, implement connection pool with configurable max connections per user, create WebSocketSessionManager to track active sessions, implement heartbeat handler to detect stale connections, add connection event listeners for connect/disconnect tracking, integrate with Redis for distributed session management, implement connection limits per user account",
+            "status": "pending",
+            "testStrategy": "Test heartbeat timeout detection, verify connection pool limits enforcement, test session persistence across server restarts, validate distributed session management"
+          },
+          {
+            "id": 5,
+            "title": "Add Automatic Reconnection and Recovery Logic",
+            "description": "Implement client reconnection strategies and message recovery for network interruptions",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create WebSocketReconnectionService with exponential backoff strategy, implement message queue for offline message storage using Redis, add sequence numbering for message ordering, create recovery mechanism to replay missed messages on reconnection, implement connection state synchronization, add network quality monitoring to adjust reconnection parameters, create fallback to REST API for critical operations during WebSocket downtime",
+            "status": "pending",
+            "testStrategy": "Test reconnection after network drops, verify message recovery completeness, test exponential backoff timing, validate fallback mechanism activation"
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Develop Emergency Detection Service",
+        "description": "Create service for detecting and responding to emergency situations",
+        "details": "Implement fall detection algorithm using accelerometer data patterns, create panic button activation handler, develop automatic emergency contact notification system, implement location-based emergency response (nearest hospital/police), add configurable emergency thresholds per user",
+        "testStrategy": "Test fall detection accuracy with simulated data, verify emergency notification delivery times < 3 seconds, test location accuracy for emergency services, validate false positive handling",
+        "priority": "high",
+        "dependencies": [
+          15,
+          16
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Emergency Detection Data Models and API Structure",
+            "description": "Create comprehensive data models for emergency events, detection configurations, and response protocols. Design RESTful API endpoints for emergency detection service integration.",
+            "dependencies": [],
+            "details": "Create JPA entities: EmergencyEvent (id, userId, type, severity, timestamp, location, resolved), EmergencyConfiguration (userId, fallThreshold, inactivityTimeout, emergencyContacts), EmergencyResponse (eventId, responseType, notificationsSent, responseTime). Design REST endpoints: POST /api/emergency/detect, GET /api/emergency/events/{userId}, PUT /api/emergency/config/{userId}, POST /api/emergency/resolve/{eventId}. Implement DTOs for request/response with validation annotations. Add database indexes for userId and timestamp for quick emergency event retrieval.",
+            "status": "pending",
+            "testStrategy": "Unit test entity relationships and constraints, validate API endpoint contracts with MockMvc, test DTO validation rules"
+          },
+          {
+            "id": 2,
+            "title": "Implement Fall Detection Algorithm Service",
+            "description": "Develop the core fall detection algorithm using accelerometer data patterns with configurable thresholds and confidence scoring to minimize false positives.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create FallDetectionService with methods: detectFall(AccelerometerData data, UserThresholds thresholds), calculateFallConfidence(double[] accelerationVector, long duration). Implement fall detection logic: sudden acceleration spike (>2g), followed by low movement period (<0.5g for 2+ seconds), orientation change detection. Add configurable parameters: acceleration threshold (default 2g), stillness threshold (0.5g), stillness duration (2s). Implement sliding window analysis for continuous monitoring. Create FallDetectionResult with confidence score (0-100%), fallType (forward/backward/sideways), severity level.",
+            "status": "pending",
+            "testStrategy": "Test with simulated accelerometer data for various fall scenarios, validate threshold configurations, measure detection accuracy and response time < 500ms"
+          },
+          {
+            "id": 3,
+            "title": "Build Emergency Notification and Contact System",
+            "description": "Implement automated emergency contact notification system with multiple communication channels and escalation protocols for unresolved emergencies.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create EmergencyNotificationService with notification strategies: SMS (via AWS SNS), push notifications (FCM), automated phone calls (Twilio). Implement contact priority system: primary guardian first, then secondary contacts, finally emergency services. Add notification templates with simple language: 'Your family member may need help. They fell at [location] at [time]'. Create escalation logic: if no response in 3 minutes, notify next contact level. Implement location enrichment: reverse geocoding for human-readable addresses, nearest hospital/police station lookup via Google Places API. Add notification delivery tracking and retry mechanism.",
+            "status": "pending",
+            "testStrategy": "Mock external notification services, test escalation timing, verify message delivery confirmation, test location accuracy within 50 meters"
+          },
+          {
+            "id": 4,
+            "title": "Develop Panic Button and Manual Emergency Trigger",
+            "description": "Create panic button functionality with immediate emergency response activation and false alarm prevention mechanisms.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement PanicButtonService with instant activation handler: single tap for alert, hold 3 seconds for emergency. Add false alarm prevention: 10-second cancellation window with haptic feedback, confirmation dialog for non-critical alerts. Create emergency type classification: medical emergency, personal safety, assistance needed. Implement location capture at panic activation: GPS coordinates, WiFi-based location, last known location fallback. Add silent alarm option for dangerous situations. Create audit log for all panic button activations. Implement rate limiting to prevent accidental repeated triggers (max 3 per minute).",
+            "status": "pending",
+            "testStrategy": "Test activation response time < 200ms, verify cancellation mechanism, test location capture accuracy, validate rate limiting"
+          },
+          {
+            "id": 5,
+            "title": "Create Emergency Response Coordination and Monitoring Dashboard",
+            "description": "Build real-time emergency monitoring system for guardians and implement automated emergency service integration with location-based routing.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Create EmergencyMonitoringService with WebSocket support for real-time updates to guardian dashboard. Implement emergency event aggregation: combine fall detection, panic button, and inactivity alerts into unified response. Add automated 911/emergency service integration: pre-formatted emergency information packet, user medical information summary, precise location with plus codes. Create guardian dashboard endpoints: GET /api/emergency/monitor/{userId}/live, POST /api/emergency/acknowledge/{eventId}. Implement emergency resolution workflow: guardian acknowledgment, false alarm marking, incident notes. Add performance metrics: average response time, false positive rate, emergency type distribution. Create automated reports for caregivers.",
+            "status": "pending",
+            "testStrategy": "Test WebSocket connection reliability, verify emergency service integration with mock APIs, test dashboard update latency < 1 second, validate emergency resolution workflow"
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Build Medication Management System",
+        "description": "Develop comprehensive medication tracking and reminder system",
+        "details": "Create medication schedule database model, implement reminder generation based on prescriptions, develop adherence tracking with photo verification option, create simple visual medication guides, implement guardian alerts for missed medications",
+        "testStrategy": "Test reminder accuracy and timing, verify photo upload and storage, test adherence calculation algorithms, validate guardian notification triggers",
+        "priority": "medium",
+        "dependencies": [
+          12,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Medication Database Schema and Entities",
+            "description": "Create comprehensive database models for medication management including medications, schedules, prescriptions, and adherence tracking",
+            "dependencies": [],
+            "details": "Create JPA entities for Medication (id, name, dosage, form, instructions, sideEffects), MedicationSchedule (id, medicationId, userId, frequency, times, startDate, endDate), Prescription (id, medicationId, userId, doctorName, prescribedDate, notes), and MedicationAdherence (id, scheduleId, scheduledTime, takenTime, status, photoUrl). Add proper relationships using @ManyToOne and @OneToMany annotations. Include validation constraints and indexes for performance optimization.",
+            "status": "pending",
+            "testStrategy": "Write unit tests for entity validation, test cascade operations, verify relationship mappings, and test repository CRUD operations"
+          },
+          {
+            "id": 2,
+            "title": "Implement Medication Service and Reminder Generation",
+            "description": "Develop core medication management service with automated reminder generation based on prescription schedules",
+            "dependencies": [
+              1
+            ],
+            "details": "Create MedicationService with methods for CRUD operations on medications and prescriptions. Implement MedicationScheduleService with reminder generation logic that creates reminders based on frequency (daily, twice-daily, weekly) and specified times. Use Spring Scheduler with @Scheduled annotation to run reminder generation every hour. Store generated reminders in Redis with TTL for quick access. Include timezone handling for accurate reminder times.",
+            "status": "pending",
+            "testStrategy": "Test reminder generation for various frequencies, verify timezone conversions, test edge cases like daylight saving time, validate Redis storage and retrieval"
+          },
+          {
+            "id": 3,
+            "title": "Build Adherence Tracking with Photo Verification",
+            "description": "Implement medication adherence tracking system with optional photo upload for verification",
+            "dependencies": [
+              2
+            ],
+            "details": "Create AdherenceService to track medication taking events. Implement photo upload endpoint that accepts multipart files, validates image format/size, and stores in AWS S3. Generate presigned URLs for secure photo access. Create adherence calculation algorithms (daily, weekly, monthly adherence rates). Implement AdherenceController with endpoints: POST /medications/adherence/{scheduleId}/confirm (with optional photo), GET /medications/adherence/stats/{userId}. Add photo metadata storage including timestamp and geolocation if available.",
+            "status": "pending",
+            "testStrategy": "Test photo upload with various file sizes and formats, verify S3 integration, test adherence calculation accuracy, validate presigned URL generation and expiration"
+          },
+          {
+            "id": 4,
+            "title": "Create Visual Medication Guides and Simplified UI Components",
+            "description": "Develop visual medication guide system with simple, accessible medication information display",
+            "dependencies": [
+              1
+            ],
+            "details": "Create MedicationGuideService to generate visual guides including pill images, dosage visualizations, and simple instructions. Implement medication image mapping system using external pill image API or local database. Create DTOs for simplified medication display with 5th-grade reading level descriptions. Build REST endpoints: GET /medications/{id}/guide (returns visual guide data), GET /medications/visual-search (search by color/shape). Include icon-based time representations (sun for morning, moon for night) and color-coding for medication types.",
+            "status": "pending",
+            "testStrategy": "Test readability scores of generated text, verify image loading and caching, test visual search accuracy, validate accessibility compliance"
+          },
+          {
+            "id": 5,
+            "title": "Implement Guardian Alert System for Missed Medications",
+            "description": "Build notification system to alert guardians when medications are missed, with configurable thresholds",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create GuardianAlertService that monitors adherence data and triggers alerts based on configurable rules. Implement alert thresholds (immediate for critical meds, after 2 hours for regular). Build notification queue using Redis to prevent duplicate alerts. Create AlertController with endpoints: POST /medications/alerts/configure (set guardian preferences), GET /medications/alerts/history. Implement multiple notification channels (push, SMS, email) with fallback mechanism. Add alert acknowledgment system to prevent notification spam.",
+            "status": "pending",
+            "testStrategy": "Test alert triggering for various scenarios, verify notification delivery across channels, test threshold configurations, validate alert deduplication logic"
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Implement Location Tracking and Geofencing",
+        "description": "Create location monitoring system with safe zone management",
+        "details": "Implement GPS data collection and storage, create geofencing service with configurable safe zones, develop location history tracking with privacy controls, implement intelligent alerts for unusual location patterns, add battery-efficient location sampling algorithms",
+        "testStrategy": "Test geofence boundary detection accuracy, verify location privacy settings, test battery consumption optimization, validate alert triggering logic",
+        "priority": "high",
+        "dependencies": [
+          12,
+          16
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Location Entity and Repository Layer",
+            "description": "Design and implement the database schema for location tracking with JPA entities and Spring Data repositories",
+            "dependencies": [],
+            "details": "Create Location entity with fields: id, userId, deviceId, latitude, longitude, accuracy, altitude, speed, heading, timestamp, batteryLevel, isInsideSafeZone. Add indexes on userId, deviceId, and timestamp for query performance. Create LocationRepository with custom queries for finding locations by user and time range. Implement LocationHistory entity for aggregated historical data with privacy-aware retention policies.",
+            "status": "pending",
+            "testStrategy": "Unit test entity validation, test repository methods with @DataJpaTest, verify index performance with test data sets"
+          },
+          {
+            "id": 2,
+            "title": "Implement Geofencing Service with Safe Zone Management",
+            "description": "Build core geofencing logic for defining, storing, and checking safe zones with configurable boundaries",
+            "dependencies": [
+              1
+            ],
+            "details": "Create SafeZone entity with fields: id, userId, name, centerLatitude, centerLongitude, radius, isActive, schedule. Implement GeofencingService with methods: createSafeZone(), updateSafeZone(), checkLocationInZone(), calculateDistance(). Use Haversine formula for distance calculations. Support multiple zone types (circular, polygonal). Store zones in Redis for fast lookup. Implement zone overlap detection and priority handling.",
+            "status": "pending",
+            "testStrategy": "Test boundary calculations with edge cases, verify zone creation/update flows, test concurrent zone checks, validate distance calculation accuracy"
+          },
+          {
+            "id": 3,
+            "title": "Develop Battery-Efficient Location Sampling Strategy",
+            "description": "Implement adaptive location sampling algorithms that balance accuracy with battery conservation",
+            "dependencies": [
+              1
+            ],
+            "details": "Create LocationSamplingService with adaptive sampling rates based on: movement patterns (stationary vs moving), battery level, time of day, proximity to safe zones. Implement sampling strategies: HIGH_ACCURACY (5s), BALANCED (30s), POWER_SAVE (2min). Use Android's FusedLocationProvider equivalent logic. Cache last known location. Implement motion detection to trigger sampling changes. Add configuration for minimum accuracy threshold.",
+            "status": "pending",
+            "testStrategy": "Test sampling rate adjustments, measure battery consumption patterns, verify accuracy thresholds, test motion detection triggers"
+          },
+          {
+            "id": 4,
+            "title": "Build Intelligent Alert System for Location Anomalies",
+            "description": "Create smart alerting system that detects unusual location patterns and notifies guardians appropriately",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement LocationAlertService with pattern detection: unexpected zone exit, prolonged stationary periods, route deviation, no location updates. Create alert rules engine with configurable thresholds. Implement ML-based anomaly detection using historical patterns. Add alert fatigue prevention with smart grouping. Create priority levels: CRITICAL (immediate), WARNING (5min delay), INFO (digest). Store alerts in database with delivery tracking.",
+            "status": "pending",
+            "testStrategy": "Test alert triggering scenarios, verify notification delivery, test anomaly detection accuracy, validate alert grouping logic"
+          },
+          {
+            "id": 5,
+            "title": "Create Location API Endpoints with Privacy Controls",
+            "description": "Develop REST APIs for location tracking with comprehensive privacy and access controls",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create LocationController with endpoints: POST /api/locations (receive updates), GET /api/locations/current/{userId}, GET /api/locations/history, POST /api/geofences, GET /api/locations/alerts. Implement privacy filters: location fuzzing for non-guardians, time-based access restrictions, consent verification. Add request validation with @Valid. Implement pagination for history. Add WebSocket support for real-time updates. Include rate limiting to prevent tracking abuse.",
+            "status": "pending",
+            "testStrategy": "Integration test all endpoints, verify privacy filters work correctly, test pagination and filtering, validate WebSocket connections"
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Develop Activity Pattern Learning Service",
+        "description": "Create ML service to learn and predict user daily routines",
+        "details": "Implement activity data collection framework, develop pattern recognition using time-series analysis, create routine prediction algorithms, implement anomaly detection for unusual behaviors, generate automated schedule suggestions based on patterns",
+        "testStrategy": "Test pattern recognition accuracy over time, validate anomaly detection thresholds, test schedule suggestion relevance, verify privacy-preserving data processing",
+        "priority": "medium",
+        "dependencies": [
+          12,
+          19
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Activity Data Collection Framework",
+            "description": "Design and implement the data collection infrastructure for capturing user activities including location changes, app usage, medication events, and daily routines",
+            "dependencies": [],
+            "details": "Create ActivityData entity with fields for activity type, timestamp, location, duration, and metadata. Implement ActivityDataRepository with batch insert capabilities. Design data collection service that aggregates events from various sources (location service, medication adherence, app interactions). Implement privacy-preserving data anonymization before storage. Create configurable data retention policies (default 90 days)",
+            "status": "pending",
+            "testStrategy": "Test data collection from multiple sources, verify batch processing performance, validate data anonymization, test retention policy enforcement"
+          },
+          {
+            "id": 2,
+            "title": "Implement Time-Series Pattern Recognition Engine",
+            "description": "Develop the core pattern recognition engine using time-series analysis to identify recurring daily and weekly activity patterns",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement sliding window algorithm for pattern detection with configurable window sizes (hourly, daily, weekly). Create feature extraction for activity sequences including frequency, duration, and time-of-day patterns. Implement pattern clustering using DBSCAN or K-means for grouping similar activities. Develop pattern confidence scoring based on consistency and recurrence. Store identified patterns in PatternRepository with user association",
+            "status": "pending",
+            "testStrategy": "Test pattern detection with synthetic time-series data, validate clustering accuracy, measure pattern confidence scores against known routines, test with varying data densities"
+          },
+          {
+            "id": 3,
+            "title": "Create Routine Prediction Algorithm",
+            "description": "Build prediction algorithms that forecast user's likely activities based on learned patterns, time of day, and historical data",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement Markov Chain model for sequential activity prediction. Create time-weighted prediction algorithm that considers day of week, time of day, and recent activities. Develop confidence threshold system for predictions (only show predictions above 70% confidence). Implement prediction caching for frequently accessed timeframes. Create PredictionService with methods for next activity, daily schedule, and weekly routine predictions",
+            "status": "pending",
+            "testStrategy": "Test prediction accuracy against historical data, validate confidence thresholds, measure prediction latency, test edge cases like holidays or schedule changes"
+          },
+          {
+            "id": 4,
+            "title": "Develop Anomaly Detection System",
+            "description": "Implement anomaly detection to identify unusual behaviors or deviations from established patterns that might indicate issues",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create statistical anomaly detection using z-score analysis for activity duration and frequency deviations. Implement isolation forest algorithm for detecting complex anomalies in multi-dimensional activity data. Develop severity scoring for anomalies (minor, moderate, severe). Create configurable alert thresholds per user based on their needs. Implement AnomalyEvent entity to track detected anomalies with guardian notification preferences",
+            "status": "pending",
+            "testStrategy": "Test anomaly detection sensitivity with injected anomalies, validate false positive rates below 10%, test guardian notification delivery, verify severity scoring accuracy"
+          },
+          {
+            "id": 5,
+            "title": "Build Automated Schedule Suggestion Service",
+            "description": "Create service that generates personalized schedule suggestions based on learned patterns and optimization for user well-being",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Implement schedule generation algorithm that considers medication times, meal patterns, and activity preferences. Create schedule optimization for balanced daily routines including rest periods. Develop suggestion ranking based on pattern confidence and user feedback. Implement ScheduleSuggestion entity with acceptance tracking. Create feedback loop to improve suggestions based on user acceptance/rejection. Add Korean language generation for schedule descriptions using simple vocabulary",
+            "status": "pending",
+            "testStrategy": "Test schedule generation completeness, validate optimization constraints, measure suggestion acceptance rates, test Korean language clarity at 5th-grade level"
+          }
+        ]
+      },
+      {
+        "id": 21,
+        "title": "Create Navigation Assistance API",
+        "description": "Build navigation system optimized for cognitive accessibility",
+        "details": "Integrate with mapping services for route calculation, implement landmark-based navigation instructions, create simplified turn-by-turn directions using familiar references, add public transportation guidance with step-by-step instructions, implement route complexity scoring for BIF users",
+        "testStrategy": "Test route simplification algorithms, verify landmark recognition accuracy, test public transport instructions clarity, validate complexity scoring accuracy",
+        "priority": "medium",
+        "dependencies": [
+          15,
+          19
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up mapping service integration and route calculation foundation",
+            "description": "Integrate with Google Maps API or similar mapping service to enable basic route calculation functionality and establish the foundation for navigation features",
+            "dependencies": [],
+            "details": "Create MapService interface and implementation using Google Maps Directions API. Configure API keys in application properties. Implement basic route request/response DTOs with fields for origin, destination, waypoints, and route preferences. Create service methods for calculating routes between two points with support for different travel modes (walking, public transit). Implement caching layer using Redis to store frequently requested routes. Add configuration for API rate limiting and error handling.",
+            "status": "pending",
+            "testStrategy": "Mock external API calls in unit tests, test route calculation with various origins/destinations, verify caching behavior, test error handling for API failures"
+          },
+          {
+            "id": 2,
+            "title": "Implement landmark-based navigation instruction generator",
+            "description": "Create system to identify landmarks along routes and generate navigation instructions using familiar reference points instead of complex street names",
+            "dependencies": [
+              1
+            ],
+            "details": "Create LandmarkService to identify notable landmarks near route waypoints using Places API. Build landmark database with common reference points (stores, hospitals, schools). Implement NavigationInstructionGenerator that converts turn-by-turn directions into landmark-based instructions. Create algorithm to select most recognizable landmarks based on prominence scores. Develop instruction templates using simple Korean language patterns. Store user-specific familiar landmarks in database for personalized navigation.",
+            "status": "pending",
+            "testStrategy": "Test landmark identification accuracy, verify instruction generation with various route types, test language simplicity scoring, validate personalization features"
+          },
+          {
+            "id": 3,
+            "title": "Build public transportation guidance system",
+            "description": "Develop comprehensive public transit navigation with step-by-step instructions optimized for BIF users, including bus/subway guidance with visual cues",
+            "dependencies": [
+              1
+            ],
+            "details": "Create PublicTransitService integrating with transit APIs for real-time schedules. Implement TransitInstructionBuilder generating step-by-step guidance for bus/subway trips. Add visual instruction components (colors, numbers, symbols) for easier recognition. Create transfer guidance with timing buffers for BIF users. Implement station/stop identification using landmarks and visual markers. Add real-time alerts for approaching stops with multiple notification methods.",
+            "status": "pending",
+            "testStrategy": "Test multi-modal route calculations, verify instruction clarity and completeness, test real-time data integration, validate accessibility of visual cues"
+          },
+          {
+            "id": 4,
+            "title": "Develop route complexity scoring algorithm",
+            "description": "Create intelligent scoring system to evaluate route complexity for BIF users and suggest simpler alternatives when available",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Design ComplexityScorer analyzing factors: number of turns, transfers, walking distance, traffic complexity, time pressure. Implement weighted scoring algorithm with configurable parameters. Create route simplification engine suggesting alternatives with lower complexity scores. Add user preference learning to adjust scoring based on individual capabilities. Implement complexity visualization for guardians to review routes. Store complexity scores with routes for performance optimization.",
+            "status": "pending",
+            "testStrategy": "Test scoring accuracy with known complex/simple routes, verify alternative route suggestions, test user preference adaptation, validate scoring consistency"
+          },
+          {
+            "id": 5,
+            "title": "Create Navigation API endpoints and integration layer",
+            "description": "Build RESTful API endpoints for navigation features with proper authentication, error handling, and BIF-optimized responses",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create NavigationController with endpoints: POST /api/navigation/route (calculate route), GET /api/navigation/instructions/{routeId} (get instructions), POST /api/navigation/simplify (get simpler alternatives), GET /api/navigation/landmarks/nearby (get nearby landmarks). Implement request/response DTOs with validation. Add authentication and guardian access controls. Create simplified error responses with user-friendly Korean messages. Implement response caching and compression. Add usage analytics for route requests.",
+            "status": "pending",
+            "testStrategy": "Test all endpoints with various inputs, verify authentication and authorization, test error handling and messages, validate response format and performance"
+          }
+        ]
+      },
+      {
+        "id": 22,
+        "title": "Implement YOLOv8 Object Detection Integration",
+        "description": "Integrate YOLOv8 for real-time object recognition from wearable camera",
+        "details": "Set up YOLOv8 model server with optimized inference, implement object detection API endpoint, create object-to-context mapping for relevant items (medicine bottles, signs, hazards), optimize model for edge deployment, implement result caching for common objects",
+        "testStrategy": "Test detection accuracy for relevant object classes, measure inference time < 500ms, test edge deployment performance, validate object relevance filtering",
+        "priority": "medium",
+        "dependencies": [
+          16
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up YOLOv8 Model Server Infrastructure",
+            "description": "Configure and deploy YOLOv8 model server with Spring Boot integration, including model loading, initialization, and health monitoring endpoints",
+            "dependencies": [],
+            "details": "Create YoloModelService class to manage model lifecycle, implement model loading from S3 bucket or local storage, configure model server with appropriate memory allocation (4GB recommended), set up health check endpoint at /api/v1/ai/yolo/health, implement model warm-up on startup to reduce first inference latency, use @PostConstruct for initialization and @PreDestroy for cleanup",
+            "status": "pending",
+            "testStrategy": "Test model loading with mock YOLOv8 weights, verify health endpoint returns model status and version, test memory usage stays within limits, verify warm-up reduces first inference time"
+          },
+          {
+            "id": 2,
+            "title": "Create Object Detection API Endpoint",
+            "description": "Implement REST API endpoint for processing images from wearable camera and returning detected objects with confidence scores and bounding boxes",
+            "dependencies": [
+              1
+            ],
+            "details": "Create ObjectDetectionController with POST /api/v1/ai/detect endpoint accepting multipart image upload, implement request validation for image size (max 5MB) and format (JPEG/PNG), create DetectionRequest and DetectionResponse DTOs with proper validation annotations, implement async processing using @Async for better throughput, add request rate limiting (10 requests per minute per user), return standardized response with detected objects array containing class, confidence, and normalized bounding box coordinates",
+            "status": "pending",
+            "testStrategy": "Test with various image formats and sizes, verify rate limiting works correctly, test async processing with concurrent requests, validate response format matches API specification"
+          },
+          {
+            "id": 3,
+            "title": "Implement Object-to-Context Mapping Service",
+            "description": "Create mapping service to translate detected objects into contextually relevant information for BIF users, focusing on medicine bottles, signs, and hazards",
+            "dependencies": [
+              2
+            ],
+            "details": "Create ContextMappingService with object classification rules, implement ObjectContext enum with categories (MEDICINE, SIGN, HAZARD, DAILY_ITEM), create mapping configuration in application.yml for object class to context mapping, implement relevance scoring algorithm based on user's profile and current activity, add Korean language support for object descriptions using message properties, implement special handling for medicine bottles with OCR integration preparation",
+            "status": "pending",
+            "testStrategy": "Test mapping accuracy for predefined object classes, verify Korean translations are appropriate for 5th-grade reading level, test relevance scoring with different user profiles, validate hazard detection triggers appropriate alerts"
+          },
+          {
+            "id": 4,
+            "title": "Optimize Model for Edge Deployment",
+            "description": "Implement model optimization techniques to achieve sub-500ms inference time suitable for edge devices and real-time processing",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement model quantization using INT8 precision to reduce model size by 75%, create model variants for different device capabilities (high/medium/low), implement dynamic batch sizing based on device performance metrics, add model pruning configuration to remove unnecessary layers, implement TensorRT optimization for NVIDIA edge devices if available, create performance monitoring with Micrometer metrics for inference time tracking",
+            "status": "pending",
+            "testStrategy": "Benchmark inference time across different model variants, test accuracy degradation stays within 5% of original model, verify model size reduction meets targets, test on actual edge device specifications"
+          },
+          {
+            "id": 5,
+            "title": "Implement Result Caching with Redis",
+            "description": "Create intelligent caching system for common object detection results to reduce computational load and improve response times",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Implement Redis-based caching using Spring Cache abstraction with @Cacheable annotations, create image hash generation using perceptual hashing for cache key generation, implement cache TTL of 1 hour for detection results with LRU eviction policy, add cache warming for common objects (medicine bottles, common signs), implement cache statistics tracking for hit/miss rates, create cache invalidation API for admin use, integrate with existing RedisCacheService",
+            "status": "pending",
+            "testStrategy": "Test cache hit rate reaches 80% for common objects, verify perceptual hashing handles minor image variations, test cache eviction works correctly at capacity, validate cache statistics accuracy"
+          }
+        ]
+      },
+      {
+        "id": 23,
+        "title": "Develop MediaPipe Pose Fall Detection",
+        "description": "Implement fall detection using MediaPipe pose estimation",
+        "details": "Integrate MediaPipe Pose model for body keypoint detection, implement fall detection algorithm based on pose changes and acceleration, create confidence scoring for fall events, develop false positive reduction techniques, implement immediate alert triggering for confirmed falls",
+        "testStrategy": "Test fall detection sensitivity and specificity, measure detection latency < 1 second, test various fall scenarios, validate false positive rate < 5%",
+        "priority": "high",
+        "dependencies": [
+          17,
+          22
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up MediaPipe Pose integration and configuration",
+            "description": "Integrate MediaPipe Pose library into the Spring Boot backend, configure pose detection parameters, and create service wrapper for pose estimation functionality",
+            "dependencies": [],
+            "details": "Add MediaPipe Java dependencies to build.gradle, create MediaPipeService class with initialization logic, configure pose detection parameters (min_detection_confidence: 0.5, min_tracking_confidence: 0.5), implement pose landmark extraction methods, create DTOs for pose keypoints (33 body landmarks), ensure proper resource management for MediaPipe graph lifecycle",
+            "status": "pending",
+            "testStrategy": "Unit test MediaPipe initialization, verify pose landmark extraction with sample images, test resource cleanup on service shutdown"
+          },
+          {
+            "id": 2,
+            "title": "Implement pose-based fall detection algorithm",
+            "description": "Develop the core fall detection algorithm using body keypoint positions and angles to identify fall patterns",
+            "dependencies": [
+              1
+            ],
+            "details": "Create FallDetectionAlgorithm class implementing angle calculations between key body segments (hip-shoulder angle, knee-hip angle), detect sudden vertical position changes of hip and shoulder keypoints, implement velocity calculation for keypoint movements, define fall pattern thresholds (angle change > 45 degrees in < 0.5 seconds, vertical displacement > 0.5 meters), create fall state machine (standing -> falling -> fallen), use sliding window approach for temporal analysis",
+            "status": "pending",
+            "testStrategy": "Test with annotated fall video datasets, verify angle calculation accuracy, validate state transitions with various fall scenarios"
+          },
+          {
+            "id": 3,
+            "title": "Develop confidence scoring and validation system",
+            "description": "Create a multi-factor confidence scoring system to validate detected falls and reduce false positives",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement ConfidenceScorer class with weighted scoring factors: pose detection confidence (20%), angle change severity (30%), velocity magnitude (25%), body orientation consistency (25%), create temporal validation requiring consistent fall detection over 3+ consecutive frames, implement pose quality checks (visibility of critical keypoints > 0.7), add environmental context validation (expected activity zones), create confidence threshold system (low: 60-75%, medium: 75-90%, high: >90%)",
+            "status": "pending",
+            "testStrategy": "Test confidence scores against labeled fall/non-fall datasets, validate threshold effectiveness with ROC curve analysis"
+          },
+          {
+            "id": 4,
+            "title": "Implement false positive reduction techniques",
+            "description": "Develop advanced filtering mechanisms to minimize false alarms from activities like sitting, lying down, or exercising",
+            "dependencies": [
+              3
+            ],
+            "details": "Create ActivityClassifier to distinguish falls from intentional movements (sitting, lying, squatting), implement motion smoothness analysis (falls have abrupt acceleration changes), add recovery detection (person getting up within 10 seconds indicates non-emergency), create user-specific calibration for normal movement patterns, implement context-aware filtering based on location (bed area vs hallway), add pose sequence validation to filter impossible transitions",
+            "status": "pending",
+            "testStrategy": "Test with diverse activity datasets including exercises and daily activities, measure false positive rate across different scenarios"
+          },
+          {
+            "id": 5,
+            "title": "Create real-time alert triggering system",
+            "description": "Implement immediate emergency alert system for confirmed fall events with integration to emergency contacts and services",
+            "dependencies": [
+              4
+            ],
+            "details": "Create FallAlertService with real-time event processing, implement alert trigger with grace period (5 seconds for user to cancel false alarm), integrate with EmergencyDetectionService for notification dispatch, add alert payload with fall details (timestamp, location, confidence score, pose snapshot), implement alert escalation (user app -> guardian -> emergency services), create audit logging for all fall events and alerts, ensure sub-second latency from detection to alert initiation",
+            "status": "pending",
+            "testStrategy": "Test end-to-end alert latency < 1 second, verify alert delivery to all configured contacts, validate alert cancellation mechanism"
+          }
+        ]
+      },
+      {
+        "id": 24,
+        "title": "Build Notification Service with Multi-channel Support",
+        "description": "Create comprehensive notification system supporting various delivery methods",
+        "details": "Implement push notification service for mobile apps, create SMS notification integration for critical alerts, develop in-app notification center, implement notification preferences per user/guardian, create notification templates with simple language",
+        "testStrategy": "Test notification delivery across all channels, verify delivery confirmation tracking, test notification preference enforcement, validate message simplification",
+        "priority": "medium",
+        "dependencies": [
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Notification Service Architecture and Database Schema",
+            "description": "Create the foundational architecture for multi-channel notification service including database schema design for notifications, delivery status tracking, and user preferences",
+            "dependencies": [],
+            "details": "Design database tables: notifications (id, user_id, type, title, content, priority, created_at), notification_deliveries (id, notification_id, channel, status, delivered_at, read_at), notification_preferences (user_id, channel, enabled, quiet_hours), notification_templates (id, type, channel, template_content). Create service interfaces for NotificationService, ChannelProvider (with implementations for each channel), and TemplateEngine. Define notification priority levels (HIGH, MEDIUM, LOW) and delivery status enum (PENDING, SENT, DELIVERED, FAILED, READ)",
+            "status": "pending",
+            "testStrategy": "Validate database schema with sample data, ensure foreign key constraints work correctly, test that all notification types can be stored and retrieved"
+          },
+          {
+            "id": 2,
+            "title": "Implement Push Notification Service for Mobile Apps",
+            "description": "Create push notification integration using Firebase Cloud Messaging (FCM) for Android/iOS devices with device token management and delivery tracking",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement FCMNotificationChannel class implementing ChannelProvider interface. Add device token management: store FCM tokens in user_devices table (user_id, device_id, token, platform, last_active). Create notification payload builder that formats messages according to BIF requirements (simple language, clear actions). Implement delivery confirmation webhook handler to update notification_deliveries table. Add retry logic for failed deliveries (max 3 attempts with exponential backoff). Configure FCM credentials in application properties",
+            "status": "pending",
+            "testStrategy": "Mock FCM API calls for unit tests, test device token registration/update flow, verify notification payload format meets accessibility requirements, test retry mechanism with simulated failures"
+          },
+          {
+            "id": 3,
+            "title": "Develop SMS Notification Integration for Critical Alerts",
+            "description": "Implement SMS notification channel using AWS SNS or Twilio for critical alerts like emergencies, medication reminders, and guardian notifications",
+            "dependencies": [
+              1
+            ],
+            "details": "Create SMSNotificationChannel implementing ChannelProvider. Define critical notification types enum (EMERGENCY, MEDICATION_DUE, GUARDIAN_ALERT, DEVICE_LOW_BATTERY). Implement message formatting to fit SMS constraints (160 chars) while maintaining clarity. Add phone number validation and formatting for international support. Create cost control mechanisms: daily SMS limits per user, priority-based sending for budget management. Implement delivery status tracking via provider webhooks",
+            "status": "pending",
+            "testStrategy": "Test message truncation and formatting logic, verify phone number validation for various formats, test SMS delivery simulation with mock provider, validate cost control limits are enforced"
+          },
+          {
+            "id": 4,
+            "title": "Build In-App Notification Center with Real-time Updates",
+            "description": "Create in-app notification system with WebSocket support for real-time updates, notification history, and mark-as-read functionality",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement InAppNotificationChannel with WebSocket integration using Spring WebSocket. Create REST endpoints: GET /api/notifications (paginated list), PUT /api/notifications/{id}/read (mark as read), DELETE /api/notifications/{id} (soft delete), GET /api/notifications/unread-count. Add Redis caching for unread counts and recent notifications. Implement notification grouping by type and date for better organization. Create notification bell icon badge update via WebSocket. Add notification history with 30-day retention policy",
+            "status": "pending",
+            "testStrategy": "Test WebSocket connection and real-time delivery, verify pagination and filtering work correctly, test concurrent read/unread status updates, validate notification grouping logic"
+          },
+          {
+            "id": 5,
+            "title": "Implement User Preference Management and Template System",
+            "description": "Create comprehensive preference management system allowing users/guardians to control notification channels, quiet hours, and implement template system with simple language",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Build preference management API: POST /api/users/{id}/notification-preferences, GET /api/users/{id}/notification-preferences. Implement quiet hours logic (check before sending non-critical notifications). Create notification template engine with placeholders: {userName}, {medicationName}, {time}, {guardianName}. Implement language simplification service that converts complex terms to simple alternatives (stored in simplification_dictionary table). Add template versioning for A/B testing effectiveness. Create guardian override capabilities for critical settings. Implement channel fallback logic (if push fails, try SMS for critical alerts)",
+            "status": "pending",
+            "testStrategy": "Test preference enforcement across all channels, verify quiet hours are respected except for emergencies, test template rendering with various data, validate language simplification maintains meaning while improving readability"
+          }
+        ]
+      },
+      {
+        "id": 25,
+        "title": "Implement Redis Caching Layer",
+        "description": "Set up Redis for caching frequently accessed data and reducing latency",
+        "details": "Configure Redis cluster for high availability, implement caching for user profiles and preferences, cache AI model responses for common scenarios, create cache warming strategies for critical data, implement cache invalidation policies",
+        "testStrategy": "Test cache hit rates > 80%, verify cache invalidation correctness, test failover scenarios, measure latency improvements",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Redis Infrastructure and Connection",
+            "description": "Set up Redis server configuration with cluster mode for high availability and establish Spring Boot connection",
+            "dependencies": [],
+            "details": "Install Redis 7.0+ and configure redis.conf for cluster mode with 3 master nodes and 3 replicas. Set up Redis Sentinel for automatic failover. Configure Spring Boot with Lettuce client in RedisConfig.java, implement connection pooling with max 50 connections, and add health check endpoints. Configure persistence with AOF and RDB snapshots. Set memory policy to allkeys-lru with 4GB max memory per node.",
+            "status": "pending",
+            "testStrategy": "Test Redis cluster formation and verify all nodes are connected. Test failover by killing master node and verify automatic promotion. Measure connection pool performance under load. Verify persistence by restarting cluster and checking data retention."
+          },
+          {
+            "id": 2,
+            "title": "Implement Cache Service and Annotations",
+            "description": "Create generic caching service with Spring Cache abstraction and custom annotations for BIF-specific caching needs",
+            "dependencies": [
+              1
+            ],
+            "details": "Create RedisCacheService implementing cache operations with TTL management. Implement @BifCacheable annotation with configurable TTL and key generation strategies. Create CacheKeyGenerator for consistent key patterns like 'bif:user:{userId}:profile'. Implement cache statistics collection for monitoring hit/miss rates. Add distributed locking with Redisson for cache stampede prevention. Configure Jackson serialization for complex objects.",
+            "status": "pending",
+            "testStrategy": "Unit test cache operations with mock Redis. Test TTL expiration accuracy. Verify key generation consistency. Test distributed locking under concurrent access. Measure serialization performance for user objects."
+          },
+          {
+            "id": 3,
+            "title": "Cache User Profiles and Preferences",
+            "description": "Implement caching layer for frequently accessed user data including profiles, preferences, and guardian relationships",
+            "dependencies": [
+              2
+            ],
+            "details": "Add @BifCacheable to UserService.findById() with 1-hour TTL. Cache UserPreference entities with 2-hour TTL. Implement batch caching for guardian relationships. Create UserCacheWarmer scheduled job to preload active users at startup. Add cache-aside pattern for user updates with immediate invalidation. Store simplified UserCacheDTO to minimize memory usage.",
+            "status": "pending",
+            "testStrategy": "Test cache hit rate > 85% for active users. Verify cache invalidation on profile updates. Test guardian relationship caching accuracy. Measure memory usage per cached user < 5KB. Test cache warming completion < 30 seconds."
+          },
+          {
+            "id": 4,
+            "title": "Cache AI Model Responses",
+            "description": "Implement intelligent caching for AI model responses based on input similarity and context patterns",
+            "dependencies": [
+              2
+            ],
+            "details": "Create AiResponseCache with similarity-based key generation using input embeddings. Implement 24-hour TTL for object detection results of common items. Cache situational analysis responses for recurring scenarios with 6-hour TTL. Add confidence threshold filtering - only cache responses > 0.8 confidence. Implement cache versioning for model updates. Create background job to analyze and cache top 100 common scenarios.",
+            "status": "pending",
+            "testStrategy": "Test similarity matching accuracy > 90%. Verify cache invalidation on model version change. Test response time improvement > 50% for cached scenarios. Validate confidence threshold filtering. Measure cache storage efficiency."
+          },
+          {
+            "id": 5,
+            "title": "Implement Cache Invalidation and Monitoring",
+            "description": "Create comprehensive cache invalidation strategies and monitoring dashboard for cache performance",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Implement event-driven invalidation using Spring ApplicationEvents for user updates. Create CacheInvalidationService with pattern-based eviction for related data. Add TTL-based invalidation with staggered expiration to prevent thundering herd. Implement cache metrics endpoint exposing hit/miss rates, memory usage, and latency improvements. Create Grafana dashboard for real-time cache monitoring. Add cache warming strategies for peak hours based on usage patterns.",
+            "status": "pending",
+            "testStrategy": "Test cascade invalidation for related entities. Verify pattern-based eviction accuracy. Test monitoring metrics accuracy. Validate peak hour cache warming effectiveness. Measure overall latency reduction > 40%."
+          }
+        ]
+      },
+      {
+        "id": 26,
+        "title": "Develop OCR Service for Text Recognition",
+        "description": "Integrate Google Vision API for reading signs and text in user environment",
+        "details": "Set up Google Vision API client, implement text extraction from camera images, create text simplification service for complex words, develop contextual text interpretation (medicine labels, signs), implement language translation if needed",
+        "testStrategy": "Test OCR accuracy in various lighting conditions, verify text simplification effectiveness, test real-time performance, validate API error handling",
+        "priority": "low",
+        "dependencies": [
+          15,
+          22
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Google Vision API Integration",
+            "description": "Configure Google Cloud project and integrate Google Vision API client into the Spring Boot application",
+            "dependencies": [],
+            "details": "Create Google Cloud project, enable Vision API, generate service account credentials, add google-cloud-vision dependency to build.gradle, configure API credentials in application properties, create VisionApiConfig class with @Configuration annotation to initialize ImageAnnotatorClient bean, implement proper error handling for API initialization failures",
+            "status": "pending",
+            "testStrategy": "Test API client initialization with valid/invalid credentials, verify connection to Google Vision service, test configuration loading from different profiles"
+          },
+          {
+            "id": 2,
+            "title": "Implement Image Processing and Text Detection Service",
+            "description": "Create service to process images from camera and extract text using Google Vision OCR",
+            "dependencies": [
+              1
+            ],
+            "details": "Create OcrService with methods for image preprocessing (format conversion, quality enhancement), implement detectText method using Vision API's TEXT_DETECTION feature, handle various image formats (JPEG, PNG), implement batch processing for multiple text regions, create DTOs for OCR results including confidence scores and bounding boxes, implement caching for repeated text detection requests using Redis",
+            "status": "pending",
+            "testStrategy": "Test OCR accuracy with sample images in various conditions (blurry, angled, different fonts), verify performance with different image sizes, test batch processing functionality, validate caching behavior"
+          },
+          {
+            "id": 3,
+            "title": "Develop Text Simplification and Analysis Service",
+            "description": "Create service to simplify complex text and provide user-friendly explanations suitable for target users",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement TextSimplificationService with word complexity analysis using readability metrics, integrate dictionary API for word definitions, create simplified vocabulary mapping for common complex terms, implement sentence restructuring for long/complex sentences, develop domain-specific simplification rules for medicine labels and warning signs, use Korean language processing libraries for proper text handling",
+            "status": "pending",
+            "testStrategy": "Test simplification accuracy with medical labels and street signs, verify readability scores meet 5th-grade level requirements, test Korean language processing accuracy, validate domain-specific term replacements"
+          },
+          {
+            "id": 4,
+            "title": "Create Contextual Interpretation Engine",
+            "description": "Develop service to interpret detected text based on context and provide actionable guidance",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Implement ContextualInterpretationService with pattern matching for different text types (medicine instructions, warning signs, store names), create interpretation rules for common scenarios, integrate with user's medication data for personalized medicine label interpretation, implement safety warnings for hazardous text content, develop location-aware interpretation using device GPS, create user-friendly action suggestions based on detected text",
+            "status": "pending",
+            "testStrategy": "Test interpretation accuracy for various text contexts, verify personalized medication matching, test safety warning triggers, validate location-based interpretations"
+          },
+          {
+            "id": 5,
+            "title": "Implement OCR Controller and Response Handling",
+            "description": "Create REST API endpoints for OCR functionality with proper error handling and user-friendly responses",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create OcrController with POST endpoint /api/ocr/analyze accepting multipart image uploads, implement request validation for image size and format, create comprehensive OcrResponse DTO with original text, simplified text, interpretation, and action suggestions, implement proper error handling with user-friendly messages for API failures, add request rate limiting to prevent API quota exhaustion, implement async processing for large images with webhook callbacks",
+            "status": "pending",
+            "testStrategy": "Test API endpoints with various image inputs, verify error handling for invalid requests, test rate limiting functionality, validate response format and content, test async processing and callback mechanisms"
+          }
+        ]
+      },
+      {
+        "id": 27,
+        "title": "Create Data Analytics and Reporting Service",
+        "description": "Build analytics platform for guardian insights and system monitoring",
+        "details": "Implement activity summary generation (daily/weekly/monthly), create health and safety metrics dashboard, develop pattern change detection alerts, implement exportable reports for healthcare providers, add system usage analytics for optimization",
+        "testStrategy": "Test report generation accuracy, verify data aggregation correctness, test export formats compatibility, validate privacy compliance in reports",
+        "priority": "low",
+        "dependencies": [
+          20
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Analytics Data Model and Database Schema",
+            "description": "Create comprehensive data model for analytics including tables for activity summaries, health metrics, usage patterns, and aggregated statistics with proper indexing for performance",
+            "dependencies": [],
+            "details": "Design tables for: daily_activity_summary, weekly_activity_summary, monthly_activity_summary, health_metrics_aggregate, usage_analytics, pattern_detection_results. Include columns for user_id, guardian_id, timestamp, metric_type, metric_value, aggregation_period. Create indexes on user_id, timestamp, and metric_type for fast querying. Use partitioning by date for large tables. Implement data retention policies (e.g., raw data for 3 months, aggregated data for 2 years)",
+            "status": "pending",
+            "testStrategy": "Test schema creation scripts, verify index performance with sample data, test partitioning behavior, validate data retention triggers"
+          },
+          {
+            "id": 2,
+            "title": "Implement Activity Summary Generation Service",
+            "description": "Build service to aggregate user activities into daily, weekly, and monthly summaries including medication adherence, location patterns, health metrics, and app usage",
+            "dependencies": [
+              1
+            ],
+            "details": "Create AnalyticsSummaryService with methods: generateDailySummary(), generateWeeklySummary(), generateMonthlySummary(). Implement batch processing using Spring Batch for efficiency. Calculate metrics like: medication adherence rate, average response time to reminders, location visit frequency, health metric trends. Use Redis for caching frequently accessed summaries. Implement scheduled jobs using @Scheduled annotation to run daily at 2 AM, weekly on Sundays, monthly on 1st day",
+            "status": "pending",
+            "testStrategy": "Test summary calculation accuracy with mock data, verify batch job performance, test cache invalidation, validate scheduling triggers"
+          },
+          {
+            "id": 3,
+            "title": "Develop Health and Safety Metrics Dashboard APIs",
+            "description": "Create REST endpoints for retrieving dashboard data including real-time and historical health metrics, safety indicators, and visual chart data for guardian interface",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement endpoints: GET /api/analytics/dashboard/health-metrics, GET /api/analytics/dashboard/safety-indicators, GET /api/analytics/dashboard/trends/{period}. Return data optimized for chart rendering (time-series format). Include metrics: heart rate trends, blood pressure patterns, fall detection incidents, emergency button usage, medication compliance scores. Implement data aggregation levels (hourly, daily, weekly). Add filters for date range and metric types. Use DTOs like HealthMetricsDashboardResponse, SafetyIndicatorResponse",
+            "status": "pending",
+            "testStrategy": "Test endpoint response times under load, verify data aggregation accuracy, test filter combinations, validate chart data format"
+          },
+          {
+            "id": 4,
+            "title": "Implement Pattern Change Detection and Alert System",
+            "description": "Build intelligent system to detect significant changes in user behavior patterns and generate alerts for guardians including anomaly detection algorithms",
+            "dependencies": [
+              3
+            ],
+            "details": "Create PatternDetectionService using statistical analysis and simple ML algorithms. Implement detection for: sudden medication non-compliance, unusual location patterns, abnormal vital signs, decreased app interaction. Use moving averages and standard deviation for baseline establishment. Set configurable thresholds (e.g., 2 standard deviations). Generate alerts via AlertNotificationService when patterns deviate. Store detection results in pattern_detection_results table. Implement alert severity levels (INFO, WARNING, CRITICAL)",
+            "status": "pending",
+            "testStrategy": "Test pattern detection algorithms with synthetic data, verify alert generation accuracy, test false positive rates, validate threshold configurations"
+          },
+          {
+            "id": 5,
+            "title": "Create Report Generation and Export Service",
+            "description": "Build service for generating exportable reports in multiple formats (PDF, Excel, CSV) for healthcare providers and system usage analytics with HIPAA compliance",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement ReportGenerationService with methods: generateHealthcareProviderReport(), generateSystemUsageReport(), generateComplianceReport(). Use Apache POI for Excel generation, iText for PDF creation. Include report templates for: patient summary report, medication adherence report, health metrics trend report, system optimization report. Implement data anonymization for privacy compliance. Add report scheduling and email delivery features. Create endpoints: POST /api/analytics/reports/generate, GET /api/analytics/reports/{reportId}/download",
+            "status": "pending",
+            "testStrategy": "Test report generation with various data volumes, verify export format compatibility, test data anonymization completeness, validate email delivery"
+          }
+        ]
+      },
+      {
+        "id": 28,
+        "title": "Implement API Rate Limiting and Monitoring",
+        "description": "Set up API protection and monitoring infrastructure",
+        "details": "Configure Spring Cloud Gateway for rate limiting, implement per-user and per-endpoint limits, set up Prometheus metrics collection, create CloudWatch dashboards for monitoring, implement alerting for anomalous usage patterns",
+        "testStrategy": "Test rate limiting enforcement, verify metrics accuracy, test alert triggering conditions, validate monitoring dashboard functionality",
+        "priority": "medium",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Spring Cloud Gateway with Rate Limiting",
+            "description": "Set up Spring Cloud Gateway as the API gateway and configure Redis-based rate limiting using RequestRateLimiter filter",
+            "dependencies": [],
+            "details": "Add Spring Cloud Gateway and Redis Reactive dependencies to build.gradle. Create gateway configuration with route definitions for all API endpoints. Configure RequestRateLimiter filter with Redis backend. Set up KeyResolver beans for user-based and IP-based rate limiting. Configure rate limiter properties in application.yml with replenish rate and burst capacity settings. Implement custom rate limiter configuration for different endpoint categories (public, authenticated, admin).",
+            "status": "pending",
+            "testStrategy": "Write integration tests to verify rate limiting enforcement by sending multiple requests and checking for 429 responses. Test different rate limit configurations per endpoint. Verify Redis keys are created correctly for rate limiting."
+          },
+          {
+            "id": 2,
+            "title": "Implement Per-User and Per-Endpoint Rate Limiting Logic",
+            "description": "Create custom rate limiting strategies that apply different limits based on user roles and specific API endpoints",
+            "dependencies": [
+              1
+            ],
+            "details": "Create custom KeyResolver implementations to extract user ID from JWT tokens for authenticated requests. Implement endpoint-specific rate limiting by creating route-specific configurations. Define rate limit tiers (basic user: 100/hour, premium: 1000/hour, API endpoints: varying limits). Create RateLimitingService to manage dynamic rate limits based on user subscription levels. Implement rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset) in responses. Add rate limit bypass for internal service-to-service communication.",
+            "status": "pending",
+            "testStrategy": "Test rate limiting for different user roles and verify correct limits apply. Test endpoint-specific limits are enforced independently. Verify rate limit headers are correctly calculated and returned."
+          },
+          {
+            "id": 3,
+            "title": "Set Up Prometheus Metrics Collection",
+            "description": "Configure Prometheus metrics exporters to collect API usage, performance, and rate limiting metrics",
+            "dependencies": [
+              2
+            ],
+            "details": "Add micrometer-registry-prometheus dependency to enable Prometheus metrics export. Configure actuator endpoints to expose /actuator/prometheus. Create custom metrics for API request counts, response times, rate limit hits, and error rates. Implement metric tags for endpoint, method, status code, and user type. Configure histogram buckets for response time distribution. Create custom gauge metrics for active connections and queue sizes. Set up metric aggregation for per-user usage tracking.",
+            "status": "pending",
+            "testStrategy": "Verify Prometheus endpoint exposes all custom metrics. Test metric values increment correctly for different API operations. Validate histogram buckets capture response time distribution accurately."
+          },
+          {
+            "id": 4,
+            "title": "Create CloudWatch Dashboards and Metrics Publishing",
+            "description": "Implement CloudWatch integration for centralized monitoring and create comprehensive dashboards for API health visualization",
+            "dependencies": [
+              3
+            ],
+            "details": "Add AWS CloudWatch SDK and micrometer-registry-cloudwatch dependencies. Configure CloudWatch metrics publisher with appropriate namespace (BifAI/API). Create CloudWatch dashboard using CDK or Terraform with widgets for request rate, error rate, latency percentiles, and rate limit violations. Implement custom CloudWatch metric filters for log-based metrics. Set up dashboard panels for real-time monitoring of API health, user activity patterns, and system resource utilization. Configure metric retention policies and aggregation periods.",
+            "status": "pending",
+            "testStrategy": "Verify metrics appear in CloudWatch console within configured intervals. Test dashboard widgets display accurate real-time data. Validate custom metric filters extract correct values from logs."
+          },
+          {
+            "id": 5,
+            "title": "Implement Alerting for Anomalous Usage Patterns",
+            "description": "Create intelligent alerting system that detects and responds to unusual API usage patterns and potential security threats",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Create AlertingService that analyzes metrics for anomaly detection. Implement CloudWatch alarms for high error rates, excessive rate limiting, and unusual traffic spikes. Configure SNS topics for alert notifications (email, SMS, Slack). Implement anomaly detection algorithms for identifying DDoS attempts, credential stuffing, and API abuse. Create automatic response mechanisms like temporary IP blocking for detected threats. Set up alert escalation policies based on severity levels. Implement alert aggregation to prevent notification spam.",
+            "status": "pending",
+            "testStrategy": "Test alert triggering by simulating anomalous traffic patterns. Verify notifications are sent to configured channels. Test automatic response mechanisms activate correctly. Validate alert aggregation prevents duplicate notifications."
+          }
+        ]
+      },
+      {
+        "id": 29,
+        "title": "Develop Offline Mode Support",
+        "description": "Implement offline functionality for critical features",
+        "details": "Create local data synchronization framework, implement offline medication reminders, develop offline emergency contact access, create location tracking queue for later upload, implement conflict resolution for data sync",
+        "testStrategy": "Test offline feature availability, verify data synchronization integrity, test conflict resolution scenarios, validate queue persistence",
+        "priority": "low",
+        "dependencies": [
+          25
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Local Storage Architecture",
+            "description": "Create a robust local storage system using SQLite for offline data persistence with proper schema design and migration support",
+            "dependencies": [],
+            "details": "Set up SQLite database with Room persistence library for Android or Core Data for iOS. Design schema to mirror critical server-side tables (medications, reminders, emergency contacts, user preferences). Implement database versioning and migration strategies. Create data access objects (DAOs) for CRUD operations. Add encryption for sensitive data using SQLCipher. Implement storage size monitoring to prevent device storage overflow.",
+            "status": "pending",
+            "testStrategy": "Test database creation and migration scenarios, verify encryption functionality, test CRUD operations with various data types, validate storage size limits and cleanup mechanisms"
+          },
+          {
+            "id": 2,
+            "title": "Build Data Synchronization Framework",
+            "description": "Develop a bidirectional sync engine that tracks changes, queues updates, and handles data synchronization when connectivity is restored",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement change tracking using timestamps and sync flags on all offline-capable entities. Create a sync queue table to store pending operations (CREATE, UPDATE, DELETE). Develop sync status tracking with retry logic and exponential backoff. Build sync adapters for each data type with transformation logic. Implement batch sync operations to minimize API calls. Add sync progress indicators and status callbacks for UI updates.",
+            "status": "pending",
+            "testStrategy": "Test sync queue persistence across app restarts, verify retry logic with network failures, test batch sync performance, validate data integrity after sync operations"
+          },
+          {
+            "id": 3,
+            "title": "Implement Offline Medication Reminder System",
+            "description": "Create a self-contained medication reminder system that functions without server connectivity using local notifications and cached data",
+            "dependencies": [
+              1
+            ],
+            "details": "Cache medication schedules and reminder configurations locally. Implement local notification scheduling using AlarmManager (Android) or UNNotificationCenter (iOS). Create reminder generation logic that runs entirely offline. Store reminder acknowledgments locally for later sync. Implement smart pre-caching of reminder content including medication images and instructions. Add fallback reminder sounds and vibration patterns for offline mode.",
+            "status": "pending",
+            "testStrategy": "Test reminder accuracy without network connectivity, verify notification delivery at scheduled times, test reminder persistence across device restarts, validate acknowledgment tracking"
+          },
+          {
+            "id": 4,
+            "title": "Develop Offline Emergency Features",
+            "description": "Build emergency contact access and location tracking capabilities that function in offline mode with queued uploads",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Cache emergency contact information with encrypted storage. Implement offline emergency button functionality with local alert generation. Create location tracking service that stores GPS coordinates locally when offline. Build upload queue for location data with automatic submission when online. Implement offline fall detection data storage. Add SMS fallback for emergency notifications when data connection is unavailable.",
+            "status": "pending",
+            "testStrategy": "Test emergency contact retrieval speed offline, verify location data queue persistence, test SMS fallback functionality, validate emergency feature availability without network"
+          },
+          {
+            "id": 5,
+            "title": "Create Conflict Resolution and Data Merge System",
+            "description": "Implement intelligent conflict resolution strategies for handling data discrepancies between local and server versions during synchronization",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Develop conflict detection algorithm comparing local and server timestamps. Implement resolution strategies: last-write-wins for preferences, server-priority for medications, merge for activity logs. Create conflict resolution UI for user intervention when needed. Build data validation to ensure consistency post-merge. Implement rollback mechanism for failed sync operations. Add comprehensive logging for sync conflicts and resolutions.",
+            "status": "pending",
+            "testStrategy": "Test various conflict scenarios (same field updates, deletions vs updates), verify resolution strategy correctness, test user intervention flow, validate data consistency after resolution"
+          }
+        ]
+      },
+      {
+        "id": 30,
+        "title": "Build Health Check and Monitoring Endpoints",
+        "description": "Create comprehensive health monitoring for all services",
+        "details": "Implement Spring Boot Actuator endpoints, create custom health indicators for external services (OpenAI, Redis, MySQL), develop service dependency monitoring, implement graceful degradation indicators, create monitoring dashboard integration",
+        "testStrategy": "Test health check accuracy, verify external service monitoring, test graceful degradation triggers, validate monitoring integration",
+        "priority": "medium",
+        "dependencies": [
+          28
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Spring Boot Actuator with Custom Health Endpoints",
+            "description": "Set up Spring Boot Actuator with security configuration and create base health check infrastructure",
+            "dependencies": [],
+            "details": "Add Spring Boot Actuator dependency to build.gradle, configure actuator endpoints in application.yml with appropriate security settings, create custom HealthIndicator base class for standardized health check responses, set up management endpoints on separate port for security isolation, configure metrics collection with Micrometer for monitoring integration",
+            "status": "pending",
+            "testStrategy": "Test actuator endpoint accessibility with authentication, verify security configuration prevents unauthorized access, validate custom health indicator base functionality"
+          },
+          {
+            "id": 2,
+            "title": "Implement MySQL Database Health Indicator",
+            "description": "Create custom health indicator for MySQL database connectivity and performance monitoring",
+            "dependencies": [
+              1
+            ],
+            "details": "Create MySQLHealthIndicator class implementing HealthIndicator interface, implement connection pool status monitoring using HikariCP metrics, add query performance checks with configurable threshold, monitor database replication lag if applicable, include detailed error messages in BIF-friendly format when database is unhealthy",
+            "status": "pending",
+            "testStrategy": "Test health check with various database states (healthy, slow, disconnected), verify connection pool metrics accuracy, validate threshold configurations"
+          },
+          {
+            "id": 3,
+            "title": "Implement Redis Cache Health Indicator",
+            "description": "Create health indicator for Redis cache service monitoring and availability",
+            "dependencies": [
+              1
+            ],
+            "details": "Create RedisHealthIndicator implementing custom health checks, monitor Redis connection status and response times, implement memory usage monitoring with warning thresholds, check Redis cluster status if using clustering, add cache hit/miss ratio metrics for performance insights",
+            "status": "pending",
+            "testStrategy": "Test Redis health check with various scenarios (connected, disconnected, high memory usage), verify response time measurements, validate cluster status reporting"
+          },
+          {
+            "id": 4,
+            "title": "Implement OpenAI API Health Indicator",
+            "description": "Create health indicator for OpenAI API availability and quota monitoring",
+            "dependencies": [
+              1
+            ],
+            "details": "Create OpenAIHealthIndicator with API connectivity checks, implement API quota usage monitoring and remaining credits check, add response time tracking for AI service calls, create circuit breaker status monitoring for graceful degradation, implement fallback status when AI service is unavailable",
+            "status": "pending",
+            "testStrategy": "Test with mocked OpenAI responses for various scenarios, verify quota tracking accuracy, test circuit breaker integration, validate fallback behavior"
+          },
+          {
+            "id": 5,
+            "title": "Create Composite Health Dashboard and Monitoring Integration",
+            "description": "Build aggregated health status endpoint and integrate with monitoring systems",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Create composite health endpoint aggregating all service statuses, implement service dependency graph visualization data, add Prometheus metrics export for external monitoring, create simplified health status API for BIF mobile app with traffic light indicators (green/yellow/red), implement webhook notifications for critical health status changes",
+            "status": "pending",
+            "testStrategy": "Test composite health calculation logic, verify monitoring system integration with mock data, test notification triggers for various health state transitions, validate BIF-friendly status representation"
+          }
+        ]
+      },
+      {
+        "id": 31,
+        "title": "Implement User Onboarding Flow",
+        "description": "Create simplified onboarding process optimized for BIF users",
+        "details": "Design step-by-step onboarding with visual guides, implement cognitive assessment questionnaire, create personalized settings based on cognitive level, develop tutorial mode for core features, implement progress tracking for onboarding completion",
+        "testStrategy": "Test onboarding completion rates, verify cognitive assessment accuracy, test tutorial effectiveness, validate settings personalization",
+        "priority": "medium",
+        "dependencies": [
+          13,
+          24
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Onboarding UI Components and Flow",
+            "description": "Create accessible UI components for the step-by-step onboarding process with visual guides optimized for BIF users",
+            "dependencies": [],
+            "details": "Create OnboardingController with endpoints for each onboarding step. Design DTOs: OnboardingStepRequest, OnboardingProgressResponse. Implement visual guide metadata structure supporting images, icons, and simple text. Create responsive layouts with minimum 48dp touch targets. Design flow with maximum 5 steps, each with clear visual progress indicators. Implement skip/back navigation with confirmation dialogs.",
+            "status": "pending",
+            "testStrategy": "Test UI component accessibility compliance, verify touch target sizes >= 48dp, validate flow navigation logic, test visual guide rendering"
+          },
+          {
+            "id": 2,
+            "title": "Implement Cognitive Assessment Service",
+            "description": "Build the cognitive assessment questionnaire system to evaluate user's cognitive level and personalize the experience",
+            "dependencies": [
+              1
+            ],
+            "details": "Create CognitiveAssessmentService with assessment logic. Design entities: CognitiveAssessment, AssessmentQuestion, AssessmentResult. Implement 10-15 simple questions testing memory, attention, and comprehension. Use 5th-grade reading level for all questions. Create scoring algorithm mapping results to cognitive levels (70-85 IQ range). Store results encrypted in database. Integrate with user profile to set initial cognitive level.",
+            "status": "pending",
+            "testStrategy": "Validate assessment scoring accuracy, test question readability level, verify result encryption, test edge cases for scoring boundaries"
+          },
+          {
+            "id": 3,
+            "title": "Create Personalized Settings Configuration",
+            "description": "Develop system to automatically configure user settings based on cognitive assessment results",
+            "dependencies": [
+              2
+            ],
+            "details": "Create PersonalizationService to map cognitive levels to settings. Implement settings templates for different cognitive levels: text size, UI complexity, notification frequency, reminder intervals. Design UserPreferenceTemplate entity with predefined configurations. Create API endpoints for settings preview and confirmation. Implement gradual complexity introduction based on user progress. Allow guardian override for critical settings.",
+            "status": "pending",
+            "testStrategy": "Test settings template application, verify cognitive level to settings mapping, validate guardian override functionality, test settings persistence"
+          },
+          {
+            "id": 4,
+            "title": "Develop Interactive Tutorial System",
+            "description": "Build tutorial mode that teaches users core features through guided interactions",
+            "dependencies": [
+              3
+            ],
+            "details": "Create TutorialService with step-by-step guidance system. Design Tutorial, TutorialStep, and TutorialProgress entities. Implement interactive tutorials for: setting reminders, responding to alerts, using emergency features. Use visual demonstrations with highlighted UI elements. Add voice guidance option for each step. Implement retry mechanism for failed tutorial steps. Create achievement system for completed tutorials.",
+            "status": "pending",
+            "testStrategy": "Test tutorial completion tracking, verify voice guidance synchronization, validate retry logic, test achievement unlocking"
+          },
+          {
+            "id": 5,
+            "title": "Implement Onboarding Analytics and Progress Tracking",
+            "description": "Create comprehensive tracking system for onboarding completion and user engagement metrics",
+            "dependencies": [
+              4
+            ],
+            "details": "Create OnboardingAnalyticsService for tracking user progress. Design OnboardingMetrics entity tracking: step completion times, retry counts, skip patterns, assessment scores. Implement real-time progress API for UI updates. Create dashboard endpoints for guardian monitoring. Add automatic alerts for incomplete onboarding after 24 hours. Generate onboarding completion certificate for user motivation. Store analytics data for improving onboarding flow.",
+            "status": "pending",
+            "testStrategy": "Verify metric collection accuracy, test real-time progress updates, validate guardian alert triggers, test analytics data aggregation"
+          }
+        ]
+      },
+      {
+        "id": 32,
+        "title": "Develop Privacy and Consent Management",
+        "description": "Build comprehensive privacy controls and consent tracking system",
+        "details": "Implement GDPR-compliant consent management, create data access controls for guardians, develop data retention policies with automatic deletion, implement data export functionality, create privacy dashboard for users",
+        "testStrategy": "Test consent tracking accuracy, verify data access restrictions, test retention policy enforcement, validate data export completeness",
+        "priority": "high",
+        "dependencies": [
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Consent Management Database Schema",
+            "description": "Create database tables and entities for storing user consent records, consent types, and consent history with GDPR compliance requirements",
+            "dependencies": [],
+            "details": "Create entities for ConsentType (data_collection, location_tracking, image_analysis, health_monitoring), ConsentRecord with user_id, consent_type, granted_at, revoked_at, ip_address, and version fields. Add ConsentHistory table for audit trail. Include consent_purpose and legal_basis fields for GDPR compliance. Create indexes on user_id and consent_type for fast lookups",
+            "status": "pending",
+            "testStrategy": "Test entity relationships, verify cascade operations, test constraint validations, ensure audit fields are properly populated"
+          },
+          {
+            "id": 2,
+            "title": "Implement Consent Collection and Storage APIs",
+            "description": "Build RESTful endpoints for collecting, updating, and retrieving user consent with proper validation and versioning",
+            "dependencies": [
+              1
+            ],
+            "details": "Create ConsentController with endpoints: POST /api/consent/grant for collecting consent with mandatory purpose and legal basis, POST /api/consent/revoke for withdrawing consent, GET /api/consent/status/{userId} for current consent status, GET /api/consent/history/{userId} for audit trail. Implement ConsentService with version tracking, IP logging, and timestamp recording. Use @Valid annotations for request validation",
+            "status": "pending",
+            "testStrategy": "Test consent grant/revoke flows, verify version incrementation, test concurrent consent updates, validate audit trail completeness"
+          },
+          {
+            "id": 3,
+            "title": "Create Guardian Data Access Control System",
+            "description": "Implement role-based access control for guardians with configurable data access permissions and relationship verification",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create GuardianAccessPermission entity linking guardian_id, user_id, and permission_types (view_location, view_health, view_medications, receive_alerts). Implement GuardianAccessService with relationship verification before granting access. Add access level inheritance rules and time-based access restrictions. Create audit log for all guardian data access attempts. Implement @PreAuthorize annotations on sensitive endpoints",
+            "status": "pending",
+            "testStrategy": "Test permission inheritance, verify access denial for unauthorized guardians, test time-based restrictions, validate audit logging"
+          },
+          {
+            "id": 4,
+            "title": "Develop Data Retention and Deletion Service",
+            "description": "Build automated data retention policy engine with configurable rules and scheduled deletion of expired data",
+            "dependencies": [
+              1
+            ],
+            "details": "Create DataRetentionPolicy entity with data_type, retention_days, and deletion_strategy fields. Implement DataRetentionService with @Scheduled tasks for automatic deletion. Create soft-delete mechanism for 30-day recovery period. Implement hard-delete for PII after retention period. Add anonymization option for statistical data. Create retention policy configurations for different data types (images: 90 days, health metrics: 365 days, logs: 30 days)",
+            "status": "pending",
+            "testStrategy": "Test scheduled deletion execution, verify soft-delete recovery, test anonymization accuracy, validate policy enforcement"
+          },
+          {
+            "id": 5,
+            "title": "Build Privacy Dashboard and Data Export APIs",
+            "description": "Create user-facing privacy dashboard showing all collected data and implement GDPR-compliant data export functionality",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create PrivacyDashboardController with GET /api/privacy/dashboard returning categorized data summary, consent status, and retention timelines. Implement DataExportService generating JSON/CSV exports of all user data. Add export request queueing for large datasets. Create simple Korean UI messages for privacy status. Include data deletion request functionality with confirmation workflow. Implement progress tracking for export generation",
+            "status": "pending",
+            "testStrategy": "Test dashboard data completeness, verify export format compliance, test large dataset handling, validate Korean message clarity"
+          }
+        ]
+      },
+      {
+        "id": 33,
+        "title": "Create Multi-language Support System",
+        "description": "Implement internationalization for Korean and English languages",
+        "details": "Set up Spring i18n configuration, create message bundles for Korean (primary) and English, implement language detection based on user preference, develop simplified translation for BIF users, ensure consistent terminology across languages",
+        "testStrategy": "Test language switching functionality, verify translation accuracy and simplicity, test fallback language behavior, validate special character handling",
+        "priority": "low",
+        "dependencies": [
+          24
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Spring Boot I18n Infrastructure",
+            "description": "Set up Spring Boot internationalization configuration with message source, locale resolver, and interceptor for language detection",
+            "dependencies": [],
+            "details": "Create I18nConfig class with @Configuration annotation. Configure MessageSource bean with ReloadableResourceBundleMessageSource pointing to classpath:messages. Set up LocaleResolver bean using SessionLocaleResolver with Korean as default locale. Configure LocaleChangeInterceptor to detect language parameter from requests. Add WebMvcConfigurer to register the interceptor. Configure UTF-8 encoding for message files.",
+            "status": "pending",
+            "testStrategy": "Test locale detection from request headers and parameters, verify message source loading from different bundles, test locale switching functionality"
+          },
+          {
+            "id": 2,
+            "title": "Create Message Properties Files Structure",
+            "description": "Develop message bundle files for Korean (primary) and English languages with simplified terminology for BIF users",
+            "dependencies": [
+              1
+            ],
+            "details": "Create messages_ko.properties as primary file with all Korean translations using simple vocabulary suitable for 5th-grade reading level. Create messages_en.properties for English translations. Structure messages hierarchically (error.*, success.*, validation.*, ui.*). Include common UI elements, error messages, validation messages, and success notifications. Ensure all messages follow BIF guidelines for simple, positive language.",
+            "status": "pending",
+            "testStrategy": "Verify all keys exist in both language files, test message retrieval for each locale, validate reading level compliance for messages"
+          },
+          {
+            "id": 3,
+            "title": "Implement Language Service and Utils",
+            "description": "Create service layer for handling language operations including user preference management and message retrieval",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create LanguageService class with methods to get/set user language preference stored in UserPreference entity. Implement MessageUtils utility class wrapping MessageSource for easy message retrieval. Add methods to detect browser language from Accept-Language header. Create LanguageContext holder for thread-local locale storage. Implement fallback logic (Korean -> English -> key itself).",
+            "status": "pending",
+            "testStrategy": "Test user preference persistence, verify thread-local locale handling, test fallback mechanism when translations missing"
+          },
+          {
+            "id": 4,
+            "title": "Add Language API Endpoints",
+            "description": "Develop REST endpoints for language switching and retrieving available languages",
+            "dependencies": [
+              3
+            ],
+            "details": "Create LanguageController with @RestController annotation. Implement GET /api/languages to return supported languages (ko, en) with display names. Add PUT /api/user/language to update user's language preference. Implement GET /api/translations/{key} for dynamic message retrieval. Add @ApiOperation annotations for Swagger documentation. Apply authentication where needed.",
+            "status": "pending",
+            "testStrategy": "Test language switching endpoint with valid/invalid locales, verify preference persistence, test translation endpoint responses"
+          },
+          {
+            "id": 5,
+            "title": "Integrate I18n with Response Messages",
+            "description": "Update all API responses and exception handlers to use internationalized messages",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update ApiResponse class to include locale-specific messages. Modify GlobalExceptionHandler to use MessageUtils for error messages. Update all service classes to use message keys instead of hardcoded strings. Ensure AuthController, HealthController use i18n messages. Create aspect or filter to automatically set response messages based on user's locale. Update validation messages in DTOs to use message keys.",
+            "status": "pending",
+            "testStrategy": "Test API responses in different locales, verify exception messages are translated, test validation error messages in both languages"
+          }
+        ]
+      },
+      {
+        "id": 34,
+        "title": "Implement Device Management Service",
+        "description": "Create system for managing wearable devices and their connectivity",
+        "details": "Develop device registration and pairing APIs, implement device health monitoring (battery, connectivity), create firmware update distribution system, develop device-specific settings management, implement multi-device support per user",
+        "testStrategy": "Test device pairing flow, verify battery monitoring accuracy, test firmware update process, validate multi-device handling",
+        "priority": "medium",
+        "dependencies": [
+          13,
+          16
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Device Entity Model and Database Schema",
+            "description": "Create comprehensive data models for device management including device registration, pairing information, and device health metrics",
+            "dependencies": [],
+            "details": "Create Device entity with fields: id, userId, deviceType, serialNumber, firmwareVersion, pairingCode, status, lastSeenAt, createdAt, updatedAt. Create DeviceHealth entity for battery level, connectivity status, signal strength. Create DevicePairing entity for pairing tokens and authentication. Add proper indexes for userId and serialNumber lookups. Implement repository interfaces with JPA specifications for complex queries",
+            "status": "pending",
+            "testStrategy": "Test entity relationships, verify cascade operations, test repository query methods, validate database constraints"
+          },
+          {
+            "id": 2,
+            "title": "Implement Device Registration and Pairing APIs",
+            "description": "Develop REST endpoints for device registration, pairing validation, and secure device-user association",
+            "dependencies": [
+              1
+            ],
+            "details": "Create DeviceController with endpoints: POST /api/devices/register for initial device registration, POST /api/devices/pair for pairing with verification code, GET /api/devices for listing user devices, DELETE /api/devices/{deviceId} for unpair. Implement pairing flow with time-limited codes, device authentication using JWT tokens, and validation for device type compatibility. Add rate limiting for pairing attempts",
+            "status": "pending",
+            "testStrategy": "Test pairing code expiration, verify rate limiting, test concurrent pairing attempts, validate JWT token generation"
+          },
+          {
+            "id": 3,
+            "title": "Create Device Health Monitoring Service",
+            "description": "Implement real-time monitoring system for device battery levels, connectivity status, and automatic alerts",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create DeviceHealthService with scheduled tasks to collect health metrics every 5 minutes. Implement WebSocket endpoint for real-time health updates. Create battery alert thresholds (critical <15%, low <30%). Monitor connectivity with heartbeat mechanism and mark devices offline after 10 minutes of inactivity. Store health history in time-series format for trend analysis. Implement notification triggers for critical battery and connectivity loss",
+            "status": "pending",
+            "testStrategy": "Test scheduled task execution, verify WebSocket message delivery, test alert threshold triggers, validate offline detection timing"
+          },
+          {
+            "id": 4,
+            "title": "Develop Firmware Update Distribution System",
+            "description": "Build secure over-the-air (OTA) firmware update mechanism with version management and rollback capabilities",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Create FirmwareService to manage firmware versions with metadata (version, changelog, device compatibility, checksum). Implement staged rollout system with percentage-based deployment. Create update endpoints: GET /api/devices/{deviceId}/firmware/check for version check, POST /api/devices/{deviceId}/firmware/update to initiate update. Store firmware files in S3 with signed URLs for secure download. Implement update status tracking (downloading, installing, completed, failed) with progress reporting",
+            "status": "pending",
+            "testStrategy": "Test firmware compatibility validation, verify checksum validation, test rollback mechanism, validate progress tracking accuracy"
+          },
+          {
+            "id": 5,
+            "title": "Implement Multi-Device Support and Settings Management",
+            "description": "Enable users to manage multiple devices with individual settings and preferences per device",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Extend device management to support multiple active devices per user with primary device designation. Create DeviceSettings entity for device-specific configurations (notification preferences, sampling intervals, feature toggles). Implement settings synchronization across devices with conflict resolution. Create device switching mechanism in user sessions. Add device-specific dashboard showing all connected devices with quick actions (locate, settings, unpair). Implement device naming and categorization features",
+            "status": "pending",
+            "testStrategy": "Test multi-device session handling, verify settings isolation between devices, test sync conflict resolution, validate primary device switching"
+          }
+        ]
+      },
+      {
+        "id": 35,
+        "title": "Build Emergency Contact Integration",
+        "description": "Develop integration with emergency services and contact management",
+        "details": "Implement emergency contact database with priority levels, create integration with local emergency services APIs, develop automated emergency information sharing, implement emergency protocol customization per user, create emergency history tracking",
+        "testStrategy": "Test emergency contact notification speed, verify service integration reliability, test information accuracy in emergencies, validate protocol customization",
+        "priority": "high",
+        "dependencies": [
+          17,
+          24
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Emergency Contact Database Schema",
+            "description": "Create database tables and entities for storing emergency contacts with priority levels, relationship types, and contact preferences",
+            "dependencies": [],
+            "details": "Create EmergencyContact entity with fields: id, userId, contactName, relationship, phoneNumber, email, priorityLevel (1-3), isGuardian, preferredContactMethod, additionalNotes. Create EmergencyContactRepository with methods for CRUD operations and priority-based retrieval. Implement validation for Korean phone numbers and ensure data encryption for sensitive contact information",
+            "status": "pending",
+            "testStrategy": "Unit tests for entity validation, repository tests for priority-based queries, integration tests for data persistence and encryption"
+          },
+          {
+            "id": 2,
+            "title": "Integrate Korean Emergency Services APIs",
+            "description": "Develop service layer to connect with local emergency services (119, 112) and hospital APIs for automated emergency reporting",
+            "dependencies": [
+              1
+            ],
+            "details": "Create EmergencyServiceIntegration service with methods to connect to Korean emergency APIs. Implement DTOs for emergency service requests including user location, medical history summary, and contact information. Add circuit breaker pattern for API reliability. Configure API endpoints for different regions in Korea. Implement fallback mechanisms when APIs are unavailable",
+            "status": "pending",
+            "testStrategy": "Mock external API calls for unit tests, create integration tests with test endpoints, verify circuit breaker functionality, test regional API switching"
+          },
+          {
+            "id": 3,
+            "title": "Implement Automated Emergency Information Sharing System",
+            "description": "Create service for automatically sharing critical user information with emergency contacts and services when emergencies are detected",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Develop EmergencyNotificationService to trigger multi-channel notifications (SMS, push, email). Create EmergencyInfoDTO containing user's current location, medical conditions, medications, and recent health metrics. Implement priority-based notification queue to contact people in order. Add rate limiting to prevent notification spam. Create notification templates in simple Korean suitable for cognitive assistance users",
+            "status": "pending",
+            "testStrategy": "Test notification delivery within 3-second SLA, verify message content accuracy, test priority queue ordering, validate rate limiting functionality"
+          },
+          {
+            "id": 4,
+            "title": "Build User-Specific Emergency Protocol Customization",
+            "description": "Develop configurable emergency protocols that can be customized based on individual user needs and medical conditions",
+            "dependencies": [
+              3
+            ],
+            "details": "Create EmergencyProtocol entity with customizable triggers, response actions, and contact sequences. Implement EmergencyProtocolService for CRUD operations and protocol execution. Add UI components for guardians to configure protocols through simple forms. Create default protocol templates for common conditions (epilepsy, diabetes, heart conditions). Implement protocol versioning for audit trail",
+            "status": "pending",
+            "testStrategy": "Unit tests for protocol validation logic, integration tests for protocol execution flow, UI tests for guardian configuration interface"
+          },
+          {
+            "id": 5,
+            "title": "Develop Emergency History Tracking and Analytics",
+            "description": "Create comprehensive emergency event logging and analytics system for tracking emergency patterns and improving response",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Implement EmergencyEvent entity to log all emergency triggers, responses, and outcomes. Create EmergencyHistoryRepository with time-based queries and pattern analysis methods. Develop EmergencyAnalyticsService to identify emergency patterns and generate insights for guardians. Add dashboard components showing emergency frequency, response times, and false positive rates. Implement data retention policies compliant with Korean privacy laws",
+            "status": "pending",
+            "testStrategy": "Test event logging accuracy and completeness, verify analytics calculations, test dashboard data visualization, validate data retention and deletion"
+          }
+        ]
+      },
+      {
+        "id": 36,
+        "title": "Develop Performance Optimization Service",
+        "description": "Create system for monitoring and optimizing application performance",
+        "details": "Implement query optimization monitoring, create automatic index recommendations, develop API response time tracking, implement resource usage optimization, create performance baseline establishment",
+        "testStrategy": "Test optimization recommendation accuracy, verify performance improvements, test resource usage reduction, validate baseline accuracy",
+        "priority": "low",
+        "dependencies": [
+          28,
+          30
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Query Performance Monitoring Infrastructure",
+            "description": "Create comprehensive database query monitoring system to track execution times, resource usage, and query patterns",
+            "dependencies": [],
+            "details": "Implement QueryPerformanceInterceptor to capture all SQL queries with execution metrics. Create QueryStats entity to store query hash, execution time, row count, and timestamp. Develop QueryPerformanceRepository for storing and analyzing query metrics. Implement real-time query monitoring using Spring AOP to intercept all repository method calls. Add configurable thresholds for slow query detection (default >500ms). Create query fingerprinting to group similar queries together for pattern analysis.",
+            "status": "pending",
+            "testStrategy": "Test query interception with various repository operations, verify accurate execution time measurement, test threshold configuration changes, validate query fingerprinting algorithm"
+          },
+          {
+            "id": 2,
+            "title": "Create Automatic Index Recommendation Engine",
+            "description": "Develop intelligent system to analyze query patterns and recommend database index optimizations",
+            "dependencies": [
+              1
+            ],
+            "details": "Build IndexRecommendationService that analyzes collected query metrics to identify missing indexes. Implement algorithm to detect frequent table scans, sort operations, and join patterns. Create index impact analyzer to estimate performance improvements. Develop recommendation scoring based on query frequency, execution time impact, and index maintenance cost. Generate CREATE INDEX statements with proper column ordering. Implement duplicate index detection to avoid redundant recommendations. Add support for composite indexes based on query WHERE and JOIN clauses.",
+            "status": "pending",
+            "testStrategy": "Test recommendation accuracy with known slow queries, verify index impact calculations, test composite index recommendations, validate duplicate detection logic"
+          },
+          {
+            "id": 3,
+            "title": "Develop API Response Time Tracking System",
+            "description": "Implement comprehensive API performance monitoring with endpoint-level metrics and alerting",
+            "dependencies": [],
+            "details": "Create ResponseTimeInterceptor using HandlerInterceptor to track all API requests. Implement ApiMetrics entity to store endpoint, method, response time, status code, and request size. Develop real-time metrics aggregation using Redis for sub-second performance tracking. Create percentile calculations (p50, p95, p99) for each endpoint. Implement automatic alerting when response times exceed SLA thresholds. Add request correlation tracking for distributed tracing. Create performance dashboard endpoints for monitoring tools integration.",
+            "status": "pending",
+            "testStrategy": "Test interceptor with various API endpoints, verify percentile calculations accuracy, test alert triggering at different thresholds, validate Redis-based aggregation performance"
+          },
+          {
+            "id": 4,
+            "title": "Implement Resource Usage Optimization Service",
+            "description": "Create service to monitor and optimize CPU, memory, database connections, and cache usage",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Develop ResourceMonitorService using JMX and Micrometer for comprehensive metrics collection. Implement connection pool optimization based on usage patterns using HikariCP metrics. Create memory usage analyzer to detect leaks and optimize heap allocation. Develop cache hit ratio optimizer for Redis using usage statistics. Implement automatic garbage collection tuning recommendations. Create resource usage baseline profiler that runs during low-traffic periods. Add predictive scaling recommendations based on historical patterns.",
+            "status": "pending",
+            "testStrategy": "Test resource monitoring accuracy under load, verify connection pool optimization logic, test memory leak detection, validate cache optimization recommendations"
+          },
+          {
+            "id": 5,
+            "title": "Create Performance Baseline and Anomaly Detection",
+            "description": "Establish performance baselines and detect anomalies in system behavior",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Build PerformanceBaselineService to establish normal performance patterns for all metrics. Implement statistical baseline calculation using moving averages and standard deviations over 7-day windows. Create anomaly detection using z-score analysis for sudden performance degradations. Develop trend analysis to identify gradual performance deterioration. Implement automatic baseline updates during maintenance windows. Create performance regression detection for new deployments. Generate comprehensive performance reports with optimization recommendations ranked by impact.",
+            "status": "pending",
+            "testStrategy": "Test baseline calculation with synthetic data patterns, verify anomaly detection sensitivity, test trend analysis accuracy, validate regression detection after deployments"
+          }
+        ]
+      },
+      {
+        "id": 37,
+        "title": "Implement Security Audit Logging",
+        "description": "Build comprehensive security event logging and monitoring system",
+        "details": "Create security event logging framework, implement failed login attempt tracking, develop data access audit trails, create suspicious activity detection, implement log retention and analysis tools",
+        "testStrategy": "Test event capture completeness, verify log integrity, test suspicious activity detection accuracy, validate retention policies",
+        "priority": "high",
+        "dependencies": [
+          11,
+          32
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Security Event Logging Framework",
+            "description": "Create the core security event logging infrastructure with standardized event formats and logging interfaces",
+            "dependencies": [],
+            "details": "Design SecurityEvent entity with fields for eventType, userId, ipAddress, userAgent, timestamp, severity, and metadata. Create SecurityEventType enum for LOGIN_FAILURE, UNAUTHORIZED_ACCESS, DATA_ACCESS, SUSPICIOUS_ACTIVITY, etc. Implement SecurityEventLogger service with methods for different event types. Define AuditableEvent interface for consistent logging across services. Create custom @SecurityAudit annotation for method-level auditing",
+            "status": "pending",
+            "testStrategy": "Unit test event creation and serialization, verify event structure completeness, test annotation processing"
+          },
+          {
+            "id": 2,
+            "title": "Implement Authentication Event Tracking",
+            "description": "Build comprehensive tracking for authentication-related security events including login attempts, failures, and suspicious patterns",
+            "dependencies": [
+              1
+            ],
+            "details": "Extend JwtAuthenticationFilter to log authentication attempts. Create AuthenticationEventListener implementing ApplicationListener<AbstractAuthenticationEvent>. Track failed login attempts with rate limiting (5 failures = 15 min lockout). Implement IP-based tracking for geographic anomaly detection. Store authentication events with device fingerprinting. Create scheduled job to analyze patterns and detect brute force attempts",
+            "status": "pending",
+            "testStrategy": "Test login failure tracking accuracy, verify account lockout mechanism, test geographic anomaly detection, validate event listener integration"
+          },
+          {
+            "id": 3,
+            "title": "Create Data Access Audit System",
+            "description": "Implement comprehensive auditing for sensitive data access including medical records, personal information, and guardian access",
+            "dependencies": [
+              1
+            ],
+            "details": "Create JPA EntityListener for tracking CRUD operations on sensitive entities (User, MedicationAdherence, HealthMetric). Implement @AuditSensitiveData annotation for method-level tracking. Log data access with context (who, what, when, why). Track bulk data exports and API calls accessing multiple records. Implement row-level security audit for guardian access to user data. Create audit trail that cannot be modified or deleted",
+            "status": "pending",
+            "testStrategy": "Test entity listener triggers, verify audit trail immutability, test sensitive data access logging, validate guardian access tracking"
+          },
+          {
+            "id": 4,
+            "title": "Develop Anomaly Detection Service",
+            "description": "Build intelligent suspicious activity detection using pattern analysis and machine learning techniques",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create AnomalyDetectionService with rule-based detection for immediate threats (rapid API calls, unusual access patterns, privilege escalation attempts). Implement time-series analysis for user behavior baselines. Track unusual data access patterns (accessing many users, odd hours, new locations). Create alert thresholds configurable per user cognitive level. Implement real-time alerting via WebSocket for critical events. Add ML model integration points for future enhancement",
+            "status": "pending",
+            "testStrategy": "Test rule-based detection accuracy, verify baseline calculation, test alert triggering, validate false positive rates"
+          },
+          {
+            "id": 5,
+            "title": "Implement Log Management and Analysis Tools",
+            "description": "Create comprehensive log retention, archival, and analysis capabilities with compliance considerations",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Implement log rotation with 90-day hot storage in database, archive to S3 for long-term retention. Create SecurityAuditController with endpoints for log search, filtering, and export. Build dashboard APIs for security metrics (failed logins, suspicious activities, data access patterns). Implement log integrity verification using checksums. Create scheduled reports for compliance requirements. Add data anonymization for logs older than 30 days while maintaining audit trail integrity",
+            "status": "pending",
+            "testStrategy": "Test log rotation and archival process, verify search and filter functionality, test report generation, validate data anonymization"
+          }
+        ]
+      },
+      {
+        "id": 38,
+        "title": "Create API Documentation System",
+        "description": "Develop comprehensive API documentation for all endpoints",
+        "details": "Implement OpenAPI/Swagger documentation, create interactive API testing interface, develop code examples for common use cases, implement versioning documentation, create simplified docs for BIF app developers",
+        "testStrategy": "Test documentation accuracy against implementation, verify example code functionality, test interactive interface, validate documentation completeness",
+        "priority": "low",
+        "dependencies": [
+          11,
+          14,
+          21
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up OpenAPI/Swagger infrastructure",
+            "description": "Configure Spring Boot with OpenAPI 3.0 (springdoc-openapi) for automatic API documentation generation",
+            "dependencies": [],
+            "details": "Add springdoc-openapi-starter-webmvc-ui dependency to build.gradle, configure OpenAPI beans in SwaggerConfig class with API metadata (title, version, description), set up security schemes for JWT authentication, configure API grouping by modules (auth, guardian, navigation, etc.), enable automatic schema generation from DTOs",
+            "status": "pending",
+            "testStrategy": "Verify Swagger UI loads at /swagger-ui.html, test that all endpoints are discovered and listed, validate JWT authentication works in Swagger UI, ensure request/response schemas match actual DTOs"
+          },
+          {
+            "id": 2,
+            "title": "Implement API annotations and documentation",
+            "description": "Add comprehensive OpenAPI annotations to all REST controllers and DTOs for detailed documentation",
+            "dependencies": [
+              1
+            ],
+            "details": "Annotate controllers with @Tag for grouping, add @Operation with summary and description to each endpoint, use @ApiResponse annotations for all response codes with examples, document request/response DTOs with @Schema annotations including field descriptions and constraints, add @Parameter documentation for path variables and query parameters, ensure Korean and English descriptions using i18n",
+            "status": "pending",
+            "testStrategy": "Review generated documentation for completeness, verify all endpoints have descriptions and examples, test that response examples match actual API responses, validate schema constraints are properly documented"
+          },
+          {
+            "id": 3,
+            "title": "Create interactive API testing interface",
+            "description": "Develop a customized Swagger UI with enhanced features for testing API endpoints directly from documentation",
+            "dependencies": [
+              2
+            ],
+            "details": "Customize Swagger UI theme to match BIF accessibility standards (larger fonts, high contrast), implement pre-populated example requests for common scenarios, add quick authentication token management, create saved request templates for complex operations, implement response visualization for better understanding, add Korean language support for UI elements",
+            "status": "pending",
+            "testStrategy": "Test API calls directly from documentation interface, verify authentication persistence across requests, test example data population, validate response rendering for different data types"
+          },
+          {
+            "id": 4,
+            "title": "Develop code examples and SDK documentation",
+            "description": "Create comprehensive code examples in multiple languages and simplified documentation for BIF app developers",
+            "dependencies": [
+              3
+            ],
+            "details": "Write code examples for Java, JavaScript, and Python showing common API usage patterns, create step-by-step integration guides with screenshots, develop simplified API reference cards with essential endpoints only, implement interactive code playground for testing snippets, create video tutorials with Korean narration for complex integrations, organize examples by use case (authentication, guardian features, emergency alerts)",
+            "status": "pending",
+            "testStrategy": "Execute all code examples to ensure they work, test examples against actual API endpoints, verify documentation clarity with target developers, validate that examples follow best practices"
+          },
+          {
+            "id": 5,
+            "title": "Implement API versioning and changelog system",
+            "description": "Create a versioning strategy for API documentation with automatic changelog generation and migration guides",
+            "dependencies": [
+              4
+            ],
+            "details": "Set up API versioning using URL path versioning (/api/v1, /api/v2), implement version selector in documentation UI, create automated changelog generation from git commits and API changes, develop migration guides between versions with code examples, implement deprecation notices with sunset dates, create version compatibility matrix for client applications",
+            "status": "pending",
+            "testStrategy": "Test version switching in documentation, verify deprecated endpoints show warnings, test that old versions remain accessible, validate migration guide accuracy"
+          }
+        ]
+      },
+      {
+        "id": 39,
+        "title": "Build Integration Testing Framework",
+        "description": "Establish comprehensive integration testing infrastructure",
+        "details": "Set up TestContainers for database testing, implement API integration test suites, create end-to-end test scenarios for critical paths, develop performance testing framework, implement automated regression testing",
+        "testStrategy": "Verify test coverage > 80%, test framework reliability, validate performance benchmarks, ensure test isolation",
+        "priority": "medium",
+        "dependencies": [
+          30
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up TestContainers Infrastructure",
+            "description": "Configure TestContainers framework for Spring Boot integration testing with MySQL and Redis containers",
+            "dependencies": [],
+            "details": "Add TestContainers dependencies to build.gradle (testcontainers-bom, mysql, redis modules). Create base test configuration class @TestConfiguration with @DynamicPropertySource to inject container properties. Set up container lifecycle management with @BeforeAll/@AfterAll. Configure containers with production-like settings (MySQL 8.0, Redis latest). Create AbstractIntegrationTest base class that all integration tests will extend.",
+            "status": "pending",
+            "testStrategy": "Verify containers start successfully, test database migrations run correctly, ensure Redis connection works, validate container cleanup after tests"
+          },
+          {
+            "id": 2,
+            "title": "Implement API Integration Test Suite",
+            "description": "Create comprehensive REST API integration tests using MockMvc and TestRestTemplate for all endpoints",
+            "dependencies": [
+              1
+            ],
+            "details": "Create test classes for each controller using @SpringBootTest with WebEnvironment.RANDOM_PORT. Implement test utilities for JWT token generation and authentication setup. Test all CRUD operations with valid/invalid data. Verify response formats match API conventions (success/error structure). Test authorization scenarios (authenticated, unauthorized, forbidden). Create test data builders using Builder pattern for complex request objects.",
+            "status": "pending",
+            "testStrategy": "Ensure 100% endpoint coverage, verify HTTP status codes, validate response body structure, test request validation, measure API response times < 500ms"
+          },
+          {
+            "id": 3,
+            "title": "Create End-to-End Test Scenarios",
+            "description": "Develop complete user journey tests for critical application flows including authentication, reminder creation, and emergency features",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement E2E test for user registration → login → create reminder → receive notification flow. Test emergency contact triggering with notification delivery verification. Create medication adherence tracking scenario with schedule validation. Test AI-powered context analysis flow from image upload to guidance generation. Implement data cleanup between scenarios to ensure test isolation. Use @Sql annotations for test data setup.",
+            "status": "pending",
+            "testStrategy": "Verify complete workflows execute successfully, validate data persistence across services, test async operations completion, ensure no side effects between tests"
+          },
+          {
+            "id": 4,
+            "title": "Develop Performance Testing Framework",
+            "description": "Build performance testing infrastructure using JMeter or Gatling to validate system performance under load",
+            "dependencies": [
+              2
+            ],
+            "details": "Set up Gatling with Gradle plugin for load testing. Create performance test scenarios for critical endpoints (auth, reminder operations, AI analysis). Configure load profiles: baseline (10 users), normal (50 users), peak (100+ concurrent users). Implement performance metrics collection (response time, throughput, error rate). Create performance regression detection with threshold alerts. Generate HTML reports with performance trends.",
+            "status": "pending",
+            "testStrategy": "Validate <3s response time for AI operations, ensure <500ms for standard API calls, test system stability under sustained load, verify no memory leaks"
+          },
+          {
+            "id": 5,
+            "title": "Implement Automated Regression Testing",
+            "description": "Create automated regression test suite with CI/CD integration and test result reporting",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Configure test categorization using JUnit tags (@IntegrationTest, @PerformanceTest, @RegressionTest). Set up parallel test execution in Gradle for faster feedback. Implement test result aggregation and reporting with Allure or similar framework. Create GitHub Actions workflow for automated test execution on PR/merge. Configure test coverage reporting with JaCoCo, enforce 80% minimum coverage. Set up test failure notifications via Slack/email.",
+            "status": "pending",
+            "testStrategy": "Verify CI pipeline runs all test categories, ensure test reports are accessible, validate coverage metrics accuracy, test notification delivery on failures"
+          }
+        ]
+      },
+      {
+        "id": 40,
+        "title": "Implement Deployment and CI/CD Pipeline",
+        "description": "Create automated deployment pipeline with quality gates",
+        "details": "Configure GitHub Actions for CI/CD, implement automated testing in pipeline, create Docker containerization for all services, set up blue-green deployment strategy, implement automated rollback mechanisms",
+        "testStrategy": "Test pipeline execution time < 15 minutes, verify deployment rollback functionality, test quality gate effectiveness, validate zero-downtime deployment",
+        "priority": "medium",
+        "dependencies": [
+          39
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup GitHub Actions Workflow Structure",
+            "description": "Create the foundational GitHub Actions workflow files with proper job definitions for CI/CD pipeline",
+            "dependencies": [],
+            "details": "Create .github/workflows directory structure. Define main workflow file (main.yml) with separate jobs for build, test, and deploy stages. Configure workflow triggers for push to main/develop branches and pull requests. Set up environment variables and secrets management. Define job dependencies and conditional execution based on branch patterns.",
+            "status": "pending",
+            "testStrategy": "Verify workflow syntax validation passes, test workflow triggers on different branch events, validate secrets are properly masked in logs"
+          },
+          {
+            "id": 2,
+            "title": "Implement Automated Testing Pipeline",
+            "description": "Configure comprehensive automated testing within GitHub Actions including unit, integration, and quality checks",
+            "dependencies": [
+              1
+            ],
+            "details": "Add Gradle test execution steps with proper test reporting. Configure JaCoCo for code coverage with 80% threshold enforcement. Implement SonarQube integration for code quality analysis. Add database migration validation using Flyway. Configure parallel test execution for performance. Generate and archive test reports as artifacts.",
+            "status": "pending",
+            "testStrategy": "Verify all test types execute successfully, validate coverage reports are generated and meet thresholds, test quality gate failures block deployment"
+          },
+          {
+            "id": 3,
+            "title": "Create Docker Containerization",
+            "description": "Dockerize the Spring Boot application and configure multi-stage builds for optimized images",
+            "dependencies": [
+              2
+            ],
+            "details": "Create multi-stage Dockerfile with separate build and runtime stages. Optimize JVM settings for container environment. Configure health checks and graceful shutdown. Create docker-compose files for local development and testing. Implement container scanning for security vulnerabilities. Set up Docker image versioning strategy aligned with Git tags.",
+            "status": "pending",
+            "testStrategy": "Test container builds complete under 5 minutes, verify container starts successfully with health checks passing, validate image size is optimized"
+          },
+          {
+            "id": 4,
+            "title": "Configure Blue-Green Deployment Strategy",
+            "description": "Implement zero-downtime blue-green deployment mechanism for AWS infrastructure",
+            "dependencies": [
+              3
+            ],
+            "details": "Create deployment scripts for AWS ECS/EC2 blue-green deployment. Configure Application Load Balancer for traffic switching. Implement health check validation before traffic cutover. Create deployment configuration with rollback triggers. Set up CloudWatch monitoring for deployment metrics. Configure deployment notifications via SNS.",
+            "status": "pending",
+            "testStrategy": "Test zero-downtime deployment with active traffic, verify health checks prevent bad deployments, validate traffic switches correctly between environments"
+          },
+          {
+            "id": 5,
+            "title": "Implement Automated Rollback Mechanisms",
+            "description": "Create automated rollback system with monitoring-based triggers and manual override capabilities",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement CloudWatch alarms for key metrics (error rate, response time, memory usage). Configure automatic rollback triggers based on alarm thresholds. Create rollback workflow in GitHub Actions with version selection. Implement database migration rollback handling. Add deployment history tracking and rollback audit logs. Create manual rollback approval process for critical situations.",
+            "status": "pending",
+            "testStrategy": "Test automatic rollback triggers on metric threshold breaches, verify database rollback executes cleanly, validate rollback completes within 5 minutes"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-14T07:04:24.582Z",
+      "updated": "2025-07-16T13:09:45.449Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

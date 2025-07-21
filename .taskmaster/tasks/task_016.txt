@@ -1,0 +1,43 @@
+# Task ID: 16
+# Title: Implement WebSocket Real-time Communication
+# Status: pending
+# Dependencies: 11
+# Priority: high
+# Description: Set up WebSocket infrastructure for real-time video streaming and instant notifications
+# Details:
+Configure Spring WebSocket with STOMP protocol, implement WebSocket security with JWT authentication, create channels for video streaming, location updates, and emergency alerts, implement connection pooling and heartbeat mechanism, add reconnection logic for network interruptions
+
+# Test Strategy:
+Load test with 100+ concurrent connections, test message delivery reliability, verify reconnection after network drops, measure latency for emergency alerts
+
+# Subtasks:
+## 1. Configure Spring WebSocket Infrastructure with STOMP [pending]
+### Dependencies: None
+### Description: Set up the core WebSocket configuration with STOMP protocol support, including message broker configuration and endpoint mapping
+### Details:
+Create WebSocketConfig class extending WebSocketMessageBrokerConfigurer, configure STOMP endpoints at /ws with SockJS fallback, set up message broker with /topic and /queue destinations, configure thread pool for WebSocket handling, add CORS configuration for allowed origins, implement WebSocket interceptor for connection logging
+
+## 2. Implement JWT-based WebSocket Security [pending]
+### Dependencies: 16.1
+### Description: Add authentication and authorization layer for WebSocket connections using JWT tokens from the existing security infrastructure
+### Details:
+Create WebSocketSecurityConfig extending AbstractSecurityWebSocketMessageBrokerConfigurer, implement ChannelInterceptor to validate JWT tokens from STOMP headers, integrate with existing JwtTokenProvider for token validation, configure channel-level security for different message destinations, implement user principal resolution from JWT claims, add rate limiting per authenticated user
+
+## 3. Create Real-time Communication Channels [pending]
+### Dependencies: 16.1, 16.2
+### Description: Implement dedicated STOMP channels for video streaming, location updates, and emergency alerts with appropriate message formats
+### Details:
+Create WebSocketController with @MessageMapping endpoints, implement /topic/video/{userId} for video frame streaming with binary message support, create /topic/location/{userId} for GPS coordinate updates, implement /topic/emergency/{userId} for high-priority alerts, define message DTOs for each channel type, implement message validation and sanitization, add message acknowledgment mechanism for critical alerts
+
+## 4. Implement Connection Management and Heartbeat [pending]
+### Dependencies: 16.1, 16.2, 16.3
+### Description: Set up connection pooling, heartbeat mechanism, and session management for reliable WebSocket connections
+### Details:
+Configure WebSocket heartbeat interval at 20 seconds, implement connection pool with configurable max connections per user, create WebSocketSessionManager to track active sessions, implement heartbeat handler to detect stale connections, add connection event listeners for connect/disconnect tracking, integrate with Redis for distributed session management, implement connection limits per user account
+
+## 5. Add Automatic Reconnection and Recovery Logic [pending]
+### Dependencies: 16.1, 16.2, 16.3, 16.4
+### Description: Implement client reconnection strategies and message recovery for network interruptions
+### Details:
+Create WebSocketReconnectionService with exponential backoff strategy, implement message queue for offline message storage using Redis, add sequence numbering for message ordering, create recovery mechanism to replay missed messages on reconnection, implement connection state synchronization, add network quality monitoring to adjust reconnection parameters, create fallback to REST API for critical operations during WebSocket downtime
+

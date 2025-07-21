@@ -1,0 +1,43 @@
+# Task ID: 32
+# Title: Develop Privacy and Consent Management
+# Status: pending
+# Dependencies: 13, 14
+# Priority: high
+# Description: Build comprehensive privacy controls and consent tracking system
+# Details:
+Implement GDPR-compliant consent management, create data access controls for guardians, develop data retention policies with automatic deletion, implement data export functionality, create privacy dashboard for users
+
+# Test Strategy:
+Test consent tracking accuracy, verify data access restrictions, test retention policy enforcement, validate data export completeness
+
+# Subtasks:
+## 1. Design Consent Management Database Schema [pending]
+### Dependencies: None
+### Description: Create database tables and entities for storing user consent records, consent types, and consent history with GDPR compliance requirements
+### Details:
+Create entities for ConsentType (data_collection, location_tracking, image_analysis, health_monitoring), ConsentRecord with user_id, consent_type, granted_at, revoked_at, ip_address, and version fields. Add ConsentHistory table for audit trail. Include consent_purpose and legal_basis fields for GDPR compliance. Create indexes on user_id and consent_type for fast lookups
+
+## 2. Implement Consent Collection and Storage APIs [pending]
+### Dependencies: 32.1
+### Description: Build RESTful endpoints for collecting, updating, and retrieving user consent with proper validation and versioning
+### Details:
+Create ConsentController with endpoints: POST /api/consent/grant for collecting consent with mandatory purpose and legal basis, POST /api/consent/revoke for withdrawing consent, GET /api/consent/status/{userId} for current consent status, GET /api/consent/history/{userId} for audit trail. Implement ConsentService with version tracking, IP logging, and timestamp recording. Use @Valid annotations for request validation
+
+## 3. Create Guardian Data Access Control System [pending]
+### Dependencies: 32.1, 32.2
+### Description: Implement role-based access control for guardians with configurable data access permissions and relationship verification
+### Details:
+Create GuardianAccessPermission entity linking guardian_id, user_id, and permission_types (view_location, view_health, view_medications, receive_alerts). Implement GuardianAccessService with relationship verification before granting access. Add access level inheritance rules and time-based access restrictions. Create audit log for all guardian data access attempts. Implement @PreAuthorize annotations on sensitive endpoints
+
+## 4. Develop Data Retention and Deletion Service [pending]
+### Dependencies: 32.1
+### Description: Build automated data retention policy engine with configurable rules and scheduled deletion of expired data
+### Details:
+Create DataRetentionPolicy entity with data_type, retention_days, and deletion_strategy fields. Implement DataRetentionService with @Scheduled tasks for automatic deletion. Create soft-delete mechanism for 30-day recovery period. Implement hard-delete for PII after retention period. Add anonymization option for statistical data. Create retention policy configurations for different data types (images: 90 days, health metrics: 365 days, logs: 30 days)
+
+## 5. Build Privacy Dashboard and Data Export APIs [pending]
+### Dependencies: 32.1, 32.2, 32.3, 32.4
+### Description: Create user-facing privacy dashboard showing all collected data and implement GDPR-compliant data export functionality
+### Details:
+Create PrivacyDashboardController with GET /api/privacy/dashboard returning categorized data summary, consent status, and retention timelines. Implement DataExportService generating JSON/CSV exports of all user data. Add export request queueing for large datasets. Create simple Korean UI messages for privacy status. Include data deletion request functionality with confirmation workflow. Implement progress tracking for export generation
+

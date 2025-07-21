@@ -1,0 +1,51 @@
+spring:
+  # Staging Database Configuration
+  datasource:
+    url: jdbc:mysql://${DB_HOST:staging-db.bifai.com}:${DB_PORT:3306}/${DB_NAME:bifai_staging}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  
+  # JPA Staging Settings
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  
+  # Redis Staging Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:staging-redis.bifai.com}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+
+# Staging Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+
+# Staging Logging
+logging:
+  level:
+    root: WARN
+    com.bifai.reminder: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
+# Flyway Staging Configuration
+flyway:
+  enabled: true
+  baseline-on-migrate: false
+  locations: classpath:db/migration
+  validate-on-migrate: true
+
+# Staging Security
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: 3600000 # 1 hour
+      refresh-expiration: 259200000 # 3 days
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://staging.bifai.com}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true

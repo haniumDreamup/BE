@@ -1,0 +1,63 @@
+spring:
+  # Bean Definition Override Setting
+  main:
+    allow-bean-definition-overriding: true
+  
+  # DataSource Configuration for Test
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # JPA Test Settings
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        default_batch_fetch_size: 10
+  
+  # H2 Console (for debugging)
+  h2:
+    console:
+      enabled: true
+  
+  # Redis Test Configuration (Embedded Redis)
+  data:
+    redis:
+      host: localhost
+      port: 6370  # Different port for test
+  
+  # Disable Flyway for tests
+  flyway:
+    enabled: false
+
+# Test Logging Configuration
+logging:
+  level:
+    root: WARN
+    com.bifai.reminder: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Test JWT Configuration
+app:
+  jwt:
+    secret: test-secret-key-for-jwt-token-generation-minimum-256-bits
+    access-token-expiration-ms: 3600000  # 1 hour
+    refresh-token-expiration-ms: 86400000 # 24 hours
+
+# BIF Test Configuration
+bif:
+  test:
+    mode: true
+    mock-external-services: true
+  database:
+    monitoring:
+      enable-statistics: true
+      log-slow-queries: false

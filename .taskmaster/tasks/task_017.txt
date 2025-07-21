@@ -1,0 +1,43 @@
+# Task ID: 17
+# Title: Develop Emergency Detection Service
+# Status: pending
+# Dependencies: 15, 16
+# Priority: high
+# Description: Create service for detecting and responding to emergency situations
+# Details:
+Implement fall detection algorithm using accelerometer data patterns, create panic button activation handler, develop automatic emergency contact notification system, implement location-based emergency response (nearest hospital/police), add configurable emergency thresholds per user
+
+# Test Strategy:
+Test fall detection accuracy with simulated data, verify emergency notification delivery times < 3 seconds, test location accuracy for emergency services, validate false positive handling
+
+# Subtasks:
+## 1. Design Emergency Detection Data Models and API Structure [pending]
+### Dependencies: None
+### Description: Create comprehensive data models for emergency events, detection configurations, and response protocols. Design RESTful API endpoints for emergency detection service integration.
+### Details:
+Create JPA entities: EmergencyEvent (id, userId, type, severity, timestamp, location, resolved), EmergencyConfiguration (userId, fallThreshold, inactivityTimeout, emergencyContacts), EmergencyResponse (eventId, responseType, notificationsSent, responseTime). Design REST endpoints: POST /api/emergency/detect, GET /api/emergency/events/{userId}, PUT /api/emergency/config/{userId}, POST /api/emergency/resolve/{eventId}. Implement DTOs for request/response with validation annotations. Add database indexes for userId and timestamp for quick emergency event retrieval.
+
+## 2. Implement Fall Detection Algorithm Service [pending]
+### Dependencies: 17.1
+### Description: Develop the core fall detection algorithm using accelerometer data patterns with configurable thresholds and confidence scoring to minimize false positives.
+### Details:
+Create FallDetectionService with methods: detectFall(AccelerometerData data, UserThresholds thresholds), calculateFallConfidence(double[] accelerationVector, long duration). Implement fall detection logic: sudden acceleration spike (>2g), followed by low movement period (<0.5g for 2+ seconds), orientation change detection. Add configurable parameters: acceleration threshold (default 2g), stillness threshold (0.5g), stillness duration (2s). Implement sliding window analysis for continuous monitoring. Create FallDetectionResult with confidence score (0-100%), fallType (forward/backward/sideways), severity level.
+
+## 3. Build Emergency Notification and Contact System [pending]
+### Dependencies: 17.1
+### Description: Implement automated emergency contact notification system with multiple communication channels and escalation protocols for unresolved emergencies.
+### Details:
+Create EmergencyNotificationService with notification strategies: SMS (via AWS SNS), push notifications (FCM), automated phone calls (Twilio). Implement contact priority system: primary guardian first, then secondary contacts, finally emergency services. Add notification templates with simple language: 'Your family member may need help. They fell at [location] at [time]'. Create escalation logic: if no response in 3 minutes, notify next contact level. Implement location enrichment: reverse geocoding for human-readable addresses, nearest hospital/police station lookup via Google Places API. Add notification delivery tracking and retry mechanism.
+
+## 4. Develop Panic Button and Manual Emergency Trigger [pending]
+### Dependencies: 17.3
+### Description: Create panic button functionality with immediate emergency response activation and false alarm prevention mechanisms.
+### Details:
+Implement PanicButtonService with instant activation handler: single tap for alert, hold 3 seconds for emergency. Add false alarm prevention: 10-second cancellation window with haptic feedback, confirmation dialog for non-critical alerts. Create emergency type classification: medical emergency, personal safety, assistance needed. Implement location capture at panic activation: GPS coordinates, WiFi-based location, last known location fallback. Add silent alarm option for dangerous situations. Create audit log for all panic button activations. Implement rate limiting to prevent accidental repeated triggers (max 3 per minute).
+
+## 5. Create Emergency Response Coordination and Monitoring Dashboard [pending]
+### Dependencies: 17.2, 17.3, 17.4
+### Description: Build real-time emergency monitoring system for guardians and implement automated emergency service integration with location-based routing.
+### Details:
+Create EmergencyMonitoringService with WebSocket support for real-time updates to guardian dashboard. Implement emergency event aggregation: combine fall detection, panic button, and inactivity alerts into unified response. Add automated 911/emergency service integration: pre-formatted emergency information packet, user medical information summary, precise location with plus codes. Create guardian dashboard endpoints: GET /api/emergency/monitor/{userId}/live, POST /api/emergency/acknowledge/{eventId}. Implement emergency resolution workflow: guardian acknowledgment, false alarm marking, incident notes. Add performance metrics: average response time, false positive rate, emergency type distribution. Create automated reports for caregivers.
+

@@ -3,723 +3,281 @@
     "tasks": [
       {
         "id": 1,
-        "title": "Initialize Spring Boot Backend Infrastructure",
-        "description": "Setup Spring Boot project with AWS integration, configure MySQL database, Redis cache, and establish core project structure with dependency management",
-        "details": "1. Initialize Spring Boot 3.x project with Web, JPA, Security, and AWS SDK dependencies\n2. Configure application.yml for multi-environment support (dev, staging, prod)\n3. Setup MySQL 8.0 connection with HikariCP pool configuration\n4. Configure Redis for session management and caching\n5. Implement AWS SDK for S3, EC2, and RDS integration\n6. Create base package structure: controller, service, repository, model, dto, config, security, exception\n7. Setup Lombok, MapStruct for boilerplate reduction\n8. Configure logging with SLF4J and Logback\n9. Create Docker configuration for local development\n10. Setup environment variables for API keys and sensitive data",
-        "testStrategy": "1. Unit tests for configuration loading and bean initialization\n2. Integration tests for database connectivity and Redis operations\n3. AWS LocalStack for S3 integration testing\n4. Spring Boot Test for application context loading\n5. Verify multi-profile configuration switching\n6. Test database connection pooling under load",
-        "priority": "high",
+        "title": "Phase 1: 기반 구축 - Spring Boot 백엔드 기본 구조 설정",
+        "description": "Spring Boot 3.5.0 기반의 백엔드 프로젝트 기본 구조를 설정하고, 필요한 의존성을 추가하며, 개발 환경을 구성합니다.",
+        "details": "- Spring Boot 3.5.0, Java 17 프로젝트 초기화\n- Gradle 빌드 설정 및 의존성 관리\n- 프로젝트 패키지 구조 설계\n- application.yml 프로파일별 설정 (dev, staging, prod)\n- 로깅 설정 (Logback)\n- 기본 예외 처리 구조",
+        "testStrategy": "- Spring Boot 애플리케이션 정상 구동 확인\n- 프로파일별 설정 로드 테스트\n- 로깅 레벨별 출력 테스트",
+        "status": "done",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Core Spring Boot Project Setup",
-            "description": "Initialize Spring Boot project with essential dependencies and establish the basic project structure",
-            "dependencies": [],
-            "details": "1. Create Spring Boot 3.x project using Spring Initializr\n2. Configure essential dependencies: Spring Web, Data JPA, Security, Validation, Lombok\n3. Setup multi-module project structure if needed\n4. Configure Maven/Gradle build system with proper versioning\n5. Establish base package structure (controller, service, repository, etc.)\n6. Create initial application.properties/yml template\n7. Setup logging configuration with logback\n8. Implement basic health check endpoint",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Database and Cache Configuration",
-            "description": "Configure MySQL database connection, migration tools, and Redis cache integration",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Configure MySQL datasource properties with HikariCP connection pooling\n2. Setup Flyway/Liquibase for database migrations\n3. Create initial database schema scripts\n4. Configure Redis connection for caching and session management\n5. Implement cache configuration with appropriate TTL settings\n6. Setup test database configuration with H2 or TestContainers\n7. Configure transaction management\n8. Implement basic repository interfaces and entity classes",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "AWS Integration Setup",
-            "description": "Integrate AWS SDK and configure necessary AWS services for the application",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Add AWS SDK dependencies to the project\n2. Configure AWS credentials and region settings\n3. Setup S3 client for file storage operations\n4. Configure SQS/SNS for messaging if required\n5. Setup CloudWatch for logging and monitoring\n6. Implement AWS parameter store/secrets manager for sensitive configuration\n7. Create service classes for AWS interactions\n8. Configure proper error handling for AWS service calls",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Security and Environment Configuration",
-            "description": "Implement security measures and configure environment-specific settings",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Configure Spring Security with appropriate authentication mechanism\n2. Setup JWT token generation and validation if applicable\n3. Implement role-based access control\n4. Configure CORS and CSRF protection\n5. Setup environment-specific profiles (dev, staging, prod)\n6. Implement environment-specific configuration properties\n7. Configure secure password storage with BCrypt\n8. Setup SSL/TLS configuration for secure communication",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Docker and Deployment Setup",
-            "description": "Prepare Docker configuration and deployment scripts for the application",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "details": "1. Create Dockerfile for the application\n2. Setup docker-compose for local development with dependent services\n3. Configure CI/CD pipeline scripts (GitHub Actions, Jenkins, etc.)\n4. Create Kubernetes deployment manifests if applicable\n5. Setup environment variable injection for containers\n6. Configure health checks and readiness probes\n7. Implement container logging configuration\n8. Prepare deployment documentation",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 2,
-        "title": "Implement Database Schema and JPA Entities",
-        "description": "Create comprehensive database schema with all entities defined in PRD including Users, Devices, Guardians, and related tables with proper relationships and constraints",
-        "details": "1. Create JPA entities with proper annotations:\n   - Users (cognitive_level as enum, guardian relationship)\n   - Devices (MAC address validation, battery tracking)\n   - Guardians (contact info as embedded object)\n   - CapturedImages (S3 URL storage, location as embedded GPS)\n   - AnalysisResults (JSON storage for flexible AI responses)\n   - Schedules (recurrence pattern using Cron expressions)\n   - Notifications (polymorphic type handling)\n   - ActivityLogs (event sourcing pattern)\n   - MedicationRecords (compliance tracking)\n   - EmergencyEvents (state machine for response status)\n2. Implement audit fields (created_at, updated_at) using @EntityListeners\n3. Create database migration scripts using Flyway\n4. Setup cascade rules and orphan removal\n5. Implement soft delete where applicable\n6. Create indexes for performance-critical queries\n7. Add database constraints and validation annotations",
-        "testStrategy": "1. Repository layer tests with @DataJpaTest\n2. Verify cascade operations and relationship integrity\n3. Test constraint violations and exception handling\n4. Performance tests for complex queries\n5. Flyway migration rollback testing\n6. Data integrity tests with concurrent operations",
+        "title": "Phase 1: 기반 구축 - 데이터베이스 스키마 설계 및 구현",
+        "description": "BIF 사용자를 위한 데이터베이스 스키마를 설계하고 JPA 엔티티를 구현합니다.",
+        "details": "- MySQL 8.0 데이터베이스 설정\n- Flyway 마이그레이션 설정\n- User, Guardian 엔티티 구현\n- Device, Location 엔티티 구현\n- Reminder, Schedule 엔티티 구현\n- Medication, Activity 엔티티 구현\n- JPA Repository 인터페이스 작성",
+        "testStrategy": "- 엔티티 매핑 검증 테스트\n- Repository CRUD 작업 테스트\n- 데이터베이스 연결 테스트\n- Flyway 마이그레이션 테스트",
+        "status": "done",
+        "dependencies": [],
         "priority": "high",
-        "dependencies": [
-          1
-        ],
-        "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement User and Guardian Entities",
-            "description": "Create JPA entities for User and Guardian with proper relationships, validation, and embedded objects",
-            "dependencies": [],
-            "details": "1. Create User entity with fields for personal info, cognitive level (enum), authentication details, and preferences\n2. Implement Guardian entity with contact information as embedded object\n3. Establish bidirectional relationship between User and Guardian entities\n4. Add proper cascade rules and fetch strategies\n5. Implement validation constraints for email, phone numbers\n6. Create repository interfaces with custom query methods",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Develop Device and Connectivity Entities",
-            "description": "Implement entities for device management, connectivity tracking, and location data",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create Device entity with MAC address validation, registration date, and status fields\n2. Implement BatteryStatus tracking with history\n3. Create ConnectivityLog entity for tracking online/offline status\n4. Implement Location entity as an embeddable type with GPS coordinates\n5. Establish relationship between User and Device entities\n6. Add indexing for device lookup by identifier and status",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Create Content Storage Entities",
-            "description": "Implement entities for storing captured images, analysis results, and related metadata",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Create CapturedImage entity with S3 URL storage and embedded location data\n2. Implement AnalysisResult entity with JSON storage for flexible AI responses\n3. Create ContentMetadata entity for storing EXIF and other metadata\n4. Establish relationships between content entities and User entity\n5. Implement proper cascade rules for content deletion\n6. Add indexing strategies for content retrieval by timestamp and type",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Schedule and Notification Entities",
-            "description": "Create entities for managing schedules, reminders, and notification delivery",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Implement Schedule entity with recurrence pattern using Cron expressions\n2. Create Notification entity with polymorphic type handling\n3. Implement NotificationDelivery entity to track delivery status\n4. Create ReminderTemplate entity for reusable notifications\n5. Establish relationships between scheduling entities and User entity\n6. Add indexing for schedule lookup by date and status",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Develop Activity and Medication Tracking Entities",
-            "description": "Implement entities for tracking activities, medications, and health-related data",
-            "dependencies": [
-              1,
-              4
-            ],
-            "details": "1. Create ActivityLog entity using event sourcing pattern\n2. Implement Medication entity with dosage, schedule, and tracking fields\n3. Create MedicationAdherence entity for tracking compliance\n4. Implement HealthMetric entity for storing various health indicators\n5. Establish relationships with User and Schedule entities\n6. Add appropriate indexing for querying activity history and medication adherence",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement Database Migration and Indexing Strategy",
-            "description": "Create database migration scripts, indexing strategy, and performance optimization",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4,
-              5
-            ],
-            "details": "1. Implement Flyway migration scripts for schema evolution\n2. Create composite indexes for frequently queried fields\n3. Implement database partitioning strategy for large tables\n4. Create database constraints and foreign key relationships\n5. Implement audit logging for entity changes\n6. Add performance optimization for common query patterns",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "subtasks": []
       },
       {
         "id": 3,
-        "title": "Build Authentication and Authorization System",
-        "description": "Implement JWT-based authentication with role-based access control supporting User, Guardian, and Admin roles with Spring Security",
-        "details": "1. Configure Spring Security with JWT token support\n2. Implement custom UserDetailsService for BIF user profiles\n3. Create JWT token generation and validation utilities\n4. Setup role hierarchy: ADMIN > GUARDIAN > USER\n5. Implement authentication endpoints:\n   - /api/v1/auth/register with cognitive profile\n   - /api/v1/auth/login with multi-factor option\n   - /api/v1/auth/refresh for token renewal\n6. Create authorization annotations for method-level security\n7. Implement Guardian-User relationship verification\n8. Setup CORS configuration for mobile app\n9. Add rate limiting for authentication endpoints\n10. Implement account lockout after failed attempts\n11. Create password reset flow with temporary tokens\n12. Add OAuth2 support for future social login",
-        "testStrategy": "1. Test JWT token generation and validation\n2. Verify role-based endpoint access\n3. Test Guardian access to user data\n4. Security penetration tests for common vulnerabilities\n5. Load test authentication endpoints\n6. Test token expiration and refresh flows",
-        "priority": "high",
-        "dependencies": [
-          2
-        ],
+        "title": "Phase 1: 기반 구축 - 인증/인가 시스템 구축",
+        "description": "Spring Security와 JWT를 활용한 인증 시스템을 구현하고, BIF 사용자와 보호자를 위한 권한 관리 체계를 구축합니다.",
+        "details": "- Spring Security 설정\n- JWT 토큰 생성 및 검증 구현\n- 사용자 인증 서비스 구현\n- 보호자 권한 관리 시스템\n- Redis 기반 토큰 관리\n- 비밀번호 암호화 구현\n- 이메일 인증 프로세스",
+        "testStrategy": "- JWT 토큰 생성/검증 테스트\n- 인증 필터 동작 테스트\n- 권한별 접근 제어 테스트\n- Redis 토큰 저장/조회 테스트",
         "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "JWT Token Implementation and Configuration",
-            "description": "Implement JWT token generation, validation, and configuration for secure authentication",
-            "dependencies": [],
-            "details": "1. Create JwtTokenProvider service with token generation and validation methods\n2. Configure token expiration times (access: 15min, refresh: 7 days)\n3. Implement token signing with HMAC-SHA256 algorithm\n4. Create JwtAuthenticationFilter for request authentication\n5. Implement token blacklisting for logout functionality\n6. Add refresh token rotation for enhanced security",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "User Registration and Login Flows",
-            "description": "Implement secure user registration and login processes with multi-factor authentication option",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create registration endpoint with email verification\n2. Implement login flow with username/password authentication\n3. Add optional SMS-based multi-factor authentication\n4. Create UserDetailsService implementation for BIF user profiles\n5. Implement account activation process\n6. Add session management with concurrent login control",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Role-based Authorization and Hierarchy",
-            "description": "Implement role-based access control with proper hierarchy between Admin, Guardian, and User roles",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Configure role hierarchy (ADMIN > GUARDIAN > USER)\n2. Implement method-level security with @PreAuthorize annotations\n3. Create custom security expressions for Guardian-User relationships\n4. Implement permission checks for data access\n5. Add role assignment and management functionality\n6. Create authorization test suite to verify proper access controls",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Security Hardening Measures",
-            "description": "Implement security hardening features including rate limiting, CORS configuration, and account protection",
-            "dependencies": [
-              3
-            ],
-            "details": "1. Implement IP-based rate limiting for authentication endpoints\n2. Configure CORS with appropriate origins and headers\n3. Add account lockout after failed login attempts\n4. Implement CSRF protection for non-GET requests\n5. Add request validation and sanitization\n6. Configure security headers (Content-Security-Policy, X-XSS-Protection, etc.)",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Password Management and OAuth Integration",
-            "description": "Implement secure password management and OAuth integration for third-party authentication",
-            "dependencies": [
-              4
-            ],
-            "details": "1. Implement password hashing with bcrypt and appropriate work factor\n2. Create password reset functionality with secure tokens\n3. Add password strength validation with feedback\n4. Implement OAuth2 integration for Google authentication\n5. Add account linking between OAuth and regular accounts\n6. Create password expiration and history policies",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 4,
-        "title": "Develop Image Processing and Storage Pipeline",
-        "description": "Create image upload, storage, and processing system with S3 integration and optimization for low-bandwidth scenarios",
-        "details": "1. Implement multipart file upload endpoint with size validation\n2. Create image preprocessing service:\n   - Resize to 720p for analysis\n   - JPEG compression for bandwidth optimization\n   - EXIF data extraction for location/timestamp\n3. Setup S3 bucket structure:\n   - Raw images: /users/{userId}/raw/{timestamp}\n   - Processed images: /users/{userId}/processed/{timestamp}\n   - Lifecycle policies for 90-day retention\n4. Implement async processing with Spring @Async\n5. Create image metadata extraction service\n6. Build thumbnail generation for mobile app display\n7. Implement CDN integration for fast image delivery\n8. Add virus scanning for uploaded images\n9. Create batch upload support for offline sync\n10. Implement progressive image loading",
-        "testStrategy": "1. Test file upload with various formats and sizes\n2. Verify S3 upload and retrieval operations\n3. Test image processing quality and performance\n4. Measure upload times under different network conditions\n5. Test concurrent upload handling\n6. Verify storage lifecycle policies",
-        "priority": "high",
+        "title": "Phase 1: 기반 구축 - 기본 API 엔드포인트 개발",
+        "description": "BIF 사용자와 보호자를 위한 기본 REST API 엔드포인트를 개발하고, 5학년 수준의 쉬운 응답 메시지를 구현합니다.",
+        "details": "- 사용자 관리 API (회원가입, 로그인, 프로필)\n- 보호자 관리 API (등록, 권한 설정)\n- 디바이스 관리 API (등록, 페어링)\n- 건강 체크 API\n- 표준 응답 포맷 구현\n- 에러 메시지 간소화 (5학년 수준)\n- API 문서화 (Swagger)",
+        "testStrategy": "- 각 엔드포인트 통합 테스트\n- 응답 메시지 가독성 검증\n- 에러 처리 테스트\n- API 문서 자동 생성 확인",
+        "status": "pending",
         "dependencies": [
+          2,
           3
         ],
-        "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement Image Upload and Validation Service",
-            "description": "Create a secure and reliable service for handling image uploads with proper validation and error handling",
-            "dependencies": [],
-            "details": "1. Implement multipart file upload endpoint with size limits (max 10MB)\n2. Create validation for acceptable image formats (JPEG, PNG, GIF, HEIC)\n3. Implement file integrity checks and virus scanning\n4. Build error handling for corrupted or invalid images\n5. Add upload progress tracking for frontend integration\n6. Implement rate limiting to prevent abuse",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Develop Image Preprocessing and Optimization Service",
-            "description": "Create a service that processes uploaded images to optimize them for storage and delivery while preserving necessary quality",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Implement image resizing to standard resolutions (720p, 480p, thumbnail)\n2. Create JPEG compression with configurable quality settings\n3. Build EXIF data extraction for metadata (location, timestamp, device info)\n4. Implement image format conversion (HEIC to JPEG) when needed\n5. Add watermarking capability for copyright protection\n6. Create asynchronous processing queue with Spring @Async",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement S3 Storage Integration with Lifecycle Management",
-            "description": "Set up AWS S3 integration for storing both raw and processed images with proper lifecycle policies",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Configure S3 bucket structure with folders for raw and processed images\n2. Implement secure upload to S3 with proper credentials management\n3. Create lifecycle policies for 90-day retention of raw images\n4. Set up versioning for processed images\n5. Implement error handling and retry logic for S3 operations\n6. Create metadata storage for image references in database",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Build Image Retrieval and Delivery Optimization",
-            "description": "Create efficient image retrieval system with caching and bandwidth optimization for various network conditions",
-            "dependencies": [
-              3
-            ],
-            "details": "1. Implement CDN integration for faster image delivery\n2. Create adaptive image serving based on client device capabilities\n3. Build caching layer for frequently accessed images\n4. Implement progressive loading for slow connections\n5. Create bandwidth detection to serve appropriate image quality\n6. Add image preloading for anticipated user navigation paths",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 5,
-        "title": "Integrate LLM for Situational Analysis",
-        "description": "Implement OpenAI API integration with custom prompts optimized for BIF users, including fallback mechanisms and response caching",
-        "details": "1. Create OpenAI client service with retry logic\n2. Design prompt templates for BIF-appropriate responses:\n   - Simple language with 5th-grade reading level\n   - Step-by-step instructions with visual cues\n   - Positive reinforcement language\n3. Implement prompt engineering for different scenarios:\n   - Navigation assistance\n   - Social situation interpretation\n   - Task decomposition\n   - Safety alerts\n4. Build response parsing and validation\n5. Create caching layer for common scenarios\n6. Implement fallback to pre-defined responses\n7. Add response filtering for inappropriate content\n8. Build confidence scoring for AI responses\n9. Create feedback loop for response improvement\n10. Implement cost tracking and optimization\n11. Add support for multiple LLM providers (GPT-4, Claude)\n12. Create A/B testing framework for prompts",
-        "testStrategy": "1. Mock OpenAI responses for unit testing\n2. Test prompt generation with various scenarios\n3. Verify fallback behavior during API failures\n4. Test response appropriateness for BIF users\n5. Performance test with concurrent requests\n6. Cost analysis testing with usage patterns",
-        "priority": "high",
+        "title": "Phase 2: AI 통합 - OpenAI API 연동",
+        "description": "OpenAI API를 연동하여 BIF 사용자를 위한 상황 인식 및 맥락 이해 기능을 구현합니다.",
+        "details": "- OpenAI API 클라이언트 구현\n- 프롬프트 엔지니어링 (BIF 사용자 최적화)\n- 상황 분석 서비스 구현\n- 응답 간소화 처리 (5학년 수준)\n- API 사용량 모니터링\n- 에러 처리 및 폴백 메커니즘\n- 캐싱 전략 구현",
+        "testStrategy": "- API 연동 테스트\n- 프롬프트 응답 품질 검증\n- 응답 시간 측정 (<3초)\n- 에러 상황 처리 테스트",
+        "status": "pending",
         "dependencies": [
           4
         ],
-        "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement OpenAI Client Service",
-            "description": "Create a robust OpenAI client service with comprehensive error handling, retry logic, and timeout management",
-            "dependencies": [],
-            "details": "1. Implement OpenAI API client using Spring RestTemplate or WebClient\n2. Add configurable retry logic with exponential backoff\n3. Implement circuit breaker pattern for API failures\n4. Create comprehensive error handling for different API response codes\n5. Add logging for all API interactions\n6. Implement request timeout handling\n7. Create service interface for easy mocking in tests",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Design BIF-Appropriate Prompt Engineering",
-            "description": "Develop prompt templates optimized for BIF users with simple language, clear instructions, and safety guardrails",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create prompt templates with 5th-grade reading level language\n2. Design system prompts that enforce simple responses\n3. Implement content filtering for inappropriate responses\n4. Create prompt templates for different scenarios (navigation, social situations, etc.)\n5. Add visual cue suggestions in prompts\n6. Implement positive reinforcement language patterns\n7. Create prompt validation to ensure they meet BIF requirements",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Build Response Processing and Validation",
-            "description": "Implement response parsing, validation, and transformation to ensure LLM outputs are appropriate for BIF users",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Create response validators for content appropriateness\n2. Implement text simplification for complex responses\n3. Add response structure validation (JSON, etc.)\n4. Create fallback responses for validation failures\n5. Implement response transformation to add visual cues\n6. Add sentiment analysis to ensure positive/neutral tone\n7. Create response length limiters to prevent overwhelming users",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Caching and Fallback Mechanisms",
-            "description": "Create a caching layer for common LLM responses and implement fallback mechanisms for API failures",
-            "dependencies": [
-              1,
-              3
-            ],
-            "details": "1. Implement Redis-based response caching\n2. Create cache key generation based on prompt intent\n3. Add TTL configuration for different response types\n4. Implement static fallback responses for common scenarios\n5. Create degraded service mode during extended API outages\n6. Add cache warming for frequently used prompts\n7. Implement cache invalidation strategy",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Develop Cost Optimization and Tracking",
-            "description": "Implement token usage tracking, cost optimization strategies, and budget management for OpenAI API usage",
-            "dependencies": [
-              1,
-              4
-            ],
-            "details": "1. Create token counting utilities for prompts and responses\n2. Implement usage tracking and reporting dashboard\n3. Add budget limits and alerts for cost control\n4. Create model selection logic based on complexity needs\n5. Implement batch processing for non-urgent requests\n6. Add compression techniques for context windows\n7. Create monthly usage reports and forecasting",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Create A/B Testing Framework for Prompts",
-            "description": "Build a framework to test different prompt strategies and measure their effectiveness for BIF users",
-            "dependencies": [
-              2,
-              3,
-              5
-            ],
-            "details": "1. Implement A/B test configuration for prompt variants\n2. Create metrics collection for prompt effectiveness\n3. Add user feedback collection mechanism\n4. Implement statistical analysis for prompt comparison\n5. Create automated prompt optimization based on results\n6. Add dashboard for prompt performance visualization\n7. Implement gradual rollout for successful prompt strategies",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 6,
-        "title": "Create Android Mobile Application Foundation",
-        "description": "Develop Android app with accessibility-first design, implementing core UI components and device connectivity features optimized for BIF users",
-        "details": "1. Setup Android project with Kotlin and Jetpack Compose\n2. Implement Material Design 3 with accessibility enhancements:\n   - Minimum 48dp touch targets\n   - High contrast color schemes\n   - Large, clear fonts (minimum 18sp)\n3. Create simplified navigation with maximum 2-level depth\n4. Build core screens:\n   - Device pairing with visual guides\n   - Main dashboard with picture-based menu\n   - Schedule view with visual timeline\n   - Emergency contact quick dial\n5. Implement Bluetooth connectivity for device pairing\n6. Create background service for continuous sync\n7. Add offline data storage with Room database\n8. Implement push notification handling\n9. Create voice command integration\n10. Build haptic feedback system\n11. Add picture-in-picture for video guidance\n12. Implement app shortcuts for critical functions",
-        "testStrategy": "1. UI tests with Espresso for accessibility\n2. Test on various screen sizes and densities\n3. Verify Bluetooth connection reliability\n4. Test offline mode functionality\n5. Accessibility audit with TalkBack\n6. Performance profiling on low-end devices",
-        "priority": "high",
-        "dependencies": [
-          5
-        ],
+        "title": "Phase 2: AI 통합 - YOLOv8 객체 인식 통합",
+        "description": "YOLOv8 모델을 통합하여 실시간 객체 인식 기능을 구현하고, BIF 사용자의 일상 활동을 지원합니다.",
+        "details": "- YOLOv8 모델 서버 구축\n- 이미지 전처리 파이프라인\n- 객체 인식 결과 처리\n- BIF 관련 객체 필터링 (위험 요소, 일상 물건)\n- 인식 결과 캐싱\n- 성능 최적화 (GPU 활용)\n- 모델 버전 관리",
+        "testStrategy": "- 객체 인식 정확도 테스트\n- 처리 속도 측정\n- 다양한 환경 테스트\n- 메모리 사용량 모니터링",
         "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Project Setup with Accessibility-Focused Architecture",
-            "description": "Set up Android project with Kotlin, Jetpack Compose, and accessibility-first architecture patterns",
-            "dependencies": [],
-            "details": "1. Initialize Android project with Gradle 8.0+\n2. Configure Kotlin and Jetpack Compose dependencies\n3. Set up MVVM architecture with accessibility considerations\n4. Implement dependency injection with Hilt\n5. Create accessibility utility classes for font scaling, contrast checking\n6. Set up CI/CD pipeline with accessibility linting\n7. Configure ProGuard rules for app optimization",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Core UI Components and Navigation System",
-            "description": "Develop accessible UI components and simplified navigation system with maximum 2-level depth",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create Material Design 3 theme with high contrast colors\n2. Implement large touch targets (minimum 48dp) for all interactive elements\n3. Design simplified navigation with bottom navigation and back button\n4. Build core screens (device pairing, dashboard, schedule, emergency contacts)\n5. Implement content scaling for different visual needs\n6. Create custom UI components with semantic properties for screen readers\n7. Add comprehensive content descriptions for all UI elements",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Device Connectivity and Background Services",
-            "description": "Implement Bluetooth connectivity, background services, and device pairing functionality",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create Bluetooth service for device discovery and pairing\n2. Implement foreground service for maintaining device connections\n3. Add visual guides for device pairing process\n4. Implement connection status indicators with accessibility considerations\n5. Create battery optimization exceptions for reliable background operation\n6. Add error handling with user-friendly recovery options\n7. Implement WorkManager for scheduled tasks and synchronization",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Offline Data Management",
-            "description": "Develop robust offline data storage, synchronization, and caching mechanisms",
-            "dependencies": [
-              1,
-              3
-            ],
-            "details": "1. Implement Room database for local storage\n2. Create data models with accessibility metadata\n3. Build synchronization service with conflict resolution\n4. Implement data caching strategies for offline operation\n5. Add data migration capabilities for app updates\n6. Create backup and restore functionality\n7. Implement data validation and error handling for corrupted data",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Accessibility Features and Input Methods",
-            "description": "Implement comprehensive accessibility features including voice input, haptic feedback, and screen reader support",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Integrate TalkBack support with custom content descriptions\n2. Implement voice input for all text fields and commands\n3. Add haptic feedback patterns for different interactions\n4. Create custom gesture recognition for simplified navigation\n5. Implement text-to-speech for important notifications\n6. Add support for external accessibility devices\n7. Create accessibility testing suite with automated checks",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "dependencies": [
+          4
+        ],
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 7,
-        "title": "Implement Schedule and Reminder System",
-        "description": "Build intelligent scheduling system with pattern learning, medication management, and multi-modal reminder delivery",
-        "details": "1. Create schedule management REST APIs\n2. Implement recurrence patterns with Quartz scheduler\n3. Build notification engine with priority queuing:\n   - Critical: Medication, emergencies\n   - High: Appointments, important tasks\n   - Normal: Routine reminders\n4. Develop pattern learning algorithm:\n   - Analyze completion times\n   - Suggest optimal reminder timing\n   - Adjust based on user response\n5. Create medication tracking features:\n   - Visual pill recognition using AI\n   - Dosage confirmation workflow\n   - Refill prediction algorithm\n6. Implement reminder escalation:\n   - Initial gentle reminder\n   - Follow-up with increased urgency\n   - Guardian notification if ignored\n7. Build contextual reminder system:\n   - Location-based triggers\n   - Time-of-day optimization\n   - Activity correlation\n8. Add voice reminder generation\n9. Create reminder templates for common tasks",
-        "testStrategy": "1. Test scheduler reliability and timing accuracy\n2. Verify notification delivery across channels\n3. Test pattern learning with simulated data\n4. Validate medication tracking accuracy\n5. Test escalation workflows\n6. Load test with thousands of concurrent schedules",
-        "priority": "medium",
-        "dependencies": [
-          6
-        ],
+        "title": "Phase 2: AI 통합 - MediaPipe Pose 낙상 감지 구현",
+        "description": "MediaPipe Pose를 활용하여 실시간 자세 추정 및 낙상 감지 시스템을 구현합니다.",
+        "details": "- MediaPipe Pose 모델 통합\n- 실시간 자세 추정 파이프라인\n- 낙상 감지 알고리즘 구현\n- 긴급 상황 판단 로직\n- 자동 알림 시스템 연동\n- 오탐지 방지 메커니즘\n- 자세 데이터 저장 및 분석",
+        "testStrategy": "- 낙상 감지 정확도 테스트\n- 실시간 처리 성능 검증\n- 다양한 자세 시나리오 테스트\n- 긴급 알림 전송 테스트",
         "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Develop Schedule Management APIs and Data Models",
-            "description": "Create the core scheduling system APIs and data models to manage user schedules, appointments, and recurring events.",
-            "dependencies": [],
-            "details": "1. Design and implement Schedule and ScheduleItem entities with JPA annotations\n2. Create DTO classes for schedule creation, update, and retrieval\n3. Develop REST endpoints for CRUD operations on schedules\n4. Implement recurrence pattern logic using Quartz scheduler\n5. Create service layer with business logic for schedule management\n6. Add validation for schedule conflicts and timing constraints",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Build Notification Engine with Priority Handling",
-            "description": "Develop a robust notification system that can prioritize and deliver reminders based on importance levels.",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create notification data models with priority levels (Critical, High, Normal)\n2. Implement notification queuing system with Redis\n3. Develop priority-based delivery algorithms\n4. Create notification templates for different types of reminders\n5. Implement escalation workflows for unacknowledged critical notifications\n6. Add multi-channel delivery support (push, SMS, in-app)",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement Pattern Learning and Optimization Algorithms",
-            "description": "Create machine learning components that analyze user behavior and optimize reminder timing and frequency.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Design data collection system for user response to reminders\n2. Implement algorithms to analyze completion times and patterns\n3. Create suggestion engine for optimal reminder timing\n4. Develop feedback loop for continuous improvement\n5. Add user preference weighting to the algorithm\n6. Implement A/B testing framework for algorithm validation",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Develop Medication Tracking and Management System",
-            "description": "Build features for tracking medications, including visual recognition, dosage confirmation, and reminder scheduling.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Create medication data models with dosage, frequency, and instructions\n2. Implement visual pill recognition using AI integration\n3. Develop dosage confirmation workflows with photo verification\n4. Create medication inventory tracking and refill reminders\n5. Implement medication schedule generation based on prescription data\n6. Add emergency contact notification for missed critical medications",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create Contextual Reminder Delivery System",
-            "description": "Develop a system that delivers reminders with appropriate context and in the right format based on user situation and preferences.",
-            "dependencies": [
-              1,
-              2,
-              3
-            ],
-            "details": "1. Implement context-aware delivery based on user location and activity\n2. Create multi-modal reminder formats (text, audio, visual)\n3. Develop adaptive reminder intensity based on user response\n4. Implement reminder bundling to prevent notification fatigue\n5. Create simplified visual instructions for complex tasks\n6. Add confirmation and follow-up mechanisms for important reminders",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "dependencies": [
+          4
+        ],
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 8,
-        "title": "Develop Safety and Emergency Features",
-        "description": "Implement comprehensive safety system including fall detection, wandering prevention, and emergency response protocols",
-        "details": "1. Create fall detection algorithm:\n   - Sensor fusion from accelerometer/gyroscope\n   - Machine learning model for fall patterns\n   - False positive filtering\n2. Implement emergency response system:\n   - Automatic alert generation\n   - GPS location sharing\n   - Emergency contact cascade\n   - Integration with local emergency services\n3. Build geofencing capabilities:\n   - Safe zone definition interface\n   - Boundary crossing detection\n   - Progressive alerts (warning → alert → emergency)\n4. Create wandering detection:\n   - Route pattern analysis\n   - Unusual location identification\n   - Return navigation guidance\n5. Implement SOS button functionality:\n   - Triple-tap activation\n   - Voice-activated emergency\n   - Silent alert option\n6. Build incident recording:\n   - Audio/video capture during emergencies\n   - Automatic cloud backup\n   - Chain of custody preservation\n7. Create emergency contact management\n8. Implement battery-critical protocols",
-        "testStrategy": "1. Test fall detection accuracy with simulated data\n2. Verify emergency alert delivery times\n3. Test geofencing accuracy and battery impact\n4. Validate GPS accuracy in various environments\n5. Test emergency protocols end-to-end\n6. Stress test with multiple simultaneous emergencies",
-        "priority": "high",
+        "title": "Phase 2: AI 통합 - 상황 분석 알고리즘 개발",
+        "description": "AI 모델들의 결과를 종합하여 BIF 사용자를 위한 맞춤형 상황 분석 및 행동 제안 알고리즘을 개발합니다.",
+        "details": "- 멀티모달 데이터 통합 (이미지, 텍스트, 위치)\n- 상황 컨텍스트 분석 엔진\n- BIF 사용자 맞춤 의사결정 트리\n- 위험도 평가 시스템\n- 행동 제안 생성기\n- 학습 기반 개인화\n- 실시간 피드백 처리",
+        "testStrategy": "- 상황 분석 정확도 테스트\n- 제안 적절성 평가\n- 응답 시간 벤치마크\n- 사용자 시나리오 테스트",
+        "status": "pending",
         "dependencies": [
+          5,
+          6,
           7
         ],
-        "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement Fall Detection Algorithm and Sensor Fusion",
-            "description": "Develop and integrate a reliable fall detection system using accelerometer and gyroscope data with machine learning for pattern recognition",
-            "dependencies": [],
-            "details": "- Create sensor data collection module from device accelerometer/gyroscope\n- Develop machine learning model to recognize fall patterns\n- Implement sensor fusion algorithm to combine multiple data sources\n- Create threshold-based filtering to reduce false positives\n- Design adaptive sensitivity based on user mobility profile\n- Implement battery-efficient background monitoring",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Build Emergency Response and Alert System",
-            "description": "Create a comprehensive emergency response system that triggers appropriate actions when safety incidents are detected",
-            "dependencies": [
-              1
-            ],
-            "details": "- Develop automatic alert generation based on fall detection\n- Implement escalation protocol with configurable timeouts\n- Create GPS location sharing with emergency contacts\n- Build integration with local emergency services API\n- Implement voice call automation for emergency contacts\n- Design visual and audio alerts with accessibility considerations",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Develop Geofencing and Location Monitoring",
-            "description": "Create a system to define safe zones and monitor user location with appropriate alerts when boundaries are crossed",
-            "dependencies": [],
-            "details": "- Implement safe zone definition interface with visual map\n- Create boundary crossing detection algorithm\n- Develop progressive alert system (warning → alert → emergency)\n- Implement battery-efficient location monitoring\n- Create time-based geofencing rules (different zones for different times)\n- Design caregiver notification system for zone violations",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Wandering Detection and Navigation Assistance",
-            "description": "Develop algorithms to detect wandering behavior and provide navigation assistance to help users return to familiar locations",
-            "dependencies": [
-              3
-            ],
-            "details": "- Create pattern recognition for repetitive movement detection\n- Implement unusual route detection algorithm\n- Develop simplified navigation guidance to return home\n- Create visual landmark-based directions for familiar locations\n- Implement time-based wandering detection (unusual locations at unusual times)\n- Design calming interface for disorientation scenarios",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create SOS Functionality and Emergency Recording",
-            "description": "Implement user-triggered emergency features including SOS button, voice recording, and situation documentation",
-            "dependencies": [
-              2
-            ],
-            "details": "- Develop easily accessible SOS button with haptic feedback\n- Implement emergency voice recording feature\n- Create automatic photo/video capture of surroundings\n- Build secure storage for emergency recordings\n- Implement automatic transcription of voice recordings\n- Design confirmation system to prevent accidental activation",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Develop Emergency Contact Management System",
-            "description": "Create a system to manage emergency contacts with prioritization, scheduling, and notification preferences",
-            "dependencies": [],
-            "details": "- Implement contact database with prioritization system\n- Create contact verification system\n- Develop contact availability scheduling (time-based routing)\n- Implement notification preference management\n- Create visual contact selection interface with photos\n- Design emergency contact testing feature to verify response times",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 9,
-        "title": "Build Social Interaction Support System",
-        "description": "Create AI-powered features for emotion recognition, conversation assistance, and social cue interpretation",
-        "details": "1. Integrate emotion recognition API:\n   - Facial expression analysis\n   - Voice tone interpretation\n   - Body language cues\n2. Build conversation assistance:\n   - Real-time prompt generation\n   - Context-appropriate responses\n   - Small talk suggestions\n3. Create social situation interpreter:\n   - Crowd analysis\n   - Social norm guidance\n   - Cultural context awareness\n4. Implement conflict detection:\n   - Aggressive behavior identification\n   - De-escalation suggestions\n   - Emergency trigger integration\n5. Build social skills training mode:\n   - Practice scenarios\n   - Progress tracking\n   - Positive reinforcement\n6. Create social event preparation:\n   - Pre-event coaching\n   - During-event support\n   - Post-event reflection\n7. Implement privacy controls:\n   - Face blurring for others\n   - Consent management\n   - Data minimization",
-        "testStrategy": "1. Test emotion recognition accuracy\n2. Validate conversation prompts appropriateness\n3. Test privacy protection mechanisms\n4. Verify real-time performance requirements\n5. Test with diverse social scenarios\n6. Validate cultural sensitivity of suggestions",
-        "priority": "medium",
-        "dependencies": [
-          8
-        ],
+        "title": "Phase 3: 실시간 처리 - WebSocket 실시간 통신 구현",
+        "description": "WebSocket을 사용하여 실시간 양방향 통신 시스템을 구현하고, BIF 사용자와 보호자 간의 즉각적인 정보 공유를 지원합니다.",
+        "details": "- Spring WebSocket 설정\n- STOMP 프로토콜 구현\n- 실시간 위치 공유 채널\n- 긴급 알림 채널\n- 활동 상태 브로드캐스트\n- 연결 상태 관리\n- 재연결 메커니즘",
+        "testStrategy": "- WebSocket 연결 테스트\n- 메시지 전송/수신 검증\n- 대용량 동시 접속 테스트\n- 연결 복구 테스트",
         "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement Emotion Recognition Integration",
-            "description": "Develop and integrate the emotion recognition system that can analyze facial expressions, voice tone, and body language to help BIF users understand emotional cues.",
-            "dependencies": [],
-            "details": "1. Integrate with facial expression analysis API\n2. Implement voice tone analysis for emotional context\n3. Create body language interpretation algorithms\n4. Design user-friendly visual feedback for detected emotions\n5. Implement confidence scoring for emotion detection accuracy\n6. Create calibration system for individual user sensitivity",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Build Conversation Assistance and Prompting System",
-            "description": "Develop a real-time conversation support system that provides contextual prompts, response suggestions, and small talk assistance for BIF users.",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create context-aware conversation prompt generator\n2. Implement real-time response suggestions based on conversation flow\n3. Build small talk template library with cultural variations\n4. Design unobtrusive UI for displaying conversation prompts\n5. Implement conversation history analysis for personalized suggestions\n6. Create difficulty-adaptive prompting based on user profile",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Develop Social Situation Interpretation System",
-            "description": "Create a system that helps BIF users understand social contexts, group dynamics, and appropriate behaviors in different social settings.",
-            "dependencies": [
-              1,
-              2
-            ],
-            "details": "1. Implement crowd analysis algorithms to detect group dynamics\n2. Create social norm guidance based on situation context\n3. Build cultural context awareness with regional adaptations\n4. Design visual cues for social situation interpretation\n5. Implement social pressure detection\n6. Create quiet/overstimulation zone identification",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Conflict Detection and De-escalation",
-            "description": "Build a system that can identify potential conflict situations, aggressive behavior, and provide de-escalation strategies for BIF users.",
-            "dependencies": [
-              1,
-              3
-            ],
-            "details": "1. Develop aggressive behavior identification algorithms\n2. Create de-escalation suggestion library with contextual triggers\n3. Implement emergency alert system for serious situations\n4. Design calming techniques presentation interface\n5. Build conflict prediction based on conversation analysis\n6. Create guardian notification system for high-risk situations",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create Privacy Controls and Data Management System",
-            "description": "Implement comprehensive privacy controls, consent management, and data handling policies for the social interaction support system.",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "details": "1. Design granular privacy settings for different social features\n2. Implement consent management for emotion and conversation recording\n3. Create data retention policies with automatic purging\n4. Build anonymization layer for social data processing\n5. Implement on-device processing options to minimize data transmission\n6. Create privacy-focused user education materials",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "dependencies": [
+          4
+        ],
+        "priority": "high",
+        "subtasks": []
       },
       {
         "id": 10,
-        "title": "Implement Navigation and Wayfinding Features",
-        "description": "Develop comprehensive navigation system for indoor/outdoor wayfinding with simplified instructions and public transportation support",
-        "details": "1. Create landmark recognition system:\n   - Visual landmark database\n   - Custom landmark addition\n   - Landmark-based navigation\n2. Build indoor navigation:\n   - Wi-Fi/Bluetooth beacon integration\n   - Visual pathway recognition\n   - Step-by-step photo guidance\n3. Implement outdoor navigation:\n   - Simplified Google Maps integration\n   - Visual turn-by-turn instructions\n   - Landmark-based directions\n4. Create public transport assistance:\n   - Route simplification algorithm\n   - Visual stop recognition\n   - Transfer timing alerts\n   - Delay handling protocols\n5. Build destination reminder system:\n   - Purpose tracking\n   - Task completion verification\n   - Return journey planning\n6. Implement lost protocols:\n   - Disorientation detection\n   - Calm-down guidance\n   - Automatic help requests\n   - Breadcrumb trail recording\n7. Create familiar route learning:\n   - Pattern recognition\n   - Route optimization\n   - Confidence building\n8. Add accessibility information:\n   - Wheelchair access\n   - Sensory considerations\n   - Crowd level indicators",
-        "testStrategy": "1. Test landmark recognition accuracy\n2. Verify indoor positioning precision\n3. Test navigation in complex environments\n4. Validate public transport integration\n5. Test lost protocol activation\n6. Verify offline navigation capabilities",
-        "priority": "medium",
+        "title": "Phase 3: 실시간 처리 - 비디오 스트리밍 파이프라인 구축",
+        "description": "웨어러블 카메라의 비디오 스트림을 실시간으로 처리하기 위한 파이프라인을 구축합니다.",
+        "details": "- WebRTC 서버 구축\n- 비디오 스트림 수신 처리\n- 프레임 추출 및 큐잉\n- 적응형 비트레이트 조절\n- 네트워크 상태 모니터링\n- 스트림 녹화 옵션\n- 대역폭 최적화",
+        "testStrategy": "- 스트리밍 지연시간 측정\n- 다양한 네트워크 환경 테스트\n- 동시 스트림 처리 테스트\n- 품질 저하 시나리오 테스트",
+        "status": "pending",
         "dependencies": [
           9
         ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Phase 3: 실시간 처리 - 엣지 컴퓨팅 로직 구현",
+        "description": "민감한 데이터의 로컬 처리를 위한 엣지 컴퓨팅 시스템을 구현하여 프라이버시를 보호합니다.",
+        "details": "- 엣지 디바이스 통신 프로토콜\n- 로컬 AI 모델 배포 시스템\n- 데이터 필터링 로직\n- 민감 정보 마스킹\n- 엣지-클라우드 동기화\n- 오프라인 모드 지원\n- 엣지 리소스 관리",
+        "testStrategy": "- 엣지 처리 성능 테스트\n- 프라이버시 보호 검증\n- 오프라인 모드 테스트\n- 동기화 정확성 테스트",
         "status": "pending",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Landmark Recognition and Database Development",
-            "description": "Create a visual landmark recognition system with database for storing and identifying landmarks relevant to BIF users",
-            "dependencies": [],
-            "details": "1. Develop image recognition algorithm optimized for landmarks\n2. Create database schema for landmark storage\n3. Implement landmark categorization (public buildings, stores, transit stations)\n4. Add functionality for users/guardians to add custom landmarks\n5. Design simplified landmark descriptions suitable for cognitive accessibility",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Indoor Navigation with Beacon Integration",
-            "description": "Build indoor navigation system utilizing Bluetooth/WiFi beacons for precise positioning in enclosed spaces",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Implement beacon detection and triangulation algorithm\n2. Create indoor mapping system with accessibility features\n3. Develop step-by-step photo guidance for complex indoor environments\n4. Add audio cues for direction changes\n5. Implement fallback navigation when beacons are unavailable",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Outdoor Navigation with Simplified Directions",
-            "description": "Develop outdoor navigation system with cognitively accessible directions based on landmarks rather than complex instructions",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Integrate with Google Maps API for base navigation\n2. Create algorithm to simplify complex directions\n3. Replace distance measurements with visual landmarks\n4. Implement visual turn-by-turn instructions with real photos\n5. Add offline navigation capabilities for areas with poor connectivity",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Public Transportation Assistance",
-            "description": "Implement public transportation guidance with simplified route planning and real-time alerts",
-            "dependencies": [
-              3
-            ],
-            "details": "1. Integrate public transportation APIs for schedule information\n2. Develop route simplification algorithm for transit options\n3. Create visual and audio alerts for approaching stops\n4. Implement transfer assistance with step-by-step guidance\n5. Add fare information and payment reminders",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Lost Protocols and Safety Features",
-            "description": "Create safety system for when users become disoriented, including guardian alerts and emergency assistance",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "details": "1. Implement detection algorithm for unusual movement patterns\n2. Create one-touch 'I'm lost' button with location sharing\n3. Develop guardian notification system with user's location\n4. Add automated guidance to return to familiar locations\n5. Implement emergency services contact feature with location data",
-            "status": "pending",
-            "testStrategy": ""
-          }
-        ]
+        "dependencies": [
+          10
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Phase 3: 실시간 처리 - 응답 시간 최적화",
+        "description": "전체 시스템의 응답 시간을 3초 이내로 최적화하여 BIF 사용자에게 즉각적인 지원을 제공합니다.",
+        "details": "- 비동기 처리 파이프라인\n- 캐싱 전략 최적화\n- 데이터베이스 쿼리 최적화\n- API 응답 시간 모니터링\n- 병목 현상 분석 도구\n- 로드 밸런싱 구현\n- CDN 활용 전략",
+        "testStrategy": "- 부하 테스트 (100+ 동시 사용자)\n- API 응답 시간 측정\n- 캐시 히트율 분석\n- 시스템 리소스 모니터링",
+        "status": "pending",
+        "dependencies": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Phase 4: 사용자 경험 - 모바일 앱 백엔드 API 개발",
+        "description": "React Native 모바일 앱을 위한 백엔드 API를 개발하고, BIF 사용자에게 최적화된 인터페이스를 제공합니다.",
+        "details": "- 모바일 특화 API 설계\n- 푸시 알림 서비스 구현\n- 오프라인 동기화 API\n- 이미지/비디오 업로드 API\n- 배터리 절약 모드 지원\n- 모바일 세션 관리\n- API 버전 관리",
+        "testStrategy": "- 모바일 네트워크 환경 테스트\n- 푸시 알림 전송 테스트\n- 오프라인 동기화 검증\n- API 버전 호환성 테스트",
+        "status": "pending",
+        "dependencies": [
+          12
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Phase 4: 사용자 경험 - BIF 사용자 테스트 지원 시스템",
+        "description": "BIF 사용자의 특성을 고려한 테스트 데이터 수집 및 분석 시스템을 구축합니다.",
+        "details": "- 사용자 행동 로깅 시스템\n- 인터랙션 패턴 분석\n- A/B 테스트 프레임워크\n- 사용성 메트릭 수집\n- 피드백 수집 API\n- 테스트 그룹 관리\n- 익명화된 데이터 저장",
+        "testStrategy": "- 로깅 시스템 정확성 검증\n- 데이터 익명화 테스트\n- 메트릭 수집 성능 테스트\n- A/B 테스트 로직 검증",
+        "status": "pending",
+        "dependencies": [
+          13
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Phase 4: 사용자 경험 - 접근성 기능 강화",
+        "description": "WCAG 2.1 AA 준수를 위한 백엔드 접근성 기능을 구현하고, BIF 사용자를 위한 추가 지원 기능을 개발합니다.",
+        "details": "- 음성 안내 텍스트 생성 API\n- 고대비 모드 데이터 지원\n- 큰 글씨 모드 설정 저장\n- 간소화된 네비게이션 데이터\n- 터치 영역 최적화 정보\n- 다국어 간단 문장 지원\n- 접근성 설정 동기화",
+        "testStrategy": "- WCAG 2.1 AA 준수 검증\n- 스크린 리더 호환성 테스트\n- 다양한 접근성 설정 테스트\n- 성능 영향 측정",
+        "status": "pending",
+        "dependencies": [
+          13
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Phase 4: 사용자 경험 - 보호자 대시보드 백엔드 구현",
+        "description": "보호자가 BIF 사용자를 효과적으로 지원할 수 있는 모니터링 대시보드를 위한 백엔드 시스템을 구현합니다.",
+        "details": "- 실시간 위치 추적 API\n- 활동 패턴 분석 리포트\n- 건강 메트릭 대시보드 데이터\n- 긴급 알림 설정 관리\n- 일정 및 복약 현황 조회\n- 권한 기반 데이터 접근\n- 보호자 다중 관리 지원",
+        "testStrategy": "- 실시간 데이터 동기화 테스트\n- 권한 검증 테스트\n- 대시보드 데이터 정확성 검증\n- 다중 보호자 시나리오 테스트",
+        "status": "pending",
+        "dependencies": [
+          13
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Phase 5: 안정화 및 배포 - 성능 최적화",
+        "description": "전체 시스템의 성능을 최적화하여 100명 이상의 동시 사용자를 지원하고, 안정적인 서비스를 제공합니다.",
+        "details": "- 데이터베이스 인덱스 최적화\n- JVM 튜닝 및 메모리 관리\n- 캐시 전략 개선\n- API 응답 압축\n- 이미지/비디오 최적화\n- 쿼리 성능 분석 및 개선\n- 리소스 풀링 최적화",
+        "testStrategy": "- 부하 테스트 (JMeter)\n- 스트레스 테스트\n- 메모리 누수 검사\n- 장기 실행 테스트",
+        "status": "pending",
+        "dependencies": [
+          16
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Phase 5: 안정화 및 배포 - 보안 감사",
+        "description": "BIF 사용자의 민감한 데이터를 보호하기 위한 포괄적인 보안 감사를 수행하고 취약점을 해결합니다.",
+        "details": "- OWASP Top 10 취약점 점검\n- API 보안 강화\n- 데이터 암호화 검증\n- 접근 권한 감사\n- SQL 인젝션 방지 검증\n- XSS 방지 대책 확인\n- 보안 헤더 설정",
+        "testStrategy": "- 침투 테스트\n- 보안 스캐닝 도구 실행\n- 권한 우회 시도 테스트\n- 암호화 강도 검증",
+        "status": "pending",
+        "dependencies": [
+          17
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Phase 5: 안정화 및 배포 - 사용자 교육 자료 제작 지원",
+        "description": "BIF 사용자와 보호자를 위한 교육 자료 제작을 지원하는 백엔드 시스템을 구축합니다.",
+        "details": "- 튜토리얼 콘텐츠 관리 API\n- 사용자 레벨별 가이드 제공\n- 동영상 자막 데이터 관리\n- 진도 추적 시스템\n- FAQ 자동 응답 시스템\n- 쉬운 언어 변환 엔진\n- 교육 완료 인증 시스템",
+        "testStrategy": "- 콘텐츠 로딩 속도 테스트\n- 진도 추적 정확성 검증\n- 다국어 지원 테스트\n- 접근성 기능 테스트",
+        "status": "pending",
+        "dependencies": [
+          16
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Phase 5: 안정화 및 배포 - 정식 서비스 런칭",
+        "description": "AWS 인프라에 서비스를 배포하고, 모니터링 시스템을 구축하여 안정적인 서비스 운영을 시작합니다.",
+        "details": "- AWS EC2/RDS/S3 인프라 구성\n- Docker 컨테이너화\n- CI/CD 파이프라인 구축 (GitHub Actions)\n- CloudWatch 모니터링 설정\n- 자동 스케일링 구성\n- 백업 및 복구 전략\n- 운영 문서 작성",
+        "testStrategy": "- 배포 프로세스 검증\n- 롤백 시나리오 테스트\n- 모니터링 알림 테스트\n- 장애 복구 시뮬레이션",
+        "status": "pending",
+        "dependencies": [
+          17,
+          18,
+          19
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2025-07-14T07:04:24.582Z",
-      "updated": "2025-07-14T07:04:24.582Z",
-      "description": "Tasks for master context"
+      "currentTag": "default",
+      "tags": {
+        "default": {
+          "name": "default",
+          "description": "BIF-AI 백엔드 개발 태스크",
+          "createdAt": "2025-01-16T05:00:00Z"
+        }
+      },
+      "created": "2025-07-16T14:19:03.836Z",
+      "description": "Tasks for master context",
+      "updated": "2025-07-17T05:38:43.126Z"
     }
   }
 }

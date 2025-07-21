@@ -1,0 +1,49 @@
+spring:
+  # Test Database Configuration (H2)
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # JPA Test Settings
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # Disable Redis for tests (use simple cache)
+  cache:
+    type: simple
+  
+  # H2 Console
+  h2:
+    console:
+      enabled: true
+
+# Test Server Configuration
+server:
+  port: 0 # Random port for tests
+
+# Test Logging
+logging:
+  level:
+    root: WARN
+    com.bifai.reminder: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# Disable Flyway for tests
+flyway:
+  enabled: false
+
+# Test Security
+app:
+  jwt:
+    secret: testSecretKeyForJWTTokenGenerationAndValidation1234567890
+    access-token-expiration-ms: 900000
+    refresh-token-expiration-ms: 604800000
