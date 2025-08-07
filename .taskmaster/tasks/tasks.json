@@ -176,7 +176,7 @@
               1
             ],
             "details": "- 긴급 상황 우선순위 분류 시스템\n- 다단계 알림 전송 로직 (SMS, Push, 전화)\n- 보호자/의료진 연락망 관리\n- 응답 시간 모니터링 및 최적화\n- 자동 에스컬레이션 프로세스\n- 알림 전송 실패 시 폴백 메커니즘",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -196,7 +196,7 @@
               3
             ],
             "details": "- 이동 패턴 학습 및 이상 감지 ML 모델\n- 배회 행동 식별 알고리즘\n- 안전 경로 계산 및 제공\n- 음성 기반 길 안내 시스템\n- 랜드마크 기반 위치 확인\n- 보호자 원격 위치 확인 기능",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -216,7 +216,7 @@
             "description": "긴급 상황 시 연락할 보호자 및 의료진 정보를 체계적으로 관리합니다.",
             "dependencies": [],
             "details": "- 연락처 우선순위 관리 시스템\n- 연락처별 권한 설정 기능\n- 의료 정보 연동 (알레르기, 복용약물)\n- 연락처 가용성 실시간 확인\n- 긴급 연락 이력 관리\n- 연락처 정보 암호화 및 보안",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -514,7 +514,7 @@
       },
       "created": "2025-07-16T14:19:03.836Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-07T06:16:31.454Z"
+      "updated": "2025-08-07T07:06:52.302Z"
     }
   }
 }
