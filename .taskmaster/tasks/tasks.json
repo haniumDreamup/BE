@@ -207,7 +207,7 @@
               2
             ],
             "details": "- 원터치 SOS 버튼 처리 로직\n- 자동 음성/영상 녹화 트리거\n- 긴급 상황 데이터 암호화 저장\n- 실시간 스트리밍 기능\n- 위치 정보 포함 긴급 메시지 생성\n- 녹음/녹화 데이터 자동 백업",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -514,7 +514,7 @@
       },
       "created": "2025-07-16T14:19:03.836Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-07T07:06:52.302Z"
+      "updated": "2025-08-07T07:20:04.382Z"
     }
   }
 }

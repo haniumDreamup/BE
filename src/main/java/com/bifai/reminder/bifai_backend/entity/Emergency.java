@@ -94,16 +94,30 @@ public class Emergency {
   @Column(name = "responder_count")
   private Integer responderCount;
 
+  @Column(name = "triggered_at")
+  private LocalDateTime triggeredAt;
+  
+  @Column(name = "cancelled_at")
+  private LocalDateTime cancelledAt;
+  
+  @Column(name = "notification_count")
+  private Integer notificationCount;
+
   /**
    * 긴급 상황 유형
    */
   public enum EmergencyType {
+    FALL_DETECTED("낙상 감지"),
     FALL_DETECTION("낙상 감지"),
+    PANIC_BUTTON("긴급 버튼"),
     MANUAL_ALERT("수동 호출"),
+    LOST("길 잃음"),
+    MEDICAL("의료 긴급"),
     GEOFENCE_EXIT("안전구역 이탈"),
     DEVICE_OFFLINE("기기 오프라인"),
     MEDICATION_MISSED("약물 미복용"),
-    ABNORMAL_PATTERN("비정상 패턴");
+    ABNORMAL_PATTERN("비정상 패턴"),
+    OTHER("기타");
 
     private final String description;
 
@@ -120,10 +134,12 @@ public class Emergency {
    * 긴급 상황 상태
    */
   public enum EmergencyStatus {
+    TRIGGERED("발동됨"),
     ACTIVE("활성"),
     NOTIFIED("알림 전송됨"),
     ACKNOWLEDGED("확인됨"),
     RESOLVED("해결됨"),
+    CANCELLED("취소됨"),
     FALSE_ALARM("오작동");
 
     private final String description;
