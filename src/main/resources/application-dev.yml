@@ -1,0 +1,63 @@
+spring:
+  # Development Database Configuration - Using H2 for easy setup
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  # JPA Development Settings
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # Redis Development Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+  
+  # H2 Console for Development
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Development Server Configuration
+server:
+  port: 8080
+
+# Development Logging
+logging:
+  level:
+    root: INFO
+    com.bifai.reminder: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Flyway Development Configuration
+flyway:
+  enabled: false
+  baseline-on-migrate: true
+  locations: classpath:db/migration
+  validate-on-migrate: true
+
+# Development Security (less restrictive)
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-secret-key-for-testing-only-change-in-production}
+      expiration: 86400000 # 24 hours
+      refresh-expiration: 604800000 # 7 days
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:8080
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true

@@ -1,0 +1,235 @@
+package com.bifai.reminder.bifai_backend.service;
+
+import com.bifai.reminder.bifai_backend.dto.location.*;
+import com.bifai.reminder.bifai_backend.dto.emergency.EmergencyRequest;
+import com.bifai.reminder.bifai_backend.entity.*;
+import com.bifai.reminder.bifai_backend.entity.Location.LocationType;
+import com.bifai.reminder.bifai_backend.entity.Geofence.GeofenceType;
+import com.bifai.reminder.bifai_backend.repository.*;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.*;
+
+/**
+ * LocationService 단위 테스트
+ * Spring 컨텍스트 없이 순수 단위 테스트
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("LocationService 단위 테스트")
+class LocationServiceUnitTest {
+
+  @Mock
+  private LocationRepository locationRepository;
+
+  @Mock
+  private GeofenceRepository geofenceRepository;
+  
+  @Mock
+  private EmergencyRepository emergencyRepository;
+  
+  @Mock
+  private NotificationService notificationService;
+  
+  @Mock
+  private GuardianRepository guardianRepository;
+
+  @Mock
+  private UserRepository userRepository;
+
+  private LocationService locationService;
+
+  private User testUser;
+  private Location testLocation;
+  private Geofence testGeofence;
+
+  @BeforeEach
+  void setUp() {
+    // LocationService 수동 생성
+    locationService = new LocationService(
+        locationRepository,
+        geofenceRepository,
+        emergencyRepository,
+        notificationService,
+        guardianRepository
+    );
+    
+    // BaseService의 userRepository 필드 설정
+    ReflectionTestUtils.setField(locationService, "userRepository", userRepository);
+    
+    // 테스트 사용자 설정
+    testUser = User.builder()
+        .userId(1L)
+        .username("testuser")
+        .fullName("테스트 사용자")
+        .email("test@example.com")
+        .build();
+
+    // 테스트 위치 설정
+    testLocation = Location.builder()
+        .id(1L)
+        .user(testUser)
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .address("서울특별시 중구")
+        .createdAt(LocalDateTime.now())
+        .accuracy(10.0)
+        .isInSafeZone(true)
+        .build();
+
+    // 테스트 안전구역 설정
+    testGeofence = Geofence.builder()
+        .id(1L)
+        .user(testUser)
+        .name("집")
+        .centerLatitude(37.5665)
+        .centerLongitude(126.9780)
+        .radiusMeters(100)
+        .address("서울특별시 중구")
+        .isActive(true)
+        .type(GeofenceType.HOME)
+        .alertOnExit(true)
+        .build();
+
+    // Security Context 설정
+    BifUserDetails userDetails = new BifUserDetails(testUser);
+    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+    securityContext.setAuthentication(
+        new UsernamePasswordAuthenticationToken(userDetails, null, Collections.emptyList())
+    );
+    SecurityContextHolder.setContext(securityContext);
+  }
+
+  @Test
+  @DisplayName("위치 업데이트 - 안전구역 내")
+  void updateLocation_WithinSafeZone() {
+    // given
+    LocationUpdateRequest request = LocationUpdateRequest.builder()
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .accuracy(10.0)
+        .build();
+
+    given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+    given(locationRepository.save(any(Location.class))).willReturn(testLocation);
+    given(geofenceRepository.findActiveGeofencesContainingLocation(1L, 37.5665, 126.9780))
+        .willReturn(Arrays.asList(testGeofence));
+    given(locationRepository.findFirstByUserIdOrderByCreatedAtDesc(1L))
+        .willReturn(Optional.of(testLocation));
+
+    // when
+    LocationResponse response = locationService.updateLocation(request);
+
+    // then
+    assertThat(response).isNotNull();
+    assertThat(response.getId()).isEqualTo(1L);
+    assertThat(response.getLatitude()).isEqualTo(37.5665);
+    assertThat(response.getLongitude()).isEqualTo(126.9780);
+    assertThat(response.getIsInSafeZone()).isTrue();
+
+    verify(locationRepository).save(any(Location.class));
+    verify(emergencyRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("위치 업데이트 - 안전구역 이탈")
+  void updateLocation_OutsideSafeZone() {
+    // given
+    LocationUpdateRequest request = LocationUpdateRequest.builder()
+        .latitude(37.6000)  // 안전구역 밖
+        .longitude(127.0000)
+        .accuracy(10.0)
+        .build();
+
+    Location outsideLocation = Location.builder()
+        .id(2L)
+        .user(testUser)
+        .latitude(37.6000)
+        .longitude(127.0000)
+        .address("서울특별시 성북구")
+        .createdAt(LocalDateTime.now())
+        .accuracy(10.0)
+        .isInSafeZone(false)
+        .build();
+
+    // 이전 위치는 안전구역 내
+    Location previousInSafeZone = Location.builder()
+        .id(1L)
+        .user(testUser)
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .isInSafeZone(true)
+        .createdAt(LocalDateTime.now().minusMinutes(5))
+        .build();
+
+    given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+    given(locationRepository.save(any(Location.class))).willReturn(outsideLocation);
+    // 현재 위치: 안전구역 밖
+    given(geofenceRepository.findActiveGeofencesContainingLocation(1L, 37.6000, 127.0000))
+        .willReturn(Collections.emptyList());
+    // 이전 위치: 안전구역 안
+    given(geofenceRepository.findActiveGeofencesContainingLocation(1L, 37.5665, 126.9780))
+        .willReturn(Arrays.asList(testGeofence));
+    given(locationRepository.findFirstByUserIdOrderByCreatedAtDesc(1L))
+        .willReturn(Optional.of(previousInSafeZone));
+
+    // when
+    LocationResponse response = locationService.updateLocation(request);
+
+    // then
+    assertThat(response).isNotNull();
+    assertThat(response.getIsInSafeZone()).isFalse();
+
+    verify(locationRepository).save(any(Location.class));
+    // 안전구역 이탈 시 긴급상황이 생성되어야 함
+    verify(emergencyRepository).save(any(Emergency.class));
+  }
+
+  @Test
+  @DisplayName("안전구역 생성 - 성공")
+  void createGeofence_Success() {
+    // given
+    GeofenceRequest request = GeofenceRequest.builder()
+        .name("집")
+        .centerLatitude(37.5665)
+        .centerLongitude(126.9780)
+        .radiusMeters(100)
+        .address("서울특별시 중구")
+        .type(GeofenceType.HOME)
+        .build();
+
+    given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+    given(geofenceRepository.existsSimilarGeofence(1L, 37.5665, 126.9780, 0L))
+        .willReturn(false);
+    given(geofenceRepository.save(any(Geofence.class))).willReturn(testGeofence);
+
+    // when
+    GeofenceResponse response = locationService.createGeofence(request);
+
+    // then
+    assertThat(response).isNotNull();
+    assertThat(response.getId()).isEqualTo(1L);
+    assertThat(response.getName()).isEqualTo("집");
+    assertThat(response.getRadiusMeters()).isEqualTo(100);
+    assertThat(response.getIsActive()).isTrue();
+
+    verify(geofenceRepository).save(any(Geofence.class));
+  }
+}

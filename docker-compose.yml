@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bifai-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: bifai_db
+      MYSQL_USER: bifai_user
+      MYSQL_PASSWORD: bifai_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bifai-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis - 추후 필요시 주석 해제
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: bifai-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - bifai-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bifai-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bifai_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: bifai_user
+      SPRING_DATASOURCE_PASSWORD: bifai_pass
+      # SPRING_DATA_REDIS_HOST: redis
+      # SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: docker-jwt-secret-key-for-bifai-backend-application-with-minimum-64-bytes-required-for-hs512-algorithm
+      JWT_EXPIRATION: 3600000
+      JWT_REFRESH_EXPIRATION: 604800000
+      # AWS 설정 (필요시 추가)
+      # AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      # AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      # AWS_REGION: ap-northeast-2
+    depends_on:
+      mysql:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+    networks:
+      - bifai-network
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  bifai-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  # redis_data:

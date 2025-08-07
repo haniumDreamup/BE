@@ -216,7 +216,7 @@
             "description": "긴급 상황 시 연락할 보호자 및 의료진 정보를 체계적으로 관리합니다.",
             "dependencies": [],
             "details": "- 연락처 우선순위 관리 시스템\n- 연락처별 권한 설정 기능\n- 의료 정보 연동 (알레르기, 복용약물)\n- 연락처 가용성 실시간 확인\n- 긴급 연락 이력 관리\n- 연락처 정보 암호화 및 보안",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           }
         ]
@@ -514,7 +514,7 @@
       },
       "created": "2025-07-16T14:19:03.836Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-07T06:01:57.371Z"
+      "updated": "2025-08-07T06:16:31.454Z"
     }
   }
 }

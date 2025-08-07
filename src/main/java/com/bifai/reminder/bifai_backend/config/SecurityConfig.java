@@ -1,0 +1,210 @@
+package com.bifai.reminder.bifai_backend.config;
+
+import com.bifai.reminder.bifai_backend.security.BifAccessDeniedHandler;
+import com.bifai.reminder.bifai_backend.security.BifAuthenticationEntryPoint;
+import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthenticationFilter;
+import com.bifai.reminder.bifai_backend.security.oauth2.CustomOAuth2UserService;
+import com.bifai.reminder.bifai_backend.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.bifai.reminder.bifai_backend.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.context.annotation.Lazy;
+
+import java.util.Arrays;
+
+/**
+ * Spring Security 설정 - JWT 기반 인증 및 권한 관리
+ * BIF 사용자를 위한 보안 설정
+ */
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!simple")
+public class SecurityConfig {
+
+    private final BifUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final BifAuthenticationEntryPoint authenticationEntryPoint;
+    private final BifAccessDeniedHandler accessDeniedHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+
+    /**
+     * Spring Security 필터 체인 설정
+     * 
+     * <p>BIF-AI 시스템의 보안 정책을 정의합니다:</p>
+     * <ul>
+     *   <li>JWT 기반 인증 (Stateless)</li>
+     *   <li>OAuth2 소셜 로그인 지원</li>
+     *   <li>CORS 설정으로 모바일 앱 지원</li>
+     *   <li>공개/보호 엔드포인트 분리</li>
+     * </ul>
+     * 
+     * @param http HttpSecurity 객체
+     * @return 설정된 SecurityFilterChain
+     * @throws Exception 설정 중 발생할 수 있는 예외
+     */
+    @Bean
+    @Lazy
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            // CSRF 비활성화 - JWT를 사용하므로 CSRF 토큰 불필요
+            .csrf(csrf -> csrf.disable())
+            // CORS 설정 적용
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // 세션 사용하지 않음 (JWT 사용)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // 엔드포인트별 접근 권한 설정
+            .authorizeHttpRequests(auth -> auth
+                // === 공개 엔드포인트 ===
+                // 헬스체크
+                .requestMatchers("/health/**").permitAll()
+                .requestMatchers("/api/v1/health/**").permitAll()
+                // H2 콘솔 (개발 환경)
+                .requestMatchers("/h2-console/**").permitAll()
+                // 인증 API (로그인, 회원가입 등)
+                .requestMatchers("/api/v1/auth/**").permitAll()
+                // OAuth2 관련 엔드포인트
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/**").permitAll()
+                // Swagger UI
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                
+                // === 보호 엔드포인트 ===
+                // 그 외 모든 요청은 인증 필요
+                .anyRequest().authenticated()
+            )
+            // H2 콘솔을 위한 iframe 허용
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+            
+            // === OAuth2 로그인 설정 ===
+            .oauth2Login(oauth2 -> oauth2
+                // 사용자 정보 엔드포인트 처리
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService) // 커스텀 사용자 서비스
+                )
+                // 성공/실패 핸들러
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler)
+            )
+            
+            // === 예외 처리 설정 ===
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint) // 인증 실패 처리
+                .accessDeniedHandler(accessDeniedHandler)         // 권한 부족 처리
+            )
+            
+            // === JWT 필터 추가 ===
+            // UsernamePasswordAuthenticationFilter 앞에 JWT 필터 추가
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /**
+     * 비밀번호 인코더 빈 설정
+     * 
+     * <p>BCrypt 알고리즘을 사용하여 비밀번호를 안전하게 암호화합니다.
+     * work factor 12는 보안성과 성능의 균형을 고려한 값입니다.</p>
+     * 
+     * <p>BCrypt 특징:</p>
+     * <ul>
+     *   <li>salt를 자동으로 생성하여 rainbow table 공격 방지</li>
+     *   <li>work factor로 연산 비용 조절 가능</li>
+     *   <li>단방향 해시로 원본 비밀번호 복구 불가</li>
+     * </ul>
+     * 
+     * @return BCryptPasswordEncoder 인스턴스
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // BIF 사용자를 위한 안전한 비밀번호 암호화
+        // work factor 12 사용 (보안성과 성능의 균형)
+        return new BCryptPasswordEncoder(12);
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    /**
+     * CORS(Cross-Origin Resource Sharing) 설정
+     * 
+     * <p>BIF-AI 모바일 앱과 웹 클라이언트의 API 접근을 허용합니다.
+     * 보안을 위해 특정 도메인만 허용하고 있습니다.</p>
+     * 
+     * <p>허용된 도메인:</p>
+     * <ul>
+     *   <li>개발 환경: localhost:3000, localhost:8080</li>
+     *   <li>프로덕션: *.bifai.com</li>
+     *   <li>모바일 앱: capacitor://localhost (iOS), http://localhost (Android)</li>
+     * </ul>
+     * 
+     * @return CORS 설정 소스
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // 허용할 도메인 패턴 설정
+        // BIF 사용자를 위한 모바일 앱 지원 - 보안을 위해 특정 도메인만 허용
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:3000",      // 프론트엔드 개발 서버
+            "http://localhost:8080",      // 백엔드 개발 서버
+            "https://*.bifai.com",        // 프로덕션 도메인
+            "capacitor://localhost",      // iOS 앱 (Capacitor)
+            "http://localhost"            // Android 앱 (Capacitor)
+        ));
+        
+        // 허용할 HTTP 메소드
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        
+        // 허용할 헤더
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",      // JWT 토큰
+            "Content-Type",       // 콘텐츠 타입
+            "X-Requested-With"    // AJAX 요청 식별
+        ));
+        
+        // 클라이언트에 노출할 헤더
+        configuration.setExposedHeaders(Arrays.asList("X-Total-Count")); // 페이지네이션용
+        
+        // 인증 정보 포함 허용 (JWT 토큰 전송을 위해 필요)
+        configuration.setAllowCredentials(true);
+        
+        // preflight 요청 캠시 시간 (1시간)
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 모든 경로에 적용
+        return source;
+    }
+}

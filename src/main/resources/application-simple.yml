@@ -1,0 +1,52 @@
+spring:
+  # Embedded Redis 사용
+  data:
+    redis:
+      host: localhost
+      port: 16379  # 기본 포트와 다른 포트 사용
+      
+  # H2 데이터베이스 설정
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  # H2 콘솔 활성화
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+    
+  # JPA 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    
+  # Flyway 비활성화
+  flyway:
+    enabled: false
+    
+  # 자동 설정 비활성화
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+# JWT 더미 설정
+jwt:
+  secret: test-secret-key
+  expiration: 3600000
+  refresh-expiration: 604800000
+
+# 로깅
+logging:
+  level:
+    root: INFO
+    com.bifai: DEBUG
+
+# 서버 설정
+server:
+  port: 8080

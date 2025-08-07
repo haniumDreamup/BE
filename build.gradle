@@ -1,0 +1,145 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.3'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
+}
+
+// Docker 테스트 스크립트 import
+apply from: 'test-docker.gradle'
+
+group = 'com.bifai.reminder'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+// 메인 클래스 지정
+springBoot {
+	mainClass = 'com.bifai.reminder.bifai_backend.BifaiBackendApplication'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+}
+
+dependencies {
+	// Spring AI BOM for dependency management
+	implementation platform('org.springframework.ai:spring-ai-bom:1.0.0-M7')
+	
+	// Core dependencies
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// Redis 관련 의존성
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.apache.commons:commons-pool2'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	
+	// Jakarta annotation API (formerly javax.annotation)
+	implementation 'jakarta.annotation:jakarta.annotation-api'
+	
+	// JWT Authentication
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+	
+	// Database
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	implementation 'com.h2database:h2'
+	
+	// Database migration
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-mysql'
+	
+	// Utilities
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	
+	// Development tools - 비활성화 (JPA 엔티티 스캔 문제)
+	// developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	// WebSocket for real-time communication
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.webjars:sockjs-client:1.5.1'
+	implementation 'org.webjars:stomp-websocket:2.3.4'
+	implementation 'org.webjars:webjars-locator-core'
+	
+	// API Documentation
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+	
+	// Spring AI Integration
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+	
+	// Google Cloud Vision API
+	implementation platform('com.google.cloud:libraries-bom:26.61.0')
+	implementation 'com.google.cloud:google-cloud-vision'
+	
+	// AWS SDK for future cloud integration
+	implementation platform('software.amazon.awssdk:bom:2.20.56')
+	implementation 'software.amazon.awssdk:s3'
+	
+	// Monitoring
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	
+	// Test dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'com.github.kstyrc:embedded-redis:0.6'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+// JaCoCo 설정
+jacoco {
+	toolVersion = "0.8.10"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+	
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+				"**/config/**",
+				"**/entity/**",
+				"**/dto/**",
+				"**/exception/**",
+				"**/*Application*"
+			])
+		}))
+	}
+}
+
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.70 // 70% 커버리지
+			}
+		}
+	}
+}

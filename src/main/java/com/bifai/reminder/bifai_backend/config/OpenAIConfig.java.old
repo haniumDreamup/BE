@@ -1,0 +1,102 @@
+package com.bifai.reminder.bifai_backend.config;
+
+import com.openai.client.OpenAIClient;
+import com.openai.client.OpenAIClientAsync;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.client.okhttp.OpenAIOkHttpClientAsync;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+import java.util.concurrent.Executors;
+
+/**
+ * OpenAI API 클라이언트 설정
+ * BIF 사용자를 위한 AI 기능 통합
+ */
+@Slf4j
+@Configuration
+@Profile("!test") // 테스트 환경에서는 비활성화
+public class OpenAIConfig {
+  
+  @Value("${openai.api.key:}")
+  private String apiKey;
+  
+  @Value("${openai.api.base-url:https://api.openai.com/v1}")
+  private String baseUrl;
+  
+  @Value("${openai.api.max-retries:3}")
+  private int maxRetries;
+  
+  @Value("${openai.api.timeout:30000}")
+  private int timeoutMs;
+  
+  @Value("${openai.api.organization:}")
+  private String organization;
+  
+  @Value("${openai.api.project:}")
+  private String project;
+  
+  /**
+   * 동기 OpenAI 클라이언트 Bean
+   */
+  @Bean
+  public OpenAIClient openAIClient() {
+    log.info("OpenAI 클라이언트 초기화 중...");
+    
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+      log.warn("OpenAI API 키가 설정되지 않았습니다. AI 기능이 제한될 수 있습니다.");
+      return null;
+    }
+    
+    var builder = OpenAIOkHttpClient.builder()
+        .apiKey(apiKey)
+        .baseUrl(baseUrl)
+        .maxRetries(maxRetries)
+        .streamHandlerExecutor(Executors.newFixedThreadPool(4))
+        .responseValidation(true);
+    
+    if (organization != null && !organization.trim().isEmpty()) {
+      builder.organization(organization);
+    }
+    
+    if (project != null && !project.trim().isEmpty()) {
+      builder.project(project);
+    }
+    
+    log.info("OpenAI 클라이언트 초기화 완료");
+    return builder.build();
+  }
+  
+  /**
+   * 비동기 OpenAI 클라이언트 Bean
+   */
+  @Bean
+  public OpenAIClientAsync openAIClientAsync() {
+    log.info("비동기 OpenAI 클라이언트 초기화 중...");
+    
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+      log.warn("OpenAI API 키가 설정되지 않았습니다. 비동기 AI 기능이 제한될 수 있습니다.");
+      return null;
+    }
+    
+    var builder = OpenAIOkHttpClientAsync.builder()
+        .apiKey(apiKey)
+        .baseUrl(baseUrl)
+        .maxRetries(maxRetries)
+        .streamHandlerExecutor(Executors.newFixedThreadPool(4));
+    
+    if (organization != null && !organization.trim().isEmpty()) {
+      builder.organization(organization);
+    }
+    
+    if (project != null && !project.trim().isEmpty()) {
+      builder.project(project);
+    }
+    
+    log.info("비동기 OpenAI 클라이언트 초기화 완료");
+    return builder.build();
+  }
+}

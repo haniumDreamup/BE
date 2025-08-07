@@ -1,25 +1,113 @@
+# Gradle
+.gradle/
+build/
+\!gradle/wrapper/gradle-wrapper.jar
+\!**/src/main/**/build/
+\!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+\!**/src/main/**/out/
+\!**/src/test/**/out/
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+\!**/src/main/**/bin/
+\!**/src/test/**/bin/
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Application
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Spring Boot
+/target/
+\!.mvn/wrapper/maven-wrapper.jar
+\!**/src/main/**/target/
+\!**/src/test/**/target/
+
+# Database
+*.db
+*.sqlite
+
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-dev-debug.log
 
-# Dependency directories
+# Testing
+/coverage/
+*.lcov
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Archives
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+# Redis
+dump.rdb
+
+# Node (if using frontend)
 node_modules/
 
-# Environment variables
-.env
+# Python (if using scripts)
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# OS specific
-.DS_Store
+# Certificates
+*.pem
+*.key
+*.crt

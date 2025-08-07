@@ -1,0 +1,307 @@
+package com.bifai.reminder.bifai_backend.service;
+
+import com.bifai.reminder.bifai_backend.common.BaseService;
+import com.bifai.reminder.bifai_backend.dto.location.*;
+import com.bifai.reminder.bifai_backend.entity.*;
+import com.bifai.reminder.bifai_backend.entity.Emergency.*;
+import com.bifai.reminder.bifai_backend.entity.Location.*;
+import com.bifai.reminder.bifai_backend.exception.ResourceNotFoundException;
+import com.bifai.reminder.bifai_backend.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * 위치 관리 서비스
+ * 
+ * <p>BIF 사용자의 실시간 위치 추적 및 안전 구역 관리를 담당합니다.
+ * GPS 위치 업데이트, 안전 구역 설정, 위치 이력 관리 등의 기능을 제공합니다.</p>
+ * 
+ * @author BIF-AI 개발팀
+ * @version 1.0
+ * @since 2024-01-01
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class LocationService extends BaseService {
+
+  private final LocationRepository locationRepository;
+  private final GeofenceRepository geofenceRepository;
+  private final EmergencyRepository emergencyRepository;
+  private final NotificationService notificationService;
+  private final GuardianRepository guardianRepository;
+
+  /**
+   * 위치 업데이트
+   * 
+   * <p>사용자의 현재 위치를 업데이트하고 안전 구역 이탈 여부를 확인합니다.
+   * 필요시 긴급 상황을 생성하고 보호자에게 알림을 전송합니다.</p>
+   * 
+   * @param request 위치 업데이트 요청 정보
+   * @return 업데이트된 위치 정보
+   */
+  @Transactional
+  public LocationResponse updateLocation(LocationUpdateRequest request) {
+    // 현재 사용자 조회
+    User user = getCurrentUser();
+
+    // 안전 구역 확인
+    List<Geofence> activeGeofences = geofenceRepository.findActiveGeofencesContainingLocation(
+        user.getId(), request.getLatitude(), request.getLongitude());
+    
+    boolean isInSafeZone = !activeGeofences.isEmpty();
+    Geofence currentGeofence = activeGeofences.stream()
+        .filter(g -> g.isActiveAt(LocalDateTime.now()))
+        .findFirst()
+        .orElse(null);
+
+    // 이전 위치 조회
+    Location previousLocation = locationRepository
+        .findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+        .orElse(null);
+
+    // 위치 정보 생성
+    Location location = Location.builder()
+        .user(user)
+        .latitude(request.getLatitude())
+        .longitude(request.getLongitude())
+        .altitude(request.getAltitude())
+        .accuracy(request.getAccuracy())
+        .speed(request.getSpeed())
+        .heading(request.getHeading())
+        .address(request.getAddress())
+        .locationType(request.getLocationType() != null ? 
+            request.getLocationType() : LocationType.REAL_TIME)
+        .isInSafeZone(isInSafeZone)
+        .currentGeofence(currentGeofence)
+        .deviceId(request.getDeviceId())
+        .batteryLevel(request.getBatteryLevel())
+        .isCharging(request.getIsCharging())
+        .networkType(request.getNetworkType())
+        .provider(request.getProvider())
+        .activityType(request.getActivityType())
+        .activityConfidence(request.getActivityConfidence())
+        .build();
+
+    location = locationRepository.save(location);
+
+    // 안전 구역 이탈/진입 확인 및 알림
+    checkGeofenceTransition(user, previousLocation, location, activeGeofences);
+
+    log.info("위치 업데이트: userId={}, location=({},{}), inSafeZone={}", 
+        user.getId(), request.getLatitude(), request.getLongitude(), isInSafeZone);
+
+    return LocationResponse.from(location);
+  }
+
+  /**
+   * 현재 위치 조회
+   * 
+   * @param userId 사용자 ID
+   * @return 최신 위치 정보
+   * @throws ResourceNotFoundException 위치 정보를 찾을 수 없는 경우
+   */
+  public LocationResponse getCurrentLocation(Long userId) {
+    Location location = locationRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("위치 정보를 찾을 수 없습니다"));
+    
+    return LocationResponse.from(location);
+  }
+
+  /**
+   * 안전 구역 설정
+   * 
+   * <p>새로운 안전 구역을 생성합니다.
+   * 중복된 위치에 안전 구역이 있는지 확인합니다.</p>
+   * 
+   * @param request 안전 구역 생성 요청 정보
+   * @return 생성된 안전 구역 정보
+   * @throws IllegalArgumentException 이미 유사한 위치에 안전 구역이 존재하는 경우
+   */
+  @Transactional
+  public GeofenceResponse createGeofence(GeofenceRequest request) {
+    // 현재 사용자 조회
+    User user = getCurrentUser();
+
+    // 중복 확인
+    if (geofenceRepository.existsSimilarGeofence(
+        user.getId(), request.getCenterLatitude(), 
+        request.getCenterLongitude(), 0L)) {
+      throw new IllegalArgumentException("이미 유사한 위치에 안전 구역이 설정되어 있습니다");
+    }
+
+    // 안전 구역 생성
+    Geofence geofence = Geofence.builder()
+        .user(user)
+        .name(request.getName())
+        .description(request.getDescription())
+        .centerLatitude(request.getCenterLatitude())
+        .centerLongitude(request.getCenterLongitude())
+        .radiusMeters(request.getRadiusMeters())
+        .address(request.getAddress())
+        .type(request.getType() != null ? request.getType() : Geofence.GeofenceType.CUSTOM)
+        .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+        .alertOnEntry(request.getAlertOnEntry())
+        .alertOnExit(request.getAlertOnExit())
+        .startTime(request.getStartTime())
+        .endTime(request.getEndTime())
+        .activeDays(request.getActiveDays())
+        .priority(request.getPriority())
+        .createdBy(user)
+        .build();
+
+    geofence = geofenceRepository.save(geofence);
+    
+    log.info("안전 구역 생성: userId={}, geofenceId={}, name={}", 
+        user.getId(), geofence.getId(), geofence.getName());
+
+    return GeofenceResponse.from(geofence);
+  }
+
+  /**
+   * 사용자의 안전 구역 목록 조회
+   * 
+   * @param userId 사용자 ID
+   * @return 안전 구역 목록 (우선순위 순)
+   */
+  public List<GeofenceResponse> getUserGeofences(Long userId) {
+    List<Geofence> geofences = geofenceRepository.findByUserIdOrderByPriorityAsc(userId);
+    return geofences.stream()
+        .map(GeofenceResponse::from)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * 위치 이력 조회
+   * 
+   * @param userId 사용자 ID
+   * @param pageable 페이지 정보
+   * @return 위치 이력 페이지
+   */
+  public Page<LocationResponse> getLocationHistory(Long userId, Pageable pageable) {
+    Page<Location> locations = locationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    return locations.map(LocationResponse::from);
+  }
+
+  /**
+   * 안전 구역 이탈/진입 확인
+   * 
+   * <p>이전 위치와 현재 위치를 비교하여 안전 구역 이탈/진입을 감지합니다.
+   * 필요시 긴급 상황을 생성하고 알림을 전송합니다.</p>
+   * 
+   * @param user 사용자
+   * @param previousLocation 이전 위치
+   * @param currentLocation 현재 위치
+   * @param currentGeofences 현재 위치에 해당하는 안전 구역 목록
+   */
+  private void checkGeofenceTransition(User user, Location previousLocation, 
+                                      Location currentLocation, List<Geofence> currentGeofences) {
+    if (previousLocation == null) {
+      return;
+    }
+
+    // 이전 위치의 안전 구역
+    List<Geofence> previousGeofences = geofenceRepository.findActiveGeofencesContainingLocation(
+        user.getId(), previousLocation.getLatitude(), previousLocation.getLongitude());
+
+    // 이탈한 안전 구역 확인
+    for (Geofence geofence : previousGeofences) {
+      if (!currentGeofences.contains(geofence) && geofence.getAlertOnExit()) {
+        handleGeofenceExit(user, geofence, currentLocation);
+      }
+    }
+
+    // 진입한 안전 구역 확인
+    for (Geofence geofence : currentGeofences) {
+      if (!previousGeofences.contains(geofence) && geofence.getAlertOnEntry()) {
+        handleGeofenceEntry(user, geofence, currentLocation);
+      }
+    }
+  }
+
+  /**
+   * 안전 구역 이탈 처리
+   * 
+   * <p>사용자가 안전 구역을 이탈했을 때 긴급 상황을 생성하고
+   * 보호자에게 알림을 전송합니다.</p>
+   * 
+   * @param user 사용자
+   * @param geofence 이탈한 안전 구역
+   * @param location 현재 위치
+   */
+  private void handleGeofenceExit(User user, Geofence geofence, Location location) {
+    log.warn("안전 구역 이탈: userId={}, geofenceName={}", user.getId(), geofence.getName());
+    
+    // 긴급 상황 생성
+    Emergency emergency = Emergency.builder()
+        .user(user)
+        .type(EmergencyType.GEOFENCE_EXIT)
+        .status(EmergencyStatus.ACTIVE)
+        .latitude(location.getLatitude())
+        .longitude(location.getLongitude())
+        .address(location.getAddress())
+        .description(geofence.getName() + " 안전 구역을 벗어났습니다")
+        .severity(EmergencySeverity.MEDIUM)
+        .triggeredBy(TriggerSource.SYSTEM)
+        .build();
+    
+    emergencyRepository.save(emergency);
+    
+    // 보호자에게 알림
+    notificationService.sendPushNotification(
+        user.getId(), 
+        "안전 구역 이탈", 
+        user.getFullName() + "님이 " + geofence.getName() + "을(를) 벗어났습니다"
+    );
+  }
+
+  /**
+   * 안전 구역 진입 처리
+   * 
+   * <p>사용자가 안전 구역에 진입했을 때 보호자에게 알림을 전송합니다.</p>
+   * 
+   * @param user 사용자
+   * @param geofence 진입한 안전 구역
+   * @param location 현재 위치
+   */
+  private void handleGeofenceEntry(User user, Geofence geofence, Location location) {
+    log.info("안전 구역 진입: userId={}, geofenceName={}", user.getId(), geofence.getName());
+    
+    // 보호자에게 알림
+    notificationService.sendPushNotification(
+        user.getId(), 
+        "안전 구역 진입", 
+        user.getFullName() + "님이 " + geofence.getName() + "에 도착했습니다"
+    );
+  }
+
+  /**
+   * 사용자가 자신의 위치인지 확인
+   * 
+   * @param userId 사용자 ID
+   * @return 본인의 위치 여부
+   */
+  public boolean isOwnLocation(Long userId) {
+    return isCurrentUser(userId);
+  }
+
+  /**
+   * 보호자가 담당 사용자의 위치인지 확인
+   * 
+   * @param userId 사용자 ID
+   * @return 보호자의 담당 사용자 여부
+   */
+  public boolean isGuardianOfUser(Long userId) {
+    // GuardianRepository의 메서드를 사용해 확인
+    return guardianRepository.existsByUserIdAndGuardianUserId(userId, getCurrentUserId());
+  }
+}

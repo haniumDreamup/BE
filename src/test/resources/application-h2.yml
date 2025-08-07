@@ -1,0 +1,39 @@
+spring:
+  # H2 데이터베이스 설정
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  # JPA 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+    
+  # Flyway 비활성화
+  flyway:
+    enabled: false
+    
+  # 자동 설정 제외
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+# JWT 설정
+jwt:
+  secret: h2-test-secret-key
+  expiration: 3600000
+  refresh-expiration: 604800000
+
+# 로깅
+logging:
+  level:
+    root: WARN
+    com.bifai: INFO
