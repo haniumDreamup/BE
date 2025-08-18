@@ -41,9 +41,13 @@ logging:
 flyway:
   enabled: false
 
+# Disable FCM for tests
+fcm:
+  enabled: false
+
 # Test Security
 app:
   jwt:
-    secret: testSecretKeyForJWTTokenGenerationAndValidation1234567890
+    secret: testSecretKeyForJWTTokenGenerationAndValidation1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ
     access-token-expiration-ms: 900000
     refresh-token-expiration-ms: 604800000

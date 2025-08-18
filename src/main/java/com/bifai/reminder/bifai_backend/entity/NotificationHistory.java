@@ -2,334 +2,238 @@ package com.bifai.reminder.bifai_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * 알림 발송 이력 엔티티
- * 모든 알림의 발송 기록 및 응답 추적
+ * 알림 이력 엔티티
+ * 
+ * 발송된 푸시 알림의 이력을 저장하고 관리
  */
 @Entity
 @Table(name = "notification_history", indexes = {
-    @Index(name = "idx_notification_user", columnList = "user_id"),
-    @Index(name = "idx_notification_recipient", columnList = "recipient_id"),
-    @Index(name = "idx_notification_status", columnList = "status"),
-    @Index(name = "idx_notification_channel", columnList = "channel"),
-    @Index(name = "idx_notification_sent_at", columnList = "sent_at"),
-    @Index(name = "idx_notification_event_type", columnList = "event_type")
+    @Index(name = "idx_notification_user_created", columnList = "user_id, created_at DESC"),
+    @Index(name = "idx_notification_type_status", columnList = "notification_type, status"),
+    @Index(name = "idx_notification_created_at", columnList = "created_at DESC")
 })
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class NotificationHistory {
-
+public class NotificationHistory extends BaseEntity {
+  
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "history_id")
   private Long id;
-
+  
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
-  private User user; // 알림 대상 사용자
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "recipient_id")
-  private EmergencyContact recipient; // 실제 수신자 (보호자)
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "template_id")
-  private NotificationTemplate template;
-
-  @Column(name = "notification_id", unique = true, length = 50)
-  private String notificationId; // 외부 시스템 참조 ID
-
-  @Column(name = "channel", nullable = false, length = 20)
+  private User user;
+  
+  @Column(name = "notification_type", nullable = false, length = 30)
   @Enumerated(EnumType.STRING)
-  private NotificationChannel channel;
-
-  @Column(name = "event_type", nullable = false, length = 50)
-  @Enumerated(EnumType.STRING)
-  private NotificationTemplate.EventType eventType;
-
-  @Column(name = "severity_level", length = 20)
-  @Enumerated(EnumType.STRING)
-  private NotificationTemplate.SeverityLevel severityLevel;
-
-  @Column(name = "status", nullable = false, length = 20)
+  private NotificationType notificationType;
+  
+  @Column(nullable = false, length = 200)
+  private String title;
+  
+  @Column(columnDefinition = "TEXT")
+  private String body;
+  
+  @Column(name = "device_token", length = 500)
+  private String deviceToken;
+  
+  @Column(name = "device_id", length = 255)
+  private String deviceId;
+  
+  @Column(length = 30)
   @Enumerated(EnumType.STRING)
   private NotificationStatus status;
-
-  @Column(name = "title", length = 200)
-  private String title;
-
-  @Column(name = "message", columnDefinition = "TEXT")
-  private String message;
-
-  @Column(name = "recipient_address", length = 200)
-  private String recipientAddress; // 전화번호, 이메일 등
-
+  
   @Column(name = "sent_at")
   private LocalDateTime sentAt;
-
-  @Column(name = "delivered_at")
-  private LocalDateTime deliveredAt;
-
+  
   @Column(name = "read_at")
   private LocalDateTime readAt;
-
+  
+  @Column(name = "clicked_at")
+  private LocalDateTime clickedAt;
+  
+  @Column(name = "error_message", length = 500)
+  private String errorMessage;
+  
+  @Column(name = "retry_count")
+  @Builder.Default
+  private Integer retryCount = 0;
+  
+  @Column(name = "fcm_message_id", length = 255)
+  private String fcmMessageId;
+  
+  @Column(columnDefinition = "JSON")
+  private String metadata; // 추가 데이터 JSON
+  
+  @Column(length = 20)
+  @Enumerated(EnumType.STRING)
+  private Priority priority;
+  
+  @Column(name = "related_entity_id")
+  private Long relatedEntityId; // 관련 엔티티 ID (medication_id, schedule_id 등)
+  
+  @Column(name = "related_entity_type", length = 50)
+  private String relatedEntityType; // 관련 엔티티 타입
+  
+  @Column(name = "notification_id", unique = true, length = 255)
+  private String notificationId; // 알림 고유 ID
+  
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "recipient_id")
+  private EmergencyContact recipient; // 수신자 (보호자 등)
+  
+  @Column(name = "event_type", length = 50)
+  @Enumerated(EnumType.STRING)
+  private NotificationTemplate.EventType eventType; // 이벤트 타입
+  
+  @Column(name = "severity_level", length = 20)
+  private String severityLevel; // 심각도
+  
+  @Column(name = "max_retries")
+  @Builder.Default
+  private Integer maxRetries = 3;
+  
   @Column(name = "responded_at")
   private LocalDateTime respondedAt;
-
+  
   @Column(name = "response_type", length = 50)
   private String responseType;
-
+  
   @Column(name = "response_data", columnDefinition = "TEXT")
   private String responseData;
-
-  @Column(name = "retry_count")
-  private Integer retryCount;
-
-  @Column(name = "max_retries")
-  private Integer maxRetries;
-
-  @Column(name = "last_retry_at")
-  private LocalDateTime lastRetryAt;
-
-  @Column(name = "error_message", columnDefinition = "TEXT")
-  private String errorMessage;
-
-  @Column(name = "error_code", length = 50)
-  private String errorCode;
-
-  @Column(name = "provider", length = 50)
-  private String provider; // AWS SNS, Twilio, FCM, etc.
-
-  @Column(name = "provider_message_id", length = 100)
-  private String providerMessageId;
-
-  @Column(name = "cost")
-  private Double cost; // 발송 비용 (SMS 등)
-
-  @Column(name = "metadata", columnDefinition = "JSON")
-  private String metadata; // 추가 메타데이터
-
-  @Column(name = "escalation_level")
-  private Integer escalationLevel;
-
-  @Column(name = "escalated_from")
-  private Long escalatedFromId; // 이전 알림 ID
-
-  @Column(name = "escalated_to")
-  private Long escalatedToId; // 다음 알림 ID
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "emergency_id")
-  private Emergency emergency; // 관련 긴급 상황
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "fall_event_id")
-  private FallEvent fallEvent; // 관련 낙상 이벤트
-
+  
   @Column(name = "response_time_seconds")
-  private Long responseTimeSeconds;
-
+  private Integer responseTimeSeconds;
+  
+  @Column(name = "escalation_level")
+  @Builder.Default
+  private Integer escalationLevel = 0;
+  
+  @Column(name = "escalated_from_id")
+  private Long escalatedFromId;
+  
+  @Column(name = "channel", length = 20)
+  private String channel; // SMS, EMAIL, PUSH 등
+  
+  @Column(name = "cost")
+  private Double cost; // 알림 발송 비용
+  
   @Column(name = "is_test")
-  private Boolean isTest;
-
-  @Column(name = "priority")
-  private Integer priority;
-
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
+  @Builder.Default
+  private Boolean isTest = false;
+  
   /**
-   * 알림 채널
+   * 알림 타입
    */
-  public enum NotificationChannel {
-    SMS("문자"),
-    EMAIL("이메일"),
-    PUSH("푸시"),
-    WEBSOCKET("웹소켓"),
-    IN_APP("인앱"),
-    PHONE_CALL("전화"),
-    KAKAO_TALK("카카오톡");
-
+  public enum NotificationType {
+    MEDICATION("약물 복용"),
+    SCHEDULE("일정"),
+    EMERGENCY("긴급"),
+    REMINDER("일반 알림"),
+    HEALTH("건강 체크"),
+    LOCATION("위치 알림"),
+    GUARDIAN("보호자 알림"),
+    SYSTEM("시스템 알림");
+    
     private final String description;
-
-    NotificationChannel(String description) {
+    
+    NotificationType(String description) {
       this.description = description;
     }
-
+    
     public String getDescription() {
       return description;
     }
   }
-
+  
   /**
    * 알림 상태
    */
   public enum NotificationStatus {
     PENDING("대기중"),
-    SENDING("발송중"),
-    SENT("발송완료"),
-    DELIVERED("전달완료"),
+    SENT("전송됨"),
+    DELIVERED("도착함"),
     READ("읽음"),
-    RESPONDED("응답함"),
+    CLICKED("클릭됨"),
     FAILED("실패"),
-    EXPIRED("만료"),
-    CANCELLED("취소됨"),
-    RETRYING("재시도중");
-
+    EXPIRED("만료됨");
+    
     private final String description;
-
+    
     NotificationStatus(String description) {
       this.description = description;
     }
-
+    
     public String getDescription() {
       return description;
     }
   }
-
-  @PrePersist
-  protected void onCreate() {
-    if (status == null) {
-      status = NotificationStatus.PENDING;
+  
+  /**
+   * 우선순위
+   */
+  public enum Priority {
+    HIGH("높음"),
+    NORMAL("보통"),
+    LOW("낮음");
+    
+    private final String description;
+    
+    Priority(String description) {
+      this.description = description;
     }
-    if (retryCount == null) {
-      retryCount = 0;
-    }
-    if (maxRetries == null) {
-      maxRetries = 3;
-    }
-    if (isTest == null) {
-      isTest = false;
-    }
-    if (escalationLevel == null) {
-      escalationLevel = 0;
+    
+    public String getDescription() {
+      return description;
     }
   }
-
+  
   /**
-   * 발송 시작
+   * 알림 전송 완료 처리
    */
-  public void markAsSending() {
-    this.status = NotificationStatus.SENDING;
-    this.sentAt = LocalDateTime.now();
-  }
-
-  /**
-   * 발송 완료
-   */
-  public void markAsSent(String providerMessageId) {
+  public void markAsSent(String fcmMessageId) {
     this.status = NotificationStatus.SENT;
-    this.providerMessageId = providerMessageId;
-    if (this.sentAt == null) {
-      this.sentAt = LocalDateTime.now();
-    }
+    this.sentAt = LocalDateTime.now();
+    this.fcmMessageId = fcmMessageId;
   }
-
+  
   /**
-   * 전달 완료
-   */
-  public void markAsDelivered() {
-    this.status = NotificationStatus.DELIVERED;
-    this.deliveredAt = LocalDateTime.now();
-  }
-
-  /**
-   * 읽음 처리
+   * 알림 읽음 처리
    */
   public void markAsRead() {
     this.status = NotificationStatus.READ;
     this.readAt = LocalDateTime.now();
-    if (this.deliveredAt == null) {
-      this.deliveredAt = this.readAt;
-    }
   }
-
+  
   /**
-   * 응답 처리
+   * 알림 클릭 처리
    */
-  public void markAsResponded(String responseType, String responseData) {
-    this.status = NotificationStatus.RESPONDED;
-    this.respondedAt = LocalDateTime.now();
-    this.responseType = responseType;
-    this.responseData = responseData;
-    
-    // 응답 시간 계산
-    if (this.sentAt != null) {
-      this.responseTimeSeconds = 
-          java.time.Duration.between(this.sentAt, this.respondedAt).getSeconds();
-    }
+  public void markAsClicked() {
+    this.status = NotificationStatus.CLICKED;
+    this.clickedAt = LocalDateTime.now();
   }
-
+  
   /**
-   * 실패 처리
+   * 알림 실패 처리
    */
-  public void markAsFailed(String errorCode, String errorMessage) {
+  public void markAsFailed(String errorMessage) {
     this.status = NotificationStatus.FAILED;
-    this.errorCode = errorCode;
     this.errorMessage = errorMessage;
+    this.retryCount++;
   }
-
-  /**
-   * 재시도
-   */
-  public void retry() {
-    this.retryCount = (this.retryCount == null ? 0 : this.retryCount) + 1;
-    this.status = NotificationStatus.RETRYING;
-    this.lastRetryAt = LocalDateTime.now();
-  }
-
+  
   /**
    * 재시도 가능 여부
    */
   public boolean canRetry() {
-    return retryCount < maxRetries && 
-           status != NotificationStatus.DELIVERED &&
-           status != NotificationStatus.READ &&
-           status != NotificationStatus.RESPONDED;
-  }
-
-  /**
-   * 에스컬레이션 설정
-   */
-  public void setEscalation(Long fromId, Integer level) {
-    this.escalatedFromId = fromId;
-    this.escalationLevel = level;
-  }
-
-  /**
-   * 응답 시간 계산 (초)
-   */
-  public long calculateResponseTime() {
-    if (sentAt != null && respondedAt != null) {
-      return java.time.Duration.between(sentAt, respondedAt).getSeconds();
-    }
-    return -1;
-  }
-
-  /**
-   * 성공 여부
-   */
-  public boolean isSuccessful() {
-    return status == NotificationStatus.DELIVERED ||
-           status == NotificationStatus.READ ||
-           status == NotificationStatus.RESPONDED;
-  }
-
-  /**
-   * 긴급 알림 여부
-   */
-  public boolean isUrgent() {
-    return severityLevel == NotificationTemplate.SeverityLevel.CRITICAL ||
-           (priority != null && priority >= 9);
+    return retryCount < 3 && status == NotificationStatus.FAILED;
   }
 }

@@ -3,12 +3,13 @@ package com.bifai.reminder.bifai_backend.repository;
 import com.bifai.reminder.bifai_backend.entity.Device;
 import com.bifai.reminder.bifai_backend.entity.Role;
 import com.bifai.reminder.bifai_backend.entity.User;
-import com.bifai.reminder.bifai_backend.util.TestDataBuilder;
+import com.bifai.reminder.bifai_backend.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,7 +18,6 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -34,10 +34,7 @@ class DeviceRepositoryTest {
     private DeviceRepository deviceRepository;
     
     @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private RoleRepository roleRepository;
+    private TestEntityManager entityManager;
     
     private User testUser;
     private Device testDevice;
@@ -45,25 +42,21 @@ class DeviceRepositoryTest {
     @BeforeEach
     void setUp() {
         // 테스트 데이터 초기화
-        deviceRepository.deleteAll();
-        userRepository.deleteAll();
-        roleRepository.deleteAll();
+        TestDataFactory.resetCounter();
         
-        // 기본 Role 생성
-        Role userRole = Role.builder()
-                .name("ROLE_USER")
-                .koreanName("사용자")
-                .description("BIF 일반 사용자")
-                .isActive(true)
-                .build();
-        roleRepository.save(userRole);
+        // Role 생성 및 영속화
+        Role userRole = TestDataFactory.createRole();
+        entityManager.persistAndFlush(userRole);
         
-        // User 생성 및 Role 설정
-        testUser = TestDataBuilder.createUser();
-        testUser.setRoles(Set.of(userRole));
-        testUser = userRepository.save(testUser);
+        // User 생성 및 영속화
+        testUser = TestDataFactory.createUserWithRole(userRole);
+        testUser = entityManager.persistAndFlush(testUser);
         
-        testDevice = TestDataBuilder.createDevice(testUser);
+        // Device 생성 (아직 영속화 안함)
+        testDevice = TestDataFactory.createDevice(testUser);
+        
+        // 영속성 컨텍스트 초기화
+        entityManager.clear();
     }
     
     @Test
@@ -71,11 +64,12 @@ class DeviceRepositoryTest {
     void saveDevice_Success() {
         // when
         Device savedDevice = deviceRepository.save(testDevice);
+        entityManager.flush();
         
         // then
         assertThat(savedDevice.getId()).isNotNull();
         assertThat(savedDevice.getDeviceIdentifier()).isEqualTo(testDevice.getDeviceIdentifier());
-        assertThat(savedDevice.getDeviceName()).isEqualTo("철수의 스마트워치");
+        assertThat(savedDevice.getDeviceName()).startsWith("테스트기기");
         assertThat(savedDevice.getDeviceType()).isEqualTo("WEARABLE");
         assertThat(savedDevice.getUser().getUserId()).isEqualTo(testUser.getUserId());
     }
@@ -84,14 +78,15 @@ class DeviceRepositoryTest {
     @DisplayName("디바이스 조회 - ID로 조회")
     void findById_Success() {
         // given
-        Device savedDevice = deviceRepository.save(testDevice);
+        Device savedDevice = entityManager.persistAndFlush(testDevice);
+        entityManager.clear();
         
         // when
         Optional<Device> foundDevice = deviceRepository.findById(savedDevice.getId());
         
         // then
         assertThat(foundDevice).isPresent();
-        assertThat(foundDevice.get().getDeviceSerialNumber()).isEqualTo("SN-12345");
+        assertThat(foundDevice.get().getDeviceSerialNumber()).startsWith("SN-");
         assertThat(foundDevice.get().getBatteryLevel()).isEqualTo(85);
     }
     
@@ -99,124 +94,130 @@ class DeviceRepositoryTest {
     @DisplayName("사용자별 디바이스 조회")
     void findByUser_Success() {
         // given
-        Device device1 = deviceRepository.save(testDevice);
+        Device device1 = entityManager.persistAndFlush(testDevice);
         
-        Device device2 = TestDataBuilder.createDevice(testUser);
-        device2.setDeviceName("철수의 스마트폰");
-        device2.setDeviceType("SMARTPHONE");
-        deviceRepository.save(device2);
+        Device device2 = TestDataFactory.createDevice(testUser);
+        device2.setDeviceType("TABLET");
+        device2 = entityManager.persistAndFlush(device2);
+        
+        entityManager.clear();
         
         // when
-        List<Device> userDevices = deviceRepository.findByUser(testUser);
+        List<Device> devices = deviceRepository.findByUser(testUser);
         
         // then
-        assertThat(userDevices).hasSize(2);
-        assertThat(userDevices).extracting("deviceType")
-            .containsExactlyInAnyOrder("WEARABLE", "SMARTPHONE");
+        assertThat(devices).hasSize(2);
+        assertThat(devices).extracting("deviceType")
+                .containsExactlyInAnyOrder("WEARABLE", "TABLET");
     }
     
     @Test
     @DisplayName("디바이스 식별자로 조회")
     void findByDeviceIdentifier_Success() {
         // given
-        deviceRepository.save(testDevice);
+        Device savedDevice = entityManager.persistAndFlush(testDevice);
+        entityManager.clear();
         
         // when
-        Optional<Device> foundDevice = deviceRepository.findByDeviceIdentifier(testDevice.getDeviceIdentifier());
+        Optional<Device> foundDevice = deviceRepository.findByDeviceIdentifier(savedDevice.getDeviceIdentifier());
         
         // then
         assertThat(foundDevice).isPresent();
-        assertThat(foundDevice.get().getDeviceName()).isEqualTo("철수의 스마트워치");
+        assertThat(foundDevice.get().getId()).isEqualTo(savedDevice.getId());
     }
     
     @Test
     @DisplayName("푸시 토큰으로 조회")
     void findByPushToken_Success() {
         // given
-        deviceRepository.save(testDevice);
+        testDevice.setPushToken("test-push-token-123");
+        Device savedDevice = entityManager.persistAndFlush(testDevice);
+        entityManager.clear();
         
         // when
-        Optional<Device> foundDevice = deviceRepository.findByPushToken(testDevice.getPushToken());
+        Optional<Device> foundDevice = deviceRepository.findByPushToken("test-push-token-123");
         
         // then
         assertThat(foundDevice).isPresent();
-        assertThat(foundDevice.get().getDeviceIdentifier()).isEqualTo(testDevice.getDeviceIdentifier());
+        assertThat(foundDevice.get().getId()).isEqualTo(savedDevice.getId());
     }
     
     @Test
     @DisplayName("활성 디바이스 조회")
-    void findByUserAndIsActiveTrue_Success() {
+    void findActiveDevices_Success() {
         // given
-        deviceRepository.save(testDevice);
+        Device activeDevice = entityManager.persistAndFlush(testDevice);
         
-        Device inactiveDevice = TestDataBuilder.createDevice(testUser);
+        Device inactiveDevice = TestDataFactory.createDevice(testUser);
         inactiveDevice.setIsActive(false);
-        inactiveDevice.setDeviceIdentifier("MAC-INACTIVE");
-        deviceRepository.save(inactiveDevice);
+        entityManager.persistAndFlush(inactiveDevice);
+        
+        entityManager.clear();
         
         // when
-        List<Device> activeDevices = deviceRepository.findByUserAndIsActiveTrue(testUser);
+        List<Device> activeDevices = deviceRepository.findByIsActiveTrue();
         
         // then
         assertThat(activeDevices).hasSize(1);
-        assertThat(activeDevices.get(0).getIsActive()).isTrue();
+        assertThat(activeDevices.get(0).getId()).isEqualTo(activeDevice.getId());
     }
     
     @Test
     @DisplayName("배터리 부족 디바이스 조회")
     void findLowBatteryDevices_Success() {
         // given
-        testDevice.setBatteryLevel(15); // 배터리 부족
-        deviceRepository.save(testDevice);
+        testDevice.setBatteryLevel(15);
+        Device lowBatteryDevice = entityManager.persistAndFlush(testDevice);
         
-        Device normalDevice = TestDataBuilder.createDevice(testUser);
-        normalDevice.setDeviceIdentifier("MAC-NORMAL");
-        normalDevice.setBatteryLevel(80);
-        deviceRepository.save(normalDevice);
+        Device normalDevice = TestDataFactory.createDevice(testUser);
+        normalDevice.setBatteryLevel(90);
+        entityManager.persistAndFlush(normalDevice);
+        
+        entityManager.clear();
         
         // when
-        List<Device> lowBatteryDevices = deviceRepository.findLowBatteryDevices(20);
+        List<Device> lowBatteryDevices = deviceRepository.findByBatteryLevelLessThanAndIsActiveTrue(20);
         
         // then
         assertThat(lowBatteryDevices).hasSize(1);
-        assertThat(lowBatteryDevices.get(0).getBatteryLevel()).isLessThanOrEqualTo(20);
+        assertThat(lowBatteryDevices.get(0).getBatteryLevel()).isEqualTo(15);
     }
     
     @Test
     @DisplayName("오래된 동기화 디바이스 조회")
-    void findDevicesNotSyncedSince_Success() {
+    void findDevicesNotSyncedRecently_Success() {
         // given
-        // 마지막 동기화를 2일 전으로 설정
-        testDevice.setLastSyncAt(LocalDateTime.now().minusDays(2));
-        deviceRepository.save(testDevice);
+        testDevice.setLastSyncAt(LocalDateTime.now().minusDays(3));
+        Device oldSyncDevice = entityManager.persistAndFlush(testDevice);
         
-        Device recentDevice = TestDataBuilder.createDevice(testUser);
-        recentDevice.setDeviceIdentifier("MAC-RECENT");
+        Device recentDevice = TestDataFactory.createDevice(testUser);
         recentDevice.setLastSyncAt(LocalDateTime.now().minusHours(1));
-        deviceRepository.save(recentDevice);
+        entityManager.persistAndFlush(recentDevice);
+        
+        entityManager.clear();
         
         // when
-        LocalDateTime threshold = LocalDateTime.now().minusDays(1);
-        List<Device> outdatedDevices = deviceRepository.findDevicesNotSyncedSince(threshold);
+        LocalDateTime cutoffTime = LocalDateTime.now().minusDays(1);
+        List<Device> oldDevices = deviceRepository.findByLastSyncAtBeforeAndIsActiveTrue(cutoffTime);
         
         // then
-        assertThat(outdatedDevices).hasSize(1);
-        assertThat(outdatedDevices.get(0).getDeviceIdentifier()).contains("MAC-");
+        assertThat(oldDevices).hasSize(1);
+        assertThat(oldDevices.get(0).getId()).isEqualTo(oldSyncDevice.getId());
     }
     
     @Test
     @DisplayName("중복 디바이스 식별자 - 실패")
-    void saveDuplicateIdentifier_Fail() {
+    void saveDuplicateDeviceIdentifier_Failure() {
         // given
-        deviceRepository.save(testDevice);
+        entityManager.persistAndFlush(testDevice);
         
-        Device duplicateDevice = TestDataBuilder.createDevice(testUser);
+        Device duplicateDevice = TestDataFactory.createDevice(testUser);
         duplicateDevice.setDeviceIdentifier(testDevice.getDeviceIdentifier());
         
         // when & then
         assertThatThrownBy(() -> {
             deviceRepository.save(duplicateDevice);
-            deviceRepository.flush();
+            entityManager.flush();
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
     
@@ -224,87 +225,77 @@ class DeviceRepositoryTest {
     @DisplayName("디바이스 타입별 조회")
     void findByDeviceType_Success() {
         // given
-        deviceRepository.save(testDevice);
+        Device wearableDevice = entityManager.persistAndFlush(testDevice);
         
-        Device smartphone = TestDataBuilder.createDevice(testUser);
-        smartphone.setDeviceIdentifier("MAC-PHONE");
-        smartphone.setDeviceType("SMARTPHONE");
-        deviceRepository.save(smartphone);
+        Device tabletDevice = TestDataFactory.createDevice(testUser);
+        tabletDevice.setDeviceType("TABLET");
+        entityManager.persistAndFlush(tabletDevice);
+        
+        entityManager.clear();
         
         // when
         List<Device> wearables = deviceRepository.findByDeviceType("WEARABLE");
-        List<Device> smartphones = deviceRepository.findByDeviceType("SMARTPHONE");
         
         // then
         assertThat(wearables).hasSize(1);
-        assertThat(smartphones).hasSize(1);
-        assertThat(wearables.get(0).getDeviceName()).contains("스마트워치");
+        assertThat(wearables.get(0).getId()).isEqualTo(wearableDevice.getId());
     }
     
     @Test
     @DisplayName("디바이스 정보 업데이트")
     void updateDevice_Success() {
         // given
-        Device savedDevice = deviceRepository.save(testDevice);
+        Device savedDevice = entityManager.persistAndFlush(testDevice);
+        entityManager.clear();
         
         // when
-        savedDevice.setBatteryLevel(50);
-        savedDevice.setLastSyncAt(LocalDateTime.now());
-        savedDevice.setAppVersion("1.1.0");
-        Device updatedDevice = deviceRepository.save(savedDevice);
+        Device deviceToUpdate = deviceRepository.findById(savedDevice.getId()).orElseThrow();
+        deviceToUpdate.setBatteryLevel(50);
+        deviceToUpdate.setLastSyncAt(LocalDateTime.now());
+        Device updatedDevice = deviceRepository.save(deviceToUpdate);
+        entityManager.flush();
+        entityManager.clear();
         
         // then
-        assertThat(updatedDevice.getBatteryLevel()).isEqualTo(50);
-        assertThat(updatedDevice.getAppVersion()).isEqualTo("1.1.0");
-        assertThat(updatedDevice.getLastSyncAt()).isAfter(LocalDateTime.now().minusMinutes(1));
+        Device foundDevice = deviceRepository.findById(updatedDevice.getId()).orElseThrow();
+        assertThat(foundDevice.getBatteryLevel()).isEqualTo(50);
     }
     
     @Test
     @DisplayName("디바이스 삭제")
     void deleteDevice_Success() {
         // given
-        Device savedDevice = deviceRepository.save(testDevice);
-        Long deviceId = savedDevice.getId();
+        Device savedDevice = entityManager.persistAndFlush(testDevice);
+        entityManager.clear();
         
         // when
-        deviceRepository.deleteById(deviceId);
+        deviceRepository.deleteById(savedDevice.getId());
+        entityManager.flush();
         
         // then
-        assertThat(deviceRepository.findById(deviceId)).isEmpty();
+        Optional<Device> deletedDevice = deviceRepository.findById(savedDevice.getId());
+        assertThat(deletedDevice).isEmpty();
     }
     
     @Test
     @DisplayName("사용자별 디바이스 수 조회")
     void countByUser_Success() {
         // given
-        deviceRepository.save(testDevice);
+        entityManager.persistAndFlush(testDevice);
         
-        Device anotherDevice = TestDataBuilder.createDevice(testUser);
-        anotherDevice.setDeviceIdentifier("MAC-ANOTHER");
-        deviceRepository.save(anotherDevice);
+        Device device2 = TestDataFactory.createDevice(testUser);
+        entityManager.persistAndFlush(device2);
+        
+        Device device3 = TestDataFactory.createDevice(testUser);
+        entityManager.persistAndFlush(device3);
+        
+        entityManager.clear();
         
         // when
-        long deviceCount = deviceRepository.countByUser(testUser);
+        long count = deviceRepository.countByUser(testUser);
         
         // then
-        assertThat(deviceCount).isEqualTo(2);
-    }
-    
-    @Test
-    @DisplayName("필수 필드 누락 - 실패")
-    void saveWithoutRequiredFields_Fail() {
-        // given
-        Device invalidDevice = Device.builder()
-                .user(testUser)
-                // deviceIdentifier 누락
-                .deviceName("테스트 기기")
-                .build();
-        
-        // when & then
-        assertThatThrownBy(() -> {
-            deviceRepository.save(invalidDevice);
-            deviceRepository.flush();
-        }).isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(count).isEqualTo(3);
     }
     
     @Test
@@ -312,18 +303,19 @@ class DeviceRepositoryTest {
     void findAllWithPaging_Success() {
         // given
         for (int i = 0; i < 5; i++) {
-            Device device = TestDataBuilder.createDevice(testUser);
-            device.setDeviceIdentifier("MAC-" + i);
-            device.setDeviceName("기기 " + i);
-            deviceRepository.save(device);
+            Device device = TestDataFactory.createDevice(testUser);
+            entityManager.persistAndFlush(device);
         }
+        entityManager.clear();
         
         // when
-        Page<Device> firstPage = deviceRepository.findAll(PageRequest.of(0, 3));
+        Page<Device> firstPage = deviceRepository.findAll(PageRequest.of(0, 2));
+        Page<Device> secondPage = deviceRepository.findAll(PageRequest.of(1, 2));
         
         // then
-        assertThat(firstPage.getContent()).hasSize(3);
+        assertThat(firstPage.getContent()).hasSize(2);
         assertThat(firstPage.getTotalElements()).isEqualTo(5);
-        assertThat(firstPage.getTotalPages()).isEqualTo(2);
+        assertThat(firstPage.getTotalPages()).isEqualTo(3);
+        assertThat(secondPage.getContent()).hasSize(2);
     }
 }

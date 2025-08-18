@@ -19,10 +19,11 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "schedules", indexes = {
-    @Index(name = "idx_schedule_user_id", columnList = "user_id"),
-    @Index(name = "idx_schedule_next_execution", columnList = "next_execution_time"),
-    @Index(name = "idx_schedule_active", columnList = "is_active"),
-    @Index(name = "idx_schedule_type", columnList = "schedule_type")
+    @Index(name = "idx_schedule_user_active_next", columnList = "user_id, is_active, next_execution_time"),
+    @Index(name = "idx_schedule_user_type_active", columnList = "user_id, schedule_type, is_active"),
+    @Index(name = "idx_schedule_active_next", columnList = "is_active, next_execution_time"),
+    @Index(name = "idx_schedule_user_priority", columnList = "user_id, priority DESC, next_execution_time"),
+    @Index(name = "idx_schedule_creator_active", columnList = "created_by_type, is_active, user_id")
 })
 @Getter
 @Setter

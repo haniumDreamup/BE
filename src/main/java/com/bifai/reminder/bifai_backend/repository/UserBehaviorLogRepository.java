@@ -103,4 +103,10 @@ public interface UserBehaviorLogRepository extends JpaRepository<UserBehaviorLog
   Double getAverageSessionDuration(@Param("userId") Long userId, 
                                    @Param("start") LocalDateTime start, 
                                    @Param("end") LocalDateTime end);
+  
+  // 사용자와 세션 ID로 로그 조회
+  List<UserBehaviorLog> findByUserAndSessionId(User user, String sessionId);
+  
+  // 사용자와 생성일시 범위로 조회
+  List<UserBehaviorLog> findByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
 }

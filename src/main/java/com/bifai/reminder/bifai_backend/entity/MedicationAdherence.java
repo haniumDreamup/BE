@@ -81,7 +81,7 @@ public class MedicationAdherence extends BaseTimeEntity {
 
     @DecimalMin(value = "0.0")
     @DecimalMax(value = "999.999")
-    @Column(name = "actual_dosage", precision = 6, scale = 3)
+    @Column(name = "actual_dosage", precision = 6)
     @Comment("실제 복용량")
     private BigDecimal actualDosage;
 
@@ -160,11 +160,11 @@ public class MedicationAdherence extends BaseTimeEntity {
     @Comment("복약 장소 설명")
     private String locationDescription;
 
-    @Column(name = "taken_latitude", precision = 10, scale = 8)
+    @Column(name = "taken_latitude", precision = 10)
     @Comment("복약 위치 위도")
     private BigDecimal latitude;
 
-    @Column(name = "taken_longitude", precision = 11, scale = 8)
+    @Column(name = "taken_longitude", precision = 11)
     @Comment("복약 위치 경도")
     private BigDecimal longitude;
 

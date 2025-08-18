@@ -32,7 +32,13 @@ import java.util.Set;
  * @see BaseEntity
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_active_username", columnList = "is_active, username"),
+    @Index(name = "idx_user_active_email", columnList = "is_active, email"),
+    @Index(name = "idx_user_provider", columnList = "provider, provider_id"),
+    @Index(name = "idx_user_last_login", columnList = "last_login_at DESC"),
+    @Index(name = "idx_user_emergency_mode", columnList = "emergency_mode_enabled, is_active")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

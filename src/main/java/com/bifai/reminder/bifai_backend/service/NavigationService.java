@@ -132,7 +132,7 @@ public class NavigationService {
    */
   private void startVoiceGuidance(User user, SafeRoute route, Double currentLat, Double currentLon) {
     String guidance = generateSimpleGuidance(route, currentLat, currentLon);
-    voiceGuidanceService.speak(guidance, user.getPreferredLanguage());
+    voiceGuidanceService.speak(guidance, user.getLanguagePreference() != null ? user.getLanguagePreference() : "ko");
   }
 
   /**

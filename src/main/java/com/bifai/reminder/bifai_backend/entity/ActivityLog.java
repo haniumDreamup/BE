@@ -117,11 +117,11 @@ public class ActivityLog extends BaseTimeEntity {
     @Comment("활동 장소 설명 (간단한 텍스트)")
     private String locationDescription;
 
-    @Column(name = "activity_latitude", precision = 10, scale = 8)
+    @Column(name = "activity_latitude", precision = 10)
     @Comment("활동 위치 위도")
     private BigDecimal latitude;
 
-    @Column(name = "activity_longitude", precision = 11, scale = 8)
+    @Column(name = "activity_longitude", precision = 11)
     @Comment("활동 위치 경도")
     private BigDecimal longitude;
 

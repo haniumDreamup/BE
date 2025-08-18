@@ -4,6 +4,7 @@ import com.bifai.reminder.bifai_backend.entity.Guardian;
 import com.bifai.reminder.bifai_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -72,13 +73,17 @@ public interface GuardianRepository extends JpaRepository<Guardian, Long> {
     
     /**
      * 특정 사용자의 보호자 조회
+     * user와 guardianUser를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"user", "guardianUser"})
     @Query("SELECT g FROM Guardian g WHERE g.user.userId = :userId AND g.isActive = true AND g.user.isActive = true")
     List<Guardian> findByUser_UserId(@Param("userId") Long userId);
     
     /**
      * 특정 사용자의 주 보호자 조회
+     * user와 guardianUser를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"user", "guardianUser"})
     @Query("SELECT g FROM Guardian g WHERE g.user.userId = :userId AND g.isPrimary = true AND g.isActive = true AND g.user.isActive = true")
     Optional<Guardian> findPrimaryGuardianByUserId(@Param("userId") Long userId);
     

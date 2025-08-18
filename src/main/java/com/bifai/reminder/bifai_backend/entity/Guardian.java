@@ -15,10 +15,12 @@ import java.util.List;
 @Entity
 @Table(name = "guardians", 
        indexes = {
-           @Index(name = "idx_guardian_user", columnList = "user_id"),
-           @Index(name = "idx_guardian_guardian_user", columnList = "guardian_user_id"),
-           @Index(name = "idx_guardian_relationship", columnList = "relationship_type"),
-           @Index(name = "idx_guardian_approval", columnList = "approval_status")
+           @Index(name = "idx_guardian_user_active_primary", columnList = "user_id, is_active, is_primary DESC"),
+           @Index(name = "idx_guardian_user_approval", columnList = "user_id, approval_status, is_active"),
+           @Index(name = "idx_guardian_user_emergency", columnList = "user_id, is_active, emergency_priority"),
+           @Index(name = "idx_guardian_guardian_active", columnList = "guardian_user_id, is_active"),
+           @Index(name = "idx_guardian_alerts", columnList = "can_receive_alerts, is_active, user_id"),
+           @Index(name = "idx_guardian_location_view", columnList = "can_view_location, is_active, user_id")
        },
        uniqueConstraints = {
            @UniqueConstraint(name = "uk_user_guardian", columnNames = {"user_id", "guardian_user_id"})

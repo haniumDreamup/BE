@@ -186,6 +186,23 @@ google:
       path: ${GOOGLE_CLOUD_CREDENTIALS_PATH:}
     project-id: ${GOOGLE_CLOUD_PROJECT_ID:}
 
+# AWS S3 Configuration
+aws:
+  s3:
+    region: ${AWS_REGION:ap-northeast-2}
+    bucket-name: ${S3_BUCKET_NAME:bifai-media}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
+    endpoint: ${AWS_S3_ENDPOINT:}  # LocalStack or custom endpoint
+  cloudfront:
+    url: ${CLOUDFRONT_URL:}  # CDN URL if using CloudFront
+
+# Firebase Cloud Messaging Configuration  
+fcm:
+  project-id: ${FCM_PROJECT_ID:bifai-reminder}
+  credentials-path: ${FCM_CREDENTIALS_PATH:firebase-service-account.json}
+  enabled: ${FCM_ENABLED:false}  # 나중에 true로 변경
+
 # BIF 서비스 전용 데이터베이스 설정
 bif:
   database:

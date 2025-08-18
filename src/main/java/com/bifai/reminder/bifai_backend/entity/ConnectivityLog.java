@@ -80,13 +80,13 @@ public class ConnectivityLog extends BaseEntity {
     /**
      * 연결 시점의 위치 위도
      */
-    @Column(name = "connectivity_latitude", precision = 10, scale = 8)
+    @Column(name = "connectivity_latitude", precision = 10)
     private BigDecimal latitude;
 
     /**
      * 연결 시점의 위치 경도
      */
-    @Column(name = "connectivity_longitude", precision = 11, scale = 8)
+    @Column(name = "connectivity_longitude", precision = 11)
     private BigDecimal longitude;
     
     /**

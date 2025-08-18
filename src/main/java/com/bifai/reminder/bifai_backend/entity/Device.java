@@ -30,11 +30,17 @@ public class Device extends BaseEntity {
     @JsonIgnore
     private User user;
     
-    @Column(name = "device_identifier", nullable = false, unique = true, length = 255)
+    @Column(name = "device_id", nullable = false, unique = true, length = 255)
+    private String deviceId; // 모바일 디바이스 고유 ID
+    
+    @Column(name = "device_identifier", unique = true, length = 255)
     private String deviceIdentifier; // MAC 주소 등 고유 식별자
     
     @Column(name = "device_serial_number", length = 100)
     private String deviceSerialNumber;
+    
+    @Column(name = "device_model", length = 100)
+    private String deviceModel;
     
     @Column(name = "device_name", nullable = false, length = 100)
     private String deviceName;
@@ -63,6 +69,13 @@ public class Device extends BaseEntity {
     @Column(name = "push_token", length = 500)
     private String pushToken;
     
+    @Column(name = "fcm_token", length = 500)
+    private String fcmToken;
+    
+    @Column(name = "notifications_enabled")
+    @Builder.Default
+    private Boolean notificationsEnabled = true;
+    
     @Column(name = "battery_level")
     private Integer batteryLevel;
     
@@ -73,6 +86,9 @@ public class Device extends BaseEntity {
     @Column(name = "last_sync_at")
     private LocalDateTime lastSyncAt;
     
+    @Column(name = "last_active_at")
+    private LocalDateTime lastActiveAt;
+    
     @Column(name = "pairing_code", length = 20)
     private String pairingCode;
     
@@ -81,6 +97,27 @@ public class Device extends BaseEntity {
     
     @Column(name = "registered_at")
     private LocalDateTime registeredAt;
+    
+    // 네트워크 정보
+    @Column(name = "ip_address", length = 50)
+    private String ipAddress;
+    
+    @Column(name = "wifi_ssid", length = 100)
+    private String wifiSsid;
+    
+    @Column(name = "wifi_bssid", length = 50)
+    private String wifiBssid;
+    
+    // 위치 정보
+    @Column(name = "latitude")
+    private Double latitude;
+    
+    @Column(name = "longitude")
+    private Double longitude;
+    
+    // 추가 정보
+    @Column(name = "last_seen")
+    private LocalDateTime lastSeen;
     
     // 관계 매핑
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -135,6 +172,20 @@ public class Device extends BaseEntity {
      */
     public void deactivate() {
         this.isActive = false;
+    }
+    
+    /**
+     * 활성화 상태 설정
+     */
+    public void setActive(boolean active) {
+        this.isActive = active;
+    }
+    
+    /**
+     * 활성화 상태 조회
+     */
+    public boolean isActive() {
+        return Boolean.TRUE.equals(isActive);
     }
     
     

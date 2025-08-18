@@ -94,4 +94,86 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
      * 사용자별 디바이스 수 조회
      */
     long countByUser(User user);
+    
+    /**
+     * 디바이스 ID로 조회
+     */
+    Optional<Device> findByDeviceId(String deviceId);
+    
+    /**
+     * 디바이스 ID와 사용자로 조회
+     */
+    Optional<Device> findByDeviceIdAndUser(String deviceId, User user);
+    
+    /**
+     * 마지막 활동 시간 이전 활성 디바이스 조회
+     */
+    List<Device> findByLastActiveAtBeforeAndIsActiveTrue(LocalDateTime threshold);
+    
+    /**
+     * 활성 디바이스 조회
+     */
+    List<Device> findByIsActiveTrue();
+    
+    /**
+     * 배터리 레벨이 특정 값 이하이고 활성인 디바이스 조회
+     */
+    List<Device> findByBatteryLevelLessThanAndIsActiveTrue(Integer batteryLevel);
+    
+    /**
+     * 마지막 동기화 시간이 특정 시간 이전이고 활성인 디바이스 조회
+     */
+    List<Device> findByLastSyncAtBeforeAndIsActiveTrue(LocalDateTime threshold);
+    
+    /**
+     * 사용자 ID와 디바이스 ID로 조회
+     */
+    @Query("SELECT d FROM Device d WHERE d.user.id = :userId AND d.deviceId = :deviceId")
+    Optional<Device> findByUserIdAndDeviceId(@Param("userId") Long userId, @Param("deviceId") String deviceId);
+    
+    /**
+     * 사용자 ID로 모든 디바이스 조회
+     */
+    @Query("SELECT d FROM Device d WHERE d.user.id = :userId")
+    List<Device> findByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 사용자의 활성 디바이스 조회 (FCM 토큰 있는 것만)
+     */
+    @Query("SELECT d FROM Device d WHERE d.user.id = :userId AND d.isActive = true")
+    List<Device> findActiveDevicesByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 사용자의 가장 최근 활성 디바이스 조회
+     */
+    @Query("SELECT d FROM Device d WHERE d.user.id = :userId AND d.isActive = true ORDER BY d.lastSeen DESC")
+    Optional<Device> findActiveDeviceByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 같은 WiFi 네트워크의 디바이스 조회
+     */
+    @Query("SELECT d FROM Device d WHERE d.wifiBssid = :bssid AND d.isActive = true")
+    List<Device> findByWifiBssid(@Param("bssid") String bssid);
+    
+    /**
+     * 위치 기반 근처 디바이스 조회 (Haversine 공식 사용)
+     */
+    @Query("SELECT d FROM Device d WHERE d.isActive = true AND " +
+           "(6371000 * acos(cos(radians(:lat)) * cos(radians(d.latitude)) * " +
+           "cos(radians(d.longitude) - radians(:lng)) + " +
+           "sin(radians(:lat)) * sin(radians(d.latitude)))) <= :radius")
+    List<Device> findNearbyDevices(@Param("lat") Double latitude, 
+                                   @Param("lng") Double longitude, 
+                                   @Param("radius") Double radius);
+    
+    
+    /**
+     * 보호자-피보호자 관계 디바이스 조회
+     */
+    @Query("SELECT DISTINCT d FROM Device d " +
+           "JOIN Guardian g ON (g.guardian.id = :userId OR g.ward.id = :userId) " +
+           "WHERE (d.user.id = g.guardian.id OR d.user.id = g.ward.id) " +
+           "AND d.user.id != :userId " +
+           "AND d.isActive = true")
+    List<Device> findGuardianRelatedDevices(@Param("userId") Long userId);
 }

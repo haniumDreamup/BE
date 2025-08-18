@@ -3,17 +3,27 @@ package com.bifai.reminder.bifai_backend.websocket;
 import com.bifai.reminder.bifai_backend.controller.WebSocketController;
 import com.bifai.reminder.bifai_backend.dto.websocket.*;
 import com.bifai.reminder.bifai_backend.service.websocket.WebSocketService;
+import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
+import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
+import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.firebase.messaging.FirebaseMessaging;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,17 +37,54 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.flyway.enabled=false",
+    "app.jwt.secret=test-jwt-secret-key-for-bifai-backend-application-test-environment-only-with-minimum-64-bytes-requirement",
+    "app.jwt.access-token-expiration-ms=900000",
+    "app.jwt.refresh-token-expiration-ms=604800000",
+    "fcm.enabled=false",
+    "spring.ai.openai.api-key=test-key"
+})
 @DisplayName("WebSocket 간단한 통합 테스트")
 class SimpleWebSocketTest {
 
   @Autowired
   private WebSocketController webSocketController;
 
-  @MockitoBean
+  @MockBean
   private WebSocketService webSocketService;
 
-  @MockitoBean
+  @MockBean
   private SimpMessagingTemplate messagingTemplate;
+  
+  @MockBean
+  private RedisTemplate<String, Object> redisTemplate;
+  
+  @MockBean
+  private RefreshTokenService refreshTokenService;
+  
+  @MockBean
+  private RedisCacheService redisCacheService;
+  
+  @MockBean
+  private ImageAnnotatorClient imageAnnotatorClient;
+  
+  @MockBean
+  private FirebaseMessaging firebaseMessaging;
+  
+  @MockBean
+  private S3Client s3Client;
+  
+  @MockBean
+  private S3AsyncClient s3AsyncClient;
+  
+  @MockBean
+  private S3Presigner s3Presigner;
 
   private Principal mockPrincipal;
 
@@ -61,7 +108,7 @@ class SimpleWebSocketTest {
 
     LocationUpdateMessage expectedMessage = LocationUpdateMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("test_" + UUID.randomUUID().toString().substring(0, 8))
         .latitude(37.5665)
         .longitude(126.9780)
         .timestamp(LocalDateTime.now())
@@ -120,7 +167,7 @@ class SimpleWebSocketTest {
 
     ActivityStatusMessage expectedMessage = ActivityStatusMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("test_" + UUID.randomUUID().toString().substring(0, 8))
         .status("ACTIVE")
         .statusDescription("활동 중")
         .batteryLevel(75)
@@ -221,7 +268,7 @@ class SimpleWebSocketTest {
 
     LocationUpdateMessage message = LocationUpdateMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("test_" + UUID.randomUUID().toString().substring(0, 8))
         .latitude(37.5665)
         .longitude(126.9780)
         .timestamp(LocalDateTime.now())
@@ -257,7 +304,7 @@ class SimpleWebSocketTest {
 
     ActivityStatusMessage message = ActivityStatusMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("test_" + UUID.randomUUID().toString().substring(0, 8))
         .status("RESTING")
         .statusDescription("배터리 부족")
         .batteryLevel(15)

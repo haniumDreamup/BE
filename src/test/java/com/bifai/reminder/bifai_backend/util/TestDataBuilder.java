@@ -71,9 +71,11 @@ public class TestDataBuilder {
      * 디바이스 생성
      */
     public static Device createDevice(User user) {
+        String timestamp = String.valueOf(System.currentTimeMillis());
         return Device.builder()
                 .user(user)
-                .deviceIdentifier("MAC-" + System.currentTimeMillis())
+                .deviceId("DEV-ID-" + timestamp)  // 필수 필드 추가
+                .deviceIdentifier("MAC-" + timestamp)
                 .deviceSerialNumber("SN-12345")
                 .deviceName("철수의 스마트워치")
                 .deviceType("WEARABLE")
@@ -82,7 +84,7 @@ public class TestDataBuilder {
                 .osType("WearOS")
                 .osVersion("3.0")
                 .appVersion("1.0.0")
-                .pushToken("push-token-" + System.currentTimeMillis())
+                .pushToken("push-token-" + timestamp)
                 .batteryLevel(85)
                 .isActive(true)
                 .lastSyncAt(LocalDateTime.now())

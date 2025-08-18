@@ -17,6 +17,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -50,7 +51,7 @@ class MockWebSocketTest {
     // 테스트 사용자 설정
     testUser = User.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("mock_" + UUID.randomUUID().toString().substring(0, 8))
         .email("test@example.com")
         .build();
 
@@ -76,7 +77,7 @@ class MockWebSocketTest {
 
     LocationUpdateMessage expectedResponse = LocationUpdateMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("mock_" + UUID.randomUUID().toString().substring(0, 8))
         .latitude(37.5665)
         .longitude(126.9780)
         .timestamp(LocalDateTime.now())
@@ -130,7 +131,7 @@ class MockWebSocketTest {
 
     ActivityStatusMessage expectedResponse = ActivityStatusMessage.builder()
         .userId(1L)
-        .username("테스트사용자")
+        .username("mock_" + UUID.randomUUID().toString().substring(0, 8))
         .status("ACTIVE")
         .statusDescription("활동 중")
         .batteryLevel(75)

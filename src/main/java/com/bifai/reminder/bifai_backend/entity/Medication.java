@@ -21,11 +21,12 @@ import java.util.List;
  */
 @Entity
 @Table(name = "medications", indexes = {
-    @Index(name = "idx_medication_user", columnList = "user_id"),
-    @Index(name = "idx_medication_status", columnList = "medication_status"),
-    @Index(name = "idx_medication_priority", columnList = "priority_level"),
-    @Index(name = "idx_medication_active_date", columnList = "is_active, start_date"),
-    @Index(name = "idx_medication_name", columnList = "medication_name")
+    @Index(name = "idx_medication_user_active_priority", columnList = "user_id, is_active, priority_level DESC"),
+    @Index(name = "idx_medication_user_status", columnList = "user_id, medication_status, priority_level DESC"),
+    @Index(name = "idx_medication_user_type", columnList = "user_id, medication_type, is_active"),
+    @Index(name = "idx_medication_dates", columnList = "start_date, end_date, is_active"),
+    @Index(name = "idx_medication_guardian_alert", columnList = "guardian_alert_needed, priority_level, user_id"),
+    @Index(name = "idx_medication_name_search", columnList = "medication_name, generic_name")
 })
 @Getter
 @Setter
@@ -72,7 +73,7 @@ public class Medication extends BaseTimeEntity {
     @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
     @Digits(integer = 8, fraction = 3)
-    @Column(name = "dosage_amount", nullable = false, precision = 11, scale = 3)
+    @Column(name = "dosage_amount", nullable = false, precision = 11)
     @Comment("1회 복용량")
     private BigDecimal dosageAmount;
 

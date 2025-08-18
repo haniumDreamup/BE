@@ -3,6 +3,7 @@ package com.bifai.reminder.bifai_backend.repository;
 import com.bifai.reminder.bifai_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,19 +22,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * 사용자명으로 사용자 찾기 (활성 사용자만)
+     * roles를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE u.username = :username AND u.isActive = true")
     Optional<User> findByUsername(@Param("username") String username);
 
     /**
      * 이메일로 사용자 찾기 (활성 사용자만)
+     * roles를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.isActive = true")
     Optional<User> findByEmail(@Param("email") String email);
 
     /**
      * 사용자명 또는 이메일로 사용자 찾기 (활성 사용자만)
+     * roles를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE (u.username = :usernameOrEmail OR u.email = :usernameOrEmail) AND u.isActive = true")
     Optional<User> findByUsernameOrEmail(@Param("usernameOrEmail") String usernameOrEmail);
 
@@ -52,7 +59,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Guardian 관계 기반 조회
+     * guardians와 roles를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"guardians", "roles"})
     @Query("SELECT u FROM User u JOIN u.guardians g WHERE g.id = :guardianId AND u.isActive = true AND g.isActive = true")
     List<User> findByGuardianId(@Param("guardianId") Long guardianId);
     
@@ -172,4 +181,37 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 이메일 인증된 사용자 수 카운트
      */
     long countByEmailVerifiedTrue();
+    
+    /**
+     * ID로 사용자 조회 (roles 포함)
+     * 로그인 및 인증 시 사용
+     */
+    @EntityGraph(attributePaths = {"roles"})
+    Optional<User> findWithRolesById(Long id);
+    
+    /**
+     * ID로 사용자 조회 (guardians 포함)
+     * 보호자 정보가 필요한 경우 사용
+     */
+    @EntityGraph(attributePaths = {"guardians", "guardians.guardianUser"})
+    Optional<User> findWithGuardiansById(Long id);
+    
+    /**
+     * ID로 사용자 조회 (모든 기본 연관관계 포함)
+     * 사용자 상세 정보 조회 시 사용
+     */
+    @EntityGraph(attributePaths = {"roles", "guardians", "userPreference"})
+    Optional<User> findWithDetailsById(Long id);
+    
+    /**
+     * 모든 활성 사용자 조회 (NotificationScheduler에서 사용)
+     */
+    @Query("SELECT u FROM User u WHERE u.isActive = true")
+    List<User> findAllActiveUsers();
+    
+    /**
+     * 특정 날짜 이후에 활동한 사용자 페이징 조회 (배치 처리용)
+     */
+    @Query("SELECT u FROM User u WHERE u.lastActivityAt >= :since AND u.isActive = true")
+    Page<User> findActiveUsersAfter(@Param("since") LocalDateTime since, Pageable pageable);
 } 

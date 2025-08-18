@@ -2,7 +2,6 @@ package com.bifai.reminder.bifai_backend.repository;
 
 import com.bifai.reminder.bifai_backend.entity.EmergencyContact;
 import com.bifai.reminder.bifai_backend.entity.NotificationHistory;
-import com.bifai.reminder.bifai_backend.entity.NotificationHistory.NotificationChannel;
 import com.bifai.reminder.bifai_backend.entity.NotificationHistory.NotificationStatus;
 import com.bifai.reminder.bifai_backend.entity.NotificationTemplate.EventType;
 import com.bifai.reminder.bifai_backend.entity.User;
@@ -171,11 +170,10 @@ public interface NotificationHistoryRepository extends JpaRepository<Notificatio
    * 전달 완료 처리
    */
   @Modifying
-  @Query("UPDATE NotificationHistory h SET h.status = 'DELIVERED', h.deliveredAt = :deliveredAt " +
+  @Query("UPDATE NotificationHistory h SET h.status = 'DELIVERED' " +
          "WHERE h.notificationId = :notificationId")
   void markAsDelivered(
-      @Param("notificationId") String notificationId, 
-      @Param("deliveredAt") LocalDateTime deliveredAt
+      @Param("notificationId") String notificationId
   );
 
   /**
@@ -224,7 +222,7 @@ public interface NotificationHistoryRepository extends JpaRepository<Notificatio
    */
   boolean existsByUserAndChannelAndCreatedAtAfter(
       User user, 
-      NotificationChannel channel, 
+      String channel, 
       LocalDateTime after
   );
 

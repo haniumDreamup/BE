@@ -48,6 +48,10 @@ dependencies {
 	implementation 'org.apache.commons:commons-pool2'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	
+	// Spring Batch
+	implementation 'org.springframework.boot:spring-boot-starter-batch'
+	testImplementation 'org.springframework.batch:spring-batch-test'
+	
 	// Jakarta annotation API (formerly javax.annotation)
 	implementation 'jakarta.annotation:jakarta.annotation-api'
 	
@@ -92,6 +96,9 @@ dependencies {
 	// AWS SDK for future cloud integration
 	implementation platform('software.amazon.awssdk:bom:2.20.56')
 	implementation 'software.amazon.awssdk:s3'
+	
+	// Firebase Cloud Messaging for push notifications
+	implementation 'com.google.firebase:firebase-admin:9.2.0'
 	
 	// Monitoring
 	implementation 'io.micrometer:micrometer-registry-prometheus'

@@ -137,7 +137,6 @@ public class SosService {
     // SMS 발송
     if (contact.getPhoneNumber() != null) {
       notificationService.sendSmsNotification(
-          emergency.getUser(), 
           contact.getPhoneNumber(), 
           message
       );
@@ -146,7 +145,6 @@ public class SosService {
     // 이메일 발송
     if (contact.getEmail() != null) {
       notificationService.sendEmailNotification(
-          emergency.getUser(),
           contact.getEmail(),
           "긴급! " + emergency.getUser().getName() + "님의 SOS 요청",
           message

@@ -98,4 +98,14 @@ public interface EmergencyRepository extends JpaRepository<Emergency, Long> {
       @Param("radiusKm") Double radiusKm,
       @Param("status") EmergencyStatus status
   );
+  
+  /**
+   * ID와 사용자로 긴급 상황 조회
+   */
+  Optional<Emergency> findByIdAndUser(Long id, com.bifai.reminder.bifai_backend.entity.User user);
+  
+  /**
+   * 사용자의 긴급 상황을 최신순으로 조회
+   */
+  List<Emergency> findByUserOrderByTriggeredAtDesc(com.bifai.reminder.bifai_backend.entity.User user);
 }

@@ -1,42 +1,45 @@
 package com.bifai.reminder.bifai_backend.controller;
 
-import com.bifai.reminder.bifai_backend.config.TestRedisConfiguration;
-import com.bifai.reminder.bifai_backend.config.TestVisionConfiguration;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthenticationFilter;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
+import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
+import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.firebase.messaging.FirebaseMessaging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.data.redis.core.RedisTemplate;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
  * Controller 테스트 기본 설정
+ * 전체 ApplicationContext를 로드하는 통합 테스트용
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({TestRedisConfiguration.class, TestVisionConfiguration.class})
 @TestPropertySource(properties = {
-    "spring.flyway.enabled=false",
-    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.ai.openai.api.OpenAiApiAutoConfiguration",
-    "spring.ai.openai.api-key=test-key",
-    "spring.ai.openai.speech.api-key=test-key",
-    "app.jwt.secret=testSecretKeyForJWTTokenGenerationAndValidation1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    "app.jwt.access-token-expiration-ms=900000",
-    "app.jwt.refresh-token-expiration-ms=604800000",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver",
     "spring.datasource.username=sa",
     "spring.datasource.password=",
-    "spring.data.redis.timeout=2000",
-    "security.enabled=false"
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.flyway.enabled=false",
+    "app.jwt.secret=test-jwt-secret-key-for-bifai-backend-application-test-environment-only-with-minimum-64-bytes-requirement",
+    "app.jwt.access-token-expiration-ms=900000",
+    "app.jwt.refresh-token-expiration-ms=604800000",
+    "fcm.enabled=false",
+    "spring.ai.openai.api-key=test-key",
+    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"
 })
 public abstract class BaseControllerTest {
 
@@ -46,15 +49,35 @@ public abstract class BaseControllerTest {
   @Autowired
   protected ObjectMapper objectMapper;
 
-  @MockitoBean
+  // Security 관련 컴포넌트는 실제 Bean 사용
+  @Autowired
   protected JwtTokenProvider jwtTokenProvider;
-
-  @MockitoBean
-  protected JwtAuthenticationFilter jwtAuthenticationFilter;
-
-  @MockitoBean
-  protected BifUserDetailsService userDetailsService;
   
-  @MockitoBean
+  @MockBean
   protected com.bifai.reminder.bifai_backend.repository.UserRepository userRepository;
+  
+  // 외부 서비스 Mock
+  @MockBean
+  protected RedisTemplate<String, Object> redisTemplate;
+  
+  @MockBean
+  protected RefreshTokenService refreshTokenService;
+  
+  @MockBean
+  protected RedisCacheService redisCacheService;
+  
+  @MockBean
+  protected ImageAnnotatorClient imageAnnotatorClient;
+  
+  @MockBean
+  protected FirebaseMessaging firebaseMessaging;
+  
+  @MockBean
+  protected S3Client s3Client;
+  
+  @MockBean
+  protected S3AsyncClient s3AsyncClient;
+  
+  @MockBean
+  protected S3Presigner s3Presigner;
 }

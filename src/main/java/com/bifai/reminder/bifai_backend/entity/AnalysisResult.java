@@ -70,7 +70,7 @@ public class AnalysisResult extends BaseTimeEntity {
     /**
      * 분석 신뢰도 점수 (0.0 ~ 1.0)
      */
-    @Column(name = "confidence_score", precision = 5, scale = 4)
+    @Column(name = "confidence_score", precision = 5)
     @PositiveOrZero
     private BigDecimal confidenceScore;
 

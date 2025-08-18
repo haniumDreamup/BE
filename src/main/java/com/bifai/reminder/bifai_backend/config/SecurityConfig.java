@@ -78,6 +78,8 @@ public class SecurityConfig {
                 // 헬스체크
                 .requestMatchers("/health/**").permitAll()
                 .requestMatchers("/api/v1/health/**").permitAll()
+                // 테스트 엔드포인트
+                .requestMatchers("/api/v1/test/**").permitAll()
                 // H2 콘솔 (개발 환경)
                 .requestMatchers("/h2-console/**").permitAll()
                 // 인증 API (로그인, 회원가입 등)

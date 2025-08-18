@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  * Spring Security 인증을 위한 사용자 정보 로드 서비스
  */
 @Slf4j
-@Service
+@Service("bifUserDetailsService")
 @RequiredArgsConstructor
 public class BifUserDetailsService implements UserDetailsService {
 

@@ -5,6 +5,7 @@ import com.bifai.reminder.bifai_backend.entity.LocationHistory;
 import com.bifai.reminder.bifai_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +25,9 @@ public interface LocationHistoryRepository extends JpaRepository<LocationHistory
     
     /**
      * 사용자의 최신 위치 조회
+     * user와 device를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"user", "device"})
     @Query("SELECT l FROM LocationHistory l WHERE l.user.userId = :userId " +
            "ORDER BY l.capturedAt DESC")
     Optional<LocationHistory> findLatestByUserId(@Param("userId") Long userId);
@@ -44,8 +47,8 @@ public interface LocationHistoryRepository extends JpaRepository<LocationHistory
      * 특정 영역 내 위치 조회 (안전 구역 확인용)
      */
     @Query("SELECT l FROM LocationHistory l WHERE l.user.userId = :userId " +
-           "AND CAST(l.latitude AS double) BETWEEN :minLat AND :maxLat " +
-           "AND CAST(l.longitude AS double) BETWEEN :minLng AND :maxLng " +
+           "AND CAST(l.latitude AS DOUBLE) BETWEEN :minLat AND :maxLat " +
+           "AND CAST(l.longitude AS DOUBLE) BETWEEN :minLng AND :maxLng " +
            "AND l.capturedAt >= :since")
     List<LocationHistory> findWithinBounds(@Param("userId") Long userId,
                                          @Param("minLat") Double minLat, @Param("maxLat") Double maxLat,
@@ -111,9 +114,9 @@ public interface LocationHistoryRepository extends JpaRepository<LocationHistory
      * 반경 내 위치 검색
      */
     @Query("SELECT l FROM LocationHistory l WHERE l.user = :user " +
-           "AND (6371 * acos(cos(radians(CAST(:centerLat AS double))) * cos(radians(CAST(l.latitude AS double))) * " +
-           "cos(radians(CAST(l.longitude AS double)) - radians(CAST(:centerLon AS double))) + sin(radians(CAST(:centerLat AS double))) * " +
-           "sin(radians(CAST(l.latitude AS double))))) <= :radiusKm")
+           "AND (6371 * acos(cos(radians(CAST(:centerLat AS DOUBLE))) * cos(radians(CAST(l.latitude AS DOUBLE))) * " +
+           "cos(radians(CAST(l.longitude AS DOUBLE)) - radians(CAST(:centerLon AS DOUBLE))) + sin(radians(CAST(:centerLat AS DOUBLE))) * " +
+           "sin(radians(CAST(l.latitude AS DOUBLE))))) <= :radiusKm")
     List<LocationHistory> findLocationsWithinRadius(@Param("user") User user,
                                                    @Param("centerLat") BigDecimal centerLat,
                                                    @Param("centerLon") BigDecimal centerLon,

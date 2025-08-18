@@ -57,13 +57,13 @@ public class CapturedImage extends BaseTimeEntity {
     /**
      * 이미지 촬영 위치 위도
      */
-    @Column(name = "gps_latitude", precision = 10, scale = 8)
+    @Column(name = "gps_latitude", precision = 10)
     private BigDecimal latitude;
 
     /**
      * 이미지 촬영 위치 경도
      */
-    @Column(name = "gps_longitude", precision = 11, scale = 8)
+    @Column(name = "gps_longitude", precision = 11)
     private BigDecimal longitude;
 
     /**

@@ -28,24 +28,15 @@ spring:
   flyway:
     enabled: false
     
-  # Redis 설정 (Docker 사용 시)
-  data:
-    redis:
-      host: localhost
-      port: 6381  # docker-compose.test.yml 포트
-      password: 
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+  # Redis 비활성화 (H2만 사용)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   
-  # Redis 비활성화 (H2만 사용할 경우 주석 해제)
-  # autoconfigure:
-  #   exclude:
-  #     - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-  #     - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  # Simple Cache 사용
+  cache:
+    type: simple
       
   # Security OAuth2 설정 (테스트용 더미 값)
   security:
@@ -92,11 +83,12 @@ spring:
       speech:
         api-key: test-openai-api-key
 
-# JWT 설정 (테스트용)
-jwt:
-  secret: test-jwt-secret-key-for-bifai-backend-application-test-only
-  expiration: 3600000
-  refresh-expiration: 604800000
+# JWT 설정 (테스트용 - 64바이트 이상)
+app:
+  jwt:
+    secret: test-jwt-secret-key-for-bifai-backend-application-test-environment-only-with-minimum-64-bytes-requirement
+    access-token-expiration-ms: 900000
+    refresh-token-expiration-ms: 604800000
 
 # 로깅 설정
 logging:

@@ -56,7 +56,7 @@ public class HealthMetric extends BaseTimeEntity {
     @NotNull
     @DecimalMin(value = "0.0")
     @Digits(integer = 8, fraction = 3)
-    @Column(name = "metric_value", nullable = false, precision = 11, scale = 3)
+    @Column(name = "metric_value", nullable = false, precision = 11)
     @Comment("측정값")
     private BigDecimal value;
 
@@ -67,7 +67,7 @@ public class HealthMetric extends BaseTimeEntity {
 
     @DecimalMin(value = "0.0")
     @Digits(integer = 8, fraction = 3)
-    @Column(name = "secondary_value", precision = 11, scale = 3)
+    @Column(name = "secondary_value", precision = 11)
     @Comment("보조 측정값 (혈압의 이완기 혈압 등)")
     private BigDecimal secondaryValue;
 
@@ -91,11 +91,11 @@ public class HealthMetric extends BaseTimeEntity {
     @Comment("경고 수준")
     private AlertLevel alertLevel = AlertLevel.NORMAL;
 
-    @Column(name = "reference_min", precision = 8, scale = 3)
+    @Column(name = "reference_min", precision = 8)
     @Comment("정상 범위 최솟값")
     private BigDecimal referenceMin;
 
-    @Column(name = "reference_max", precision = 8, scale = 3)
+    @Column(name = "reference_max", precision = 8)
     @Comment("정상 범위 최댓값")
     private BigDecimal referenceMax;
 
@@ -153,11 +153,11 @@ public class HealthMetric extends BaseTimeEntity {
     @Comment("측정 결과 이미지 URL")
     private String imageUrl;
 
-    @Column(name = "measurement_latitude", precision = 10, scale = 8)
+    @Column(name = "measurement_latitude", precision = 10)
     @Comment("측정 위치 위도")
     private BigDecimal measurementLatitude;
     
-    @Column(name = "measurement_longitude", precision = 11, scale = 8)
+    @Column(name = "measurement_longitude", precision = 11)
     @Comment("측정 위치 경도")
     private BigDecimal measurementLongitude;
 

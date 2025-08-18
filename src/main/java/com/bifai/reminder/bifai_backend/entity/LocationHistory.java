@@ -41,23 +41,23 @@ public class LocationHistory extends BaseEntity {
     private Device device;
     
     @NotNull
-    @Column(precision = 10, scale = 8, nullable = false)
+    @Column(precision = 10, nullable = false)
     private BigDecimal latitude;
     
     @NotNull
-    @Column(precision = 11, scale = 8, nullable = false)
+    @Column(precision = 11, nullable = false)
     private BigDecimal longitude;
     
-    @Column(precision = 8, scale = 2)
+    @Column(precision = 8)
     private BigDecimal accuracy; // 미터 단위
     
-    @Column(precision = 8, scale = 2)
+    @Column(precision = 8)
     private BigDecimal altitude; // 미터 단위
     
-    @Column(precision = 6, scale = 2)
+    @Column(precision = 6)
     private BigDecimal speed; // m/s
     
-    @Column(precision = 5, scale = 2)
+    @Column(precision = 5)
     private BigDecimal heading; // 도(degree)
     
     @Column(name = "location_type", length = 30)

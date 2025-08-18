@@ -19,10 +19,10 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "reminder_templates", indexes = {
-    @Index(name = "idx_template_user_id", columnList = "user_id"),
-    @Index(name = "idx_template_type", columnList = "template_type"),
-    @Index(name = "idx_template_active", columnList = "is_active"),
-    @Index(name = "idx_template_system", columnList = "is_system_template")
+    @Index(name = "idx_reminder_template_user_id", columnList = "user_id"),
+    @Index(name = "idx_reminder_template_type", columnList = "template_type"),
+    @Index(name = "idx_reminder_template_active", columnList = "is_active"),
+    @Index(name = "idx_reminder_template_system", columnList = "is_system_template")
 })
 @Getter
 @Setter
@@ -150,13 +150,13 @@ public class ReminderTemplate extends BaseTimeEntity {
     /**
      * 사용자 만족도 평균 (1-5점)
      */
-    @Column(name = "satisfaction_score", precision = 3, scale = 2)
+    @Column(name = "satisfaction_score", precision = 3)
     private java.math.BigDecimal satisfactionScore;
 
     /**
      * 성공률 (%)
      */
-    @Column(name = "success_rate", precision = 5, scale = 2)
+    @Column(name = "success_rate", precision = 5)
     private java.math.BigDecimal successRate;
 
     /**

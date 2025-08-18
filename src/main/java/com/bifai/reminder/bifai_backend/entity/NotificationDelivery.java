@@ -130,7 +130,7 @@ public class NotificationDelivery extends BaseTimeEntity {
     /**
      * 비용 (필요시)
      */
-    @Column(name = "delivery_cost", precision = 10, scale = 4)
+    @Column(name = "delivery_cost", precision = 10)
     private java.math.BigDecimal deliveryCost;
 
     /**

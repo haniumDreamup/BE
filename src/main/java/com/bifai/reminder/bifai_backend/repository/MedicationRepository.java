@@ -4,6 +4,7 @@ import com.bifai.reminder.bifai_backend.entity.Medication;
 import com.bifai.reminder.bifai_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,8 +24,10 @@ import java.util.Optional;
 public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
     // 기본 조회 메서드
+    @EntityGraph(attributePaths = {"user"})
     List<Medication> findByUserOrderByPriorityLevelDescCreatedAtDesc(User user);
     
+    @EntityGraph(attributePaths = {"user"})
     Page<Medication> findByUserOrderByPriorityLevelDescCreatedAtDesc(User user, Pageable pageable);
     
     List<Medication> findByUser_UserIdOrderByPriorityLevelDescCreatedAtDesc(Long userId);
@@ -259,4 +262,12 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
      */
     @Query("SELECT m FROM Medication m WHERE m.user = :user AND m.medicationName LIKE %:name%")
     List<Medication> searchByNameContaining(@Param("user") User user, @Param("name") String name);
+    
+    /**
+     * 특정 시간에 복용해야 할 약물 조회 (NotificationScheduler에서 사용)
+     */
+    @Query("SELECT m FROM Medication m JOIN m.intakeTimes it " +
+           "WHERE m.isActive = true AND m.medicationStatus = 'ACTIVE' " +
+           "AND it = :time ORDER BY m.priorityLevel DESC")
+    List<Medication> findByScheduleTime(@Param("time") java.time.LocalTime time);
 } 

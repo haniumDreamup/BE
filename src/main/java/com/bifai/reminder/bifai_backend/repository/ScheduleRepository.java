@@ -4,6 +4,7 @@ import com.bifai.reminder.bifai_backend.entity.Schedule;
 import com.bifai.reminder.bifai_backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -23,13 +24,17 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     /**
      * 사용자의 활성화된 스케줄 조회 (페이징)
+     * user를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"user"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.isActive = true ORDER BY s.nextExecutionTime ASC")
     Page<Schedule> findActiveSchedulesByUser(@Param("user") User user, Pageable pageable);
 
     /**
      * 사용자의 특정 타입 스케줄 조회
+     * user를 함께 페치하여 N+1 문제 방지
      */
+    @EntityGraph(attributePaths = {"user"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.scheduleType = :scheduleType AND s.isActive = true ORDER BY s.nextExecutionTime ASC")
     List<Schedule> findByUserAndScheduleTypeAndActive(
             @Param("user") User user,
@@ -250,4 +255,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findConflictingSchedules(@Param("user") User user, 
                                           @Param("start") LocalDateTime start, 
                                           @Param("end") LocalDateTime end);
+    
+    /**
+     * 특정 시간에 실행되어야 할 스케줄 조회 (NotificationScheduler에서 사용)
+     */
+    @Query("SELECT s FROM Schedule s WHERE s.isActive = true " +
+           "AND s.nextExecutionTime = :scheduledTime")
+    List<Schedule> findByScheduledTime(@Param("scheduledTime") LocalDateTime scheduledTime);
 } 

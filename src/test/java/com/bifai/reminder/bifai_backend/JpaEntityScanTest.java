@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * "Not a managed type" 오류 디버깅용
  */
 @DataJpaTest
-@ActiveProfiles("test-jpa")
+@ActiveProfiles("test")
 public class JpaEntityScanTest {
 
     @Autowired

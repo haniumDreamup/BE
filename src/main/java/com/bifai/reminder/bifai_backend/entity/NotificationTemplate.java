@@ -15,10 +15,10 @@ import java.util.Map;
  */
 @Entity
 @Table(name = "notification_templates", indexes = {
-    @Index(name = "idx_template_type", columnList = "template_type"),
-    @Index(name = "idx_template_event", columnList = "event_type"),
-    @Index(name = "idx_template_active", columnList = "is_active"),
-    @Index(name = "idx_template_language", columnList = "language_code")
+    @Index(name = "idx_notif_template_type", columnList = "template_type"),
+    @Index(name = "idx_notif_template_event", columnList = "event_type"),
+    @Index(name = "idx_notif_template_active", columnList = "is_active"),
+    @Index(name = "idx_notif_template_language", columnList = "language_code")
 })
 @Getter
 @Setter
