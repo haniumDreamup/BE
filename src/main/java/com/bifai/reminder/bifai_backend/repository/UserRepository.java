@@ -46,6 +46,31 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     /**
+     * 캐싱용 활성 사용자 조회
+     */
+    @Query("SELECT u FROM User u WHERE u.isActive = true " +
+           "AND u.lastLoginAt > :since " +
+           "ORDER BY u.lastLoginAt DESC")
+    List<User> findActiveUsersForCaching(@Param("since") LocalDateTime since);
+    
+    /**
+     * 캐싱용 활성 사용자 조회 (매개변수 없는 버전)
+     */
+    default List<User> findActiveUsersForCaching() {
+        return findActiveUsersForCaching(LocalDateTime.now().minusDays(7));
+    }
+    
+    /**
+     * 오늘 일정이 있는 사용자 조회
+     */
+    @Query("SELECT DISTINCT u FROM User u " +
+           "JOIN Schedule s ON s.user = u " +
+           "WHERE u.isActive = true " +
+           "AND DATE(s.scheduledTime) = CURRENT_DATE " +
+           "ORDER BY u.userId")
+    List<User> findUsersWithTodaySchedule();
+
+    /**
      * 사용자명 중복 확인 (활성 사용자만)
      */
     @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.username = :username AND u.isActive = true")

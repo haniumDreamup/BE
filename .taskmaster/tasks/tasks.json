@@ -735,12 +735,66 @@
         "description": "전체 시스템의 성능을 최적화하여 100명 이상의 동시 사용자를 지원하고, 안정적인 서비스를 제공합니다.",
         "details": "- 데이터베이스 인덱스 최적화\n- JVM 튜닝 및 메모리 관리\n- 캐시 전략 개선\n- API 응답 압축\n- 이미지/비디오 최적화\n- 쿼리 성능 분석 및 개선\n- 리소스 풀링 최적화",
         "testStrategy": "- 부하 테스트 (JMeter)\n- 스트레스 테스트\n- 메모리 누수 검사\n- 장기 실행 테스트",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           16
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "데이터베이스 인덱스 최적화 및 쿼리 성능 개선",
+            "description": "데이터베이스 성능 병목 지점을 파악하고 인덱스를 최적화하여 쿼리 응답 시간을 개선합니다.",
+            "dependencies": [],
+            "details": "- 느린 쿼리 로그 분석 (slow query log 활성화)\n- EXPLAIN ANALYZE를 통한 쿼리 실행 계획 분석\n- 복합 인덱스 생성 (user_id + created_at, location_id + timestamp)\n- N+1 문제 해결을 위한 @EntityGraph 및 fetch join 적용\n- 불필요한 인덱스 제거 및 인덱스 힌트 추가\n- 배치 쿼리 및 벌크 연산 최적화\n- QueryDSL을 활용한 동적 쿼리 최적화",
+            "status": "done",
+            "testStrategy": "- 쿼리 성능 벤치마크 테스트 (before/after 비교)\n- 인덱스 사용률 모니터링\n- 실행 계획 검증 테스트"
+          },
+          {
+            "id": 2,
+            "title": "Redis 기반 다계층 캐싱 전략 구현",
+            "description": "Redis를 활용한 효율적인 캐싱 시스템을 구축하여 데이터베이스 부하를 줄이고 응답 속도를 향상시킵니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "- Spring Cache와 Redis 통합 설정\n- @Cacheable, @CacheEvict 어노테이션 적용\n- 캐시 TTL 전략 수립 (사용자 프로필: 1시간, 위치 정보: 5분)\n- 캐시 워밍업 스케줄러 구현\n- 캐시 히트율 모니터링 시스템 구축\n- 분산 캐시 일관성 보장 (Redis Pub/Sub)\n- 캐시 스탬피드 방지 로직 구현",
+            "status": "done",
+            "testStrategy": "- 캐시 히트/미스 비율 측정\n- 동시성 테스트 (캐시 스탬피드 방지 검증)\n- TTL 만료 및 갱신 테스트"
+          },
+          {
+            "id": 3,
+            "title": "API 응답 최적화 및 압축 구현",
+            "description": "API 응답 크기를 줄이고 네트워크 대역폭을 효율적으로 사용하여 전체적인 응답 속도를 개선합니다.",
+            "dependencies": [
+              2
+            ],
+            "details": "- Gzip/Brotli 압축 필터 구현\n- JSON 응답 최적화 (@JsonView로 필드 제어)\n- 페이지네이션 및 커서 기반 페이징 구현\n- GraphQL 부분 도입 검토 (복잡한 조회용)\n- ETag 헤더를 통한 조건부 요청 처리\n- 응답 DTO 최적화 (불필요한 필드 제거)\n- WebFlux를 활용한 비동기 응답 처리",
+            "status": "done",
+            "testStrategy": "- 응답 크기 측정 및 압축률 검증\n- 네트워크 대역폭 사용량 모니터링\n- 다양한 클라이언트 환경에서의 호환성 테스트"
+          },
+          {
+            "id": 4,
+            "title": "리소스 풀링 및 연결 관리 최적화",
+            "description": "데이터베이스 커넥션 풀, 스레드 풀 등 시스템 리소스를 효율적으로 관리하여 동시 처리 능력을 향상시킵니다.",
+            "dependencies": [
+              3
+            ],
+            "details": "- HikariCP 커넥션 풀 튜닝 (maximumPoolSize, connectionTimeout)\n- ThreadPoolTaskExecutor 설정 최적화\n- @Async 메소드를 위한 비동기 처리 풀 구성\n- RestTemplate/WebClient 커넥션 풀 설정\n- Redis 커넥션 풀 최적화 (Lettuce 설정)\n- 리소스 사용률 모니터링 대시보드 구축\n- Circuit Breaker 패턴 적용 (Resilience4j)",
+            "status": "pending",
+            "testStrategy": "- 동시 접속자 100명 이상 부하 테스트\n- 커넥션 풀 고갈 시나리오 테스트\n- 리소스 리크 감지 테스트"
+          },
+          {
+            "id": 5,
+            "title": "JVM 튜닝 및 메모리 관리 최적화",
+            "description": "JVM 파라미터를 조정하고 메모리 사용을 최적화하여 애플리케이션의 안정성과 성능을 향상시킵니다.",
+            "dependencies": [
+              4
+            ],
+            "details": "- G1GC 가비지 컬렉터 설정 및 튜닝\n- 힙 메모리 크기 최적화 (-Xms, -Xmx)\n- 메타스페이스 크기 설정\n- JVM 플래그 최적화 (-XX:+UseStringDeduplication)\n- 메모리 프로파일링 도구 설정 (JProfiler/VisualVM)\n- 메모리 누수 감지 및 해결\n- JMX를 통한 실시간 모니터링 구축",
+            "status": "pending",
+            "testStrategy": "- 장시간 부하 테스트 (메모리 누수 검증)\n- GC 로그 분석 및 튜닝 효과 측정\n- 메모리 사용 패턴 분석"
+          }
+        ]
       },
       {
         "id": 18,
@@ -795,7 +849,7 @@
       },
       "created": "2025-07-16T14:19:03.836Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-20T06:54:51.997Z"
+      "updated": "2025-08-20T07:10:46.833Z"
     }
   }
 }
