@@ -3,6 +3,17 @@ spring:
     name: bifai-backend
   profiles:
     active: dev
+
+# 보안 설정
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:8080
+  security:
+    jwt-expiration: 86400000 # 24시간
+    refresh-token-expiration: 604800000 # 7일
+    rate-limit:
+      requests-per-second: 50
+      burst-capacity: 100
   
   # DevTools 비활성화 - JPA 엔티티 스캔 문제 해결
   devtools:

@@ -83,6 +83,13 @@ dependencies {
 	implementation 'org.webjars:stomp-websocket:2.3.4'
 	implementation 'org.webjars:webjars-locator-core'
 	
+	// Resilience4j for Circuit Breaker
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+	implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.1.0'
+	implementation 'io.github.resilience4j:resilience4j-ratelimiter:2.1.0'
+	implementation 'io.github.resilience4j:resilience4j-bulkhead:2.1.0'
+	implementation 'io.github.resilience4j:resilience4j-retry:2.1.0'
+	
 	// API Documentation
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 	

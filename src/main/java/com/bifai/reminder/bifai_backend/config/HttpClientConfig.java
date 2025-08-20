@@ -1,0 +1,157 @@
+package com.bifai.reminder.bifai_backend.config;
+
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * HTTP 클라이언트 커넥션 풀 설정
+ * RestTemplate과 WebClient 최적화
+ */
+@Configuration
+@Slf4j
+public class HttpClientConfig {
+  
+  /**
+   * RestTemplate 설정 (동기 HTTP 클라이언트)
+   */
+  @Bean
+  public RestTemplate restTemplate() {
+    // 커넥션 풀 매니저 설정
+    PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+    connectionManager.setMaxTotal(100); // 전체 최대 커넥션
+    connectionManager.setDefaultMaxPerRoute(20); // 호스트당 최대 커넥션
+    connectionManager.setValidateAfterInactivity(TimeValue.ofSeconds(10)); // 유효성 검사
+    
+    // 요청 설정
+    RequestConfig requestConfig = RequestConfig.custom()
+      .setConnectionRequestTimeout(Timeout.ofSeconds(10)) // 커넥션 풀에서 커넥션 획득 타임아웃
+      .setResponseTimeout(Timeout.ofSeconds(30)) // 응답 타임아웃
+      .build();
+    
+    // HTTP 클라이언트 생성
+    CloseableHttpClient httpClient = HttpClients.custom()
+      .setConnectionManager(connectionManager)
+      .setDefaultRequestConfig(requestConfig)
+      .evictIdleConnections(TimeValue.ofSeconds(60)) // 60초 이상 유휴 커넥션 제거
+      .evictExpiredConnections() // 만료된 커넥션 제거
+      .build();
+    
+    // RestTemplate 팩토리 설정
+    HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+    factory.setConnectTimeout(10000); // 10초
+    factory.setConnectionRequestTimeout(10000); // 10초
+    
+    RestTemplate restTemplate = new RestTemplate(factory);
+    
+    log.info("RestTemplate 커넥션 풀 설정 완료 - 최대: {}, 라우트당: {}", 
+      connectionManager.getMaxTotal(), connectionManager.getDefaultMaxPerRoute());
+    
+    return restTemplate;
+  }
+  
+  /**
+   * WebClient 설정 (비동기 HTTP 클라이언트)
+   */
+  @Bean
+  public WebClient webClient() {
+    // 커넥션 프로바이더 설정
+    ConnectionProvider provider = ConnectionProvider.builder("bifai-webclient")
+      .maxConnections(100) // 최대 커넥션 수
+      .maxIdleTime(Duration.ofSeconds(60)) // 최대 유휴 시간
+      .maxLifeTime(Duration.ofMinutes(5)) // 커넥션 최대 수명
+      .pendingAcquireTimeout(Duration.ofSeconds(45)) // 커넥션 획득 대기 시간
+      .evictInBackground(Duration.ofSeconds(120)) // 백그라운드 제거 주기
+      .build();
+    
+    // Netty HTTP 클라이언트 설정
+    HttpClient httpClient = HttpClient.create(provider)
+      .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000) // 연결 타임아웃
+      .responseTimeout(Duration.ofSeconds(30)) // 응답 타임아웃
+      .doOnConnected(conn -> 
+        conn.addHandlerLast(new ReadTimeoutHandler(30, TimeUnit.SECONDS))
+            .addHandlerLast(new WriteTimeoutHandler(30, TimeUnit.SECONDS)))
+      .compress(true); // 압축 활성화
+    
+    // Exchange 전략 (큰 응답 처리)
+    ExchangeStrategies strategies = ExchangeStrategies.builder()
+      .codecs(clientCodecConfigurer -> 
+        clientCodecConfigurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+      .build();
+    
+    WebClient webClient = WebClient.builder()
+      .clientConnector(new ReactorClientHttpConnector(httpClient))
+      .exchangeStrategies(strategies)
+      .defaultHeader("Accept-Encoding", "gzip, deflate")
+      .defaultHeader("User-Agent", "BifAI-Backend/1.0")
+      .build();
+    
+    log.info("WebClient 커넥션 풀 설정 완료 - 최대 커넥션: 100");
+    
+    return webClient;
+  }
+  
+  /**
+   * 외부 API 전용 RestTemplate (타임아웃 짧게)
+   */
+  @Bean(name = "externalApiRestTemplate")
+  public RestTemplate externalApiRestTemplate() {
+    PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+    connectionManager.setMaxTotal(50);
+    connectionManager.setDefaultMaxPerRoute(10);
+    
+    RequestConfig requestConfig = RequestConfig.custom()
+      .setConnectionRequestTimeout(Timeout.ofSeconds(5))
+      .setResponseTimeout(Timeout.ofSeconds(15)) // 외부 API는 짧게
+      .build();
+    
+    CloseableHttpClient httpClient = HttpClients.custom()
+      .setConnectionManager(connectionManager)
+      .setDefaultRequestConfig(requestConfig)
+      .build();
+    
+    HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+    factory.setConnectTimeout(5000); // 5초
+    
+    return new RestTemplate(factory);
+  }
+  
+  /**
+   * 내부 마이크로서비스용 WebClient (더 많은 커넥션)
+   */
+  @Bean(name = "internalWebClient")
+  public WebClient internalWebClient() {
+    ConnectionProvider provider = ConnectionProvider.builder("internal-webclient")
+      .maxConnections(200) // 내부용은 더 많이
+      .maxIdleTime(Duration.ofSeconds(30))
+      .pendingAcquireTimeout(Duration.ofSeconds(20))
+      .build();
+    
+    HttpClient httpClient = HttpClient.create(provider)
+      .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 내부는 빠르게
+      .responseTimeout(Duration.ofSeconds(10));
+    
+    return WebClient.builder()
+      .clientConnector(new ReactorClientHttpConnector(httpClient))
+      .build();
+  }
+}
