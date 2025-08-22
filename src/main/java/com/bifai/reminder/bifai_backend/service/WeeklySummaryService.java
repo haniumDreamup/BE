@@ -101,8 +101,11 @@ public class WeeklySummaryService {
       LocalDateTime dayStart = date.atStartOfDay();
       LocalDateTime dayEnd = date.atTime(LocalTime.MAX);
       
+      // 해당 날짜의 활성 약물 조회
+      User user = userRepository.findById(userId).orElse(null);
+      if (user == null) continue;
       List<Medication> dayMedications = medicationRepository
-        .findByUserIdAndScheduledTimeBetween(userId, dayStart, dayEnd);
+        .findByUserAndIsActiveTrueOrderByPriorityLevelDescCreatedAtDesc(user);
       
       int dayTotal = dayMedications.size();
       int dayTaken = 0;
@@ -111,9 +114,12 @@ public class WeeklySummaryService {
         totalMedications++;
         
         Optional<MedicationAdherence> adherence = adherenceRepository
-          .findByMedicationIdAndScheduledDate(medication.getMedicationId(), date);
+          .findByMedication_IdAndAdherenceDate(medication.getId(), date);
         
-        if (adherence.isPresent() && adherence.get().getTaken()) {
+        if (adherence.isPresent() && 
+            (adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN ||
+             adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_EARLY ||
+             adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_LATE)) {
           dayTaken++;
         } else {
           totalMissed++;
@@ -180,7 +186,7 @@ public class WeeklySummaryService {
       LocalDateTime dayEnd = date.atTime(LocalTime.MAX);
       
       List<ActivityLog> dayActivities = activityLogRepository
-        .findByUserUserIdAndTimestampBetween(userId, dayStart, dayEnd);
+        .findByUser_UserIdAndActivityDateBetween(userId, dayStart, dayEnd);
       
       // 활동 시간 추정 (로그 수 * 5분)
       int dayMinutes = dayActivities.size() * 5;
@@ -227,7 +233,7 @@ public class WeeklySummaryService {
     LocalDateTime weekEndTime = weekEnd.atTime(LocalTime.MAX);
     
     List<LocationHistory> weekLocations = locationRepository
-      .findByUserUserIdAndTimestampBetween(userId, weekStartTime, weekEndTime);
+      .findByUser_UserIdAndCapturedAtBetweenOrderByCapturedAtDesc(userId, weekStartTime, weekEndTime);
     
     // 자주 방문한 장소 집계
     Map<String, Integer> locationFrequency = new HashMap<>();
@@ -239,7 +245,7 @@ public class WeeklySummaryService {
       locationFrequency.merge(place, 1, Integer::sum);
       uniquePlaces.add(place);
       
-      if (Boolean.FALSE.equals(location.getIsInSafeZone())) {
+      if (Boolean.FALSE.equals(location.getInSafeZone())) {
         safeZoneExits++;
       }
     }
@@ -274,17 +280,19 @@ public class WeeklySummaryService {
     LocalDateTime weekEndTime = weekEnd.atTime(LocalTime.MAX);
     
     List<Schedule> weekSchedules = scheduleRepository
-      .findByUserUserIdAndScheduledTimeBetween(userId, weekStartTime, weekEndTime);
+      .findByUser_UserIdAndNextExecutionTimeBetween(userId, weekStartTime, weekEndTime);
     
     Map<LocalDate, Integer> dailySchedules = new HashMap<>();
     List<String> missedImportant = new ArrayList<>();
     int completed = 0;
     
     for (Schedule schedule : weekSchedules) {
-      LocalDate scheduleDate = schedule.getScheduledTime().toLocalDate();
+      LocalDate scheduleDate = schedule.getNextExecutionTime() != null ? 
+        schedule.getNextExecutionTime().toLocalDate() : LocalDate.now();
       dailySchedules.merge(scheduleDate, 1, Integer::sum);
       
-      if (Boolean.TRUE.equals(schedule.getCompleted())) {
+      if (schedule.getLastExecutionTime() != null && 
+          schedule.getLastExecutionTime().toLocalDate().isEqual(scheduleDate)) {
         completed++;
       } else if ("HIGH".equals(schedule.getPriority())) {
         missedImportant.add(schedule.getTitle());
@@ -314,15 +322,15 @@ public class WeeklySummaryService {
     LocalDateTime weekEndTime = weekEnd.atTime(LocalTime.MAX);
     
     List<ActivityLog> activities = activityLogRepository
-      .findByUserUserIdAndTimestampBetween(userId, weekStartTime, weekEndTime);
+      .findByUser_UserIdAndActivityDateBetween(userId, weekStartTime, weekEndTime);
     
     // 아침형/저녁형 판단
     long morningActivities = activities.stream()
-      .filter(a -> a.getTimestamp().getHour() < 12)
+      .filter(a -> a.getActivityDate().getHour() < 12)
       .count();
     
     long eveningActivities = activities.stream()
-      .filter(a -> a.getTimestamp().getHour() >= 18)
+      .filter(a -> a.getActivityDate().getHour() >= 18)
       .count();
     
     if (morningActivities > eveningActivities * 1.5) {

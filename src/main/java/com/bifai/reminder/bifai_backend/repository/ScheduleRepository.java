@@ -262,4 +262,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     @Query("SELECT s FROM Schedule s WHERE s.isActive = true " +
            "AND s.nextExecutionTime = :scheduledTime")
     List<Schedule> findByScheduledTime(@Param("scheduledTime") LocalDateTime scheduledTime);
+    
+    /**
+     * 사용자 ID와 시간 범위로 스케줄 조회
+     */
+    List<Schedule> findByUser_UserIdAndNextExecutionTimeBetween(Long userId, LocalDateTime start, LocalDateTime end);
 } 

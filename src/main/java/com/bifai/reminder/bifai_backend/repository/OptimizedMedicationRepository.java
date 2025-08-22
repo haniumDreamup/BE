@@ -42,8 +42,8 @@ public interface OptimizedMedicationRepository extends JpaRepository<Medication,
          "LEFT JOIN FETCH m.user u " +
          "LEFT JOIN FETCH m.adherenceRecords a " +
          "WHERE m.user.userId = :userId " +
-         "AND a.scheduledDate BETWEEN :startDate AND :endDate " +
-         "ORDER BY a.scheduledDate DESC, m.priorityLevel DESC")
+         "AND a.adherenceDate BETWEEN :startDate AND :endDate " +
+         "ORDER BY a.adherenceDate DESC, m.priorityLevel DESC")
   List<Medication> findMedicationsWithAdherence(
     @Param("userId") Long userId,
     @Param("startDate") LocalDate startDate,
@@ -68,15 +68,15 @@ public interface OptimizedMedicationRepository extends JpaRepository<Medication,
    * 주간 복약 요약 데이터 (단일 쿼리로 집계)
    */
   @Query("SELECT NEW com.bifai.reminder.bifai_backend.dto.dashboard.MedicationWeeklyStats(" +
-         "m.medicationId, m.medicationName, m.priorityLevel, " +
+         "m.id, m.medicationName, m.priorityLevel, " +
          "COUNT(a), " +
-         "SUM(CASE WHEN a.taken = true THEN 1 ELSE 0 END), " +
+         "SUM(CASE WHEN a.adherenceStatus = 'TAKEN' OR a.adherenceStatus = 'TAKEN_EARLY' OR a.adherenceStatus = 'TAKEN_LATE' THEN 1 ELSE 0 END), " +
          "AVG(a.delayMinutes)) " +
          "FROM Medication m " +
-         "LEFT JOIN MedicationAdherence a ON a.medicationId = m.medicationId " +
+         "LEFT JOIN m.adherenceRecords a " +
          "WHERE m.user.userId = :userId " +
-         "AND a.scheduledDate BETWEEN :startDate AND :endDate " +
-         "GROUP BY m.medicationId, m.medicationName, m.priorityLevel " +
+         "AND a.adherenceDate BETWEEN :startDate AND :endDate " +
+         "GROUP BY m.id, m.medicationName, m.priorityLevel " +
          "ORDER BY m.priorityLevel DESC")
   List<Object> getMedicationWeeklyStats(
     @Param("userId") Long userId,
@@ -114,16 +114,16 @@ public interface OptimizedMedicationRepository extends JpaRepository<Medication,
   /**
    * 보호자 알림 대상 약물들 (JOIN 최소화)
    */
-  @Query("SELECT m.medicationId, m.medicationName, m.user.userId, m.user.username " +
+  @Query("SELECT m.id, m.medicationName, m.user.userId, m.user.username " +
          "FROM Medication m " +
          "WHERE m.guardianAlertNeeded = true " +
          "AND m.isActive = true " +
          "AND m.priorityLevel IN ('CRITICAL', 'HIGH') " +
          "AND EXISTS (" +
          "  SELECT 1 FROM MedicationAdherence a " +
-         "  WHERE a.medicationId = m.medicationId " +
-         "  AND a.taken = false " +
-         "  AND a.scheduledDate = :date" +
+         "  WHERE a.medication = m " +
+         "  AND (a.adherenceStatus = 'MISSED' OR a.adherenceStatus = 'PENDING') " +
+         "  AND a.adherenceDate = :date" +
          ")")
   List<Object[]> findMedicationsNeedingGuardianAlert(@Param("date") LocalDate date);
 }

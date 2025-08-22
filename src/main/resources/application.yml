@@ -4,16 +4,7 @@ spring:
   profiles:
     active: dev
 
-# 보안 설정
-app:
-  cors:
-    allowed-origins: http://localhost:3000,http://localhost:8080
-  security:
-    jwt-expiration: 86400000 # 24시간
-    refresh-token-expiration: 604800000 # 7일
-    rate-limit:
-      requests-per-second: 50
-      burst-capacity: 100
+# 설정은 아래 app 섹션에 통합
   
   # DevTools 비활성화 - JPA 엔티티 스캔 문제 해결
   devtools:
@@ -172,6 +163,18 @@ app:
   name: BIF-AI Reminder Backend
   version: 0.0.1
   description: 경계선 지능 대상자를 위한 상황 인지 보조 시스템
+  
+  # CORS 설정
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:8080
+  
+  # 보안 설정
+  security:
+    jwt-expiration: 86400000 # 24시간
+    refresh-token-expiration: 604800000 # 7일
+    rate-limit:
+      requests-per-second: 50
+      burst-capacity: 100
   
   # JWT Configuration
   jwt:

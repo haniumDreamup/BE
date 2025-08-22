@@ -67,6 +67,9 @@ public class LocationHistory extends BaseEntity {
     @Column(length = 500)
     private String address;
     
+    @Column(name = "in_safe_zone")
+    private Boolean inSafeZone;
+    
     @NotNull
     @Column(name = "captured_at", nullable = false)
     private LocalDateTime capturedAt;

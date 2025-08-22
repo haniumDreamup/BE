@@ -241,7 +241,7 @@ public class OptimizedDashboardService {
    */
   private boolean isMedicationTaken(Medication medication, LocalDate date) {
     // Redis에서 복약 기록 확인
-    String key = "medication_taken:" + medication.getMedicationId() + ":" + date;
+    String key = "medication_taken:" + medication.getId() + ":" + date;
     return Boolean.TRUE.equals(redisTemplate.hasKey(key));
   }
   
@@ -250,10 +250,11 @@ public class OptimizedDashboardService {
    */
   private MedicationDto toMedicationDto(Medication medication) {
     return MedicationDto.builder()
-      .medicationId(medication.getMedicationId())
+      .medicationId(medication.getId())
       .name(medication.getMedicationName())
       .priority(medication.getPriorityLevel().toString())
-      .scheduledTime(medication.getScheduledTime())
+      // TODO: scheduled time은 medication 엔티티에 없음
+      .scheduledTime(LocalDateTime.now())
       .build();
   }
   

@@ -222,4 +222,14 @@ public interface GuardianRepository extends JpaRepository<Guardian, Long> {
            "AND g.isActive = :isActive AND g.approvalStatus = 'APPROVED'")
     List<Guardian> findByUserIdAndIsActive(@Param("userId") Long userId, 
                                           @Param("isActive") Boolean isActive);
+    
+    /**
+     * 보호자와 피보호자로 보호자 관계 조회
+     */
+    Optional<Guardian> findByGuardianUserAndUser(User guardianUser, User user);
+    
+    /**
+     * 보호자 사용자 ID로 조회
+     */
+    List<Guardian> findByGuardianUserId(Long guardianUserId);
 } 

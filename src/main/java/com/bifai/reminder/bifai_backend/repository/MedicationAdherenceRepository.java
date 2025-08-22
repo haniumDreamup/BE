@@ -250,4 +250,10 @@ public interface MedicationAdherenceRepository extends JpaRepository<MedicationA
     @Query("SELECT ma FROM MedicationAdherence ma WHERE ma.user = :user " +
            "ORDER BY ma.recordedAt DESC LIMIT :limit")
     List<MedicationAdherence> findRecentAdherenceByUser(@Param("user") User user, @Param("limit") int limit);
+    
+    // 약물 ID와 날짜로 복약 기록 조회
+    Optional<MedicationAdherence> findByMedication_IdAndAdherenceDate(Long medicationId, LocalDate adherenceDate);
+    
+    // 사용자와 날짜로 복약 기록 조회
+    List<MedicationAdherence> findByUserAndAdherenceDate(User user, LocalDate adherenceDate);
 } 

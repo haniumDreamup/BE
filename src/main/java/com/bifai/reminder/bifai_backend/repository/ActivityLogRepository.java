@@ -25,6 +25,8 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     // 기본 조회 메서드
     List<ActivityLog> findByUserOrderByActivityDateDesc(User user);
     
+    List<ActivityLog> findByUserOrderByCreatedAtDesc(User user);
+    
     Page<ActivityLog> findByUserOrderByActivityDateDesc(User user, Pageable pageable);
     
     List<ActivityLog> findByUser_UserIdOrderByActivityDateDesc(Long userId);

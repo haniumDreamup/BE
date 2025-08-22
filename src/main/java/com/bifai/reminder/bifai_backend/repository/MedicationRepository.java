@@ -227,6 +227,11 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
     List<Medication> findByUser(User user);
     
     /**
+     * 사용자 ID로 약물 목록 조회
+     */
+    List<Medication> findByUserId(Long userId);
+    
+    /**
      * 활성 약물만 조회
      */
     List<Medication> findByUserAndIsActiveTrue(User user);

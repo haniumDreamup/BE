@@ -55,6 +55,9 @@ dependencies {
 	// Jakarta annotation API (formerly javax.annotation)
 	implementation 'jakarta.annotation:jakarta.annotation-api'
 	
+	// Jakarta Mail for email functionality
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	
 	// JWT Authentication
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
@@ -89,6 +92,12 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-ratelimiter:2.1.0'
 	implementation 'io.github.resilience4j:resilience4j-bulkhead:2.1.0'
 	implementation 'io.github.resilience4j:resilience4j-retry:2.1.0'
+	
+	// Apache HttpClient for RestTemplate
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+	
+	// WebFlux for WebClient
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	
 	// API Documentation
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'

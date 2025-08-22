@@ -64,11 +64,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 오늘 일정이 있는 사용자 조회
      */
     @Query("SELECT DISTINCT u FROM User u " +
-           "JOIN Schedule s ON s.user = u " +
            "WHERE u.isActive = true " +
-           "AND DATE(s.scheduledTime) = CURRENT_DATE " +
+           "AND EXISTS (SELECT 1 FROM Schedule s WHERE s.user = u " +
+           "AND s.nextExecutionTime BETWEEN :todayStart AND :todayEnd) " +
            "ORDER BY u.userId")
-    List<User> findUsersWithTodaySchedule();
+    List<User> findUsersWithTodaySchedule(@Param("todayStart") LocalDateTime todayStart, 
+                                          @Param("todayEnd") LocalDateTime todayEnd);
+    
+    default List<User> findUsersWithTodaySchedule() {
+        LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime todayEnd = todayStart.plusDays(1).minusNanos(1);
+        return findUsersWithTodaySchedule(todayStart, todayEnd);
+    }
 
     /**
      * 사용자명 중복 확인 (활성 사용자만)

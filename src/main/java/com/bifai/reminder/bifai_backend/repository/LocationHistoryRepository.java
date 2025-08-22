@@ -44,6 +44,11 @@ public interface LocationHistoryRepository extends JpaRepository<LocationHistory
     Page<LocationHistory> findByUser_UserIdOrderByCapturedAtDesc(Long userId, Pageable pageable);
     
     /**
+     * 사용자별 위치 이력 생성일 기준 정렬 조회
+     */
+    List<LocationHistory> findByUserOrderByCreatedAtDesc(User user);
+    
+    /**
      * 특정 영역 내 위치 조회 (안전 구역 확인용)
      */
     @Query("SELECT l FROM LocationHistory l WHERE l.user.userId = :userId " +

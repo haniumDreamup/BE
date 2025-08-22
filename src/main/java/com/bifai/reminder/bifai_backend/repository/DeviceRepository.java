@@ -170,10 +170,9 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
     /**
      * 보호자-피보호자 관계 디바이스 조회
      */
-    @Query("SELECT DISTINCT d FROM Device d " +
-           "JOIN Guardian g ON (g.guardian.id = :userId OR g.ward.id = :userId) " +
-           "WHERE (d.user.id = g.guardian.id OR d.user.id = g.ward.id) " +
-           "AND d.user.id != :userId " +
+    @Query("SELECT DISTINCT d FROM Device d, Guardian g " +
+           "WHERE ((g.guardianUser.userId = :userId AND d.user = g.user) " +
+           "OR (g.user.userId = :userId AND d.user = g.guardianUser)) " +
            "AND d.isActive = true")
     List<Device> findGuardianRelatedDevices(@Param("userId") Long userId);
 }

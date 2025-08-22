@@ -36,7 +36,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
   /**
    * 특정 보호자의 모든 피보호자 관계 조회
    */
-  List<GuardianRelationship> findByGuardianGuardianIdAndStatus(Long guardianId, RelationshipStatus status);
+  List<GuardianRelationship> findByGuardian_IdAndStatus(Long guardianId, RelationshipStatus status);
   
   /**
    * 초대 토큰으로 관계 조회
@@ -77,7 +77,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
    * 보호자의 피보호자 수 카운트
    */
   @Query("SELECT COUNT(gr) FROM GuardianRelationship gr " +
-         "WHERE gr.guardian.guardianId = :guardianId " +
+         "WHERE gr.guardian.id = :guardianId " +
          "AND gr.status = 'ACTIVE'")
   Long countActiveRelationshipsByGuardian(@Param("guardianId") Long guardianId);
   
@@ -113,7 +113,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
   /**
    * 중복 관계 확인
    */
-  boolean existsByGuardianGuardianIdAndUserUserIdAndStatusNot(
+  boolean existsByGuardian_IdAndUser_UserIdAndStatusNot(
     Long guardianId, 
     Long userId, 
     RelationshipStatus status
@@ -124,7 +124,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
    */
   @Query("SELECT CASE WHEN COUNT(gr) > 0 THEN true ELSE false END " +
          "FROM GuardianRelationship gr " +
-         "WHERE gr.guardian.guardianId = :guardianId " +
+         "WHERE gr.guardian.id = :guardianId " +
          "AND gr.user.userId = :userId " +
          "AND gr.status = 'ACTIVE' " +
          "AND gr.permissionLevel IN ('MANAGE', 'FULL')")
@@ -135,7 +135,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
    */
   @Query("SELECT CASE WHEN COUNT(gr) > 0 THEN true ELSE false END " +
          "FROM GuardianRelationship gr " +
-         "WHERE gr.guardian.guardianId = :guardianId " +
+         "WHERE gr.guardian.id = :guardianId " +
          "AND gr.user.userId = :userId " +
          "AND gr.status = 'ACTIVE'")
   boolean hasViewPermission(@Param("guardianId") Long guardianId, @Param("userId") Long userId);

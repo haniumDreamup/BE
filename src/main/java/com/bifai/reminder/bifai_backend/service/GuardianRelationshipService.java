@@ -58,8 +58,8 @@ public class GuardianRelationshipService {
       .orElseGet(() -> createPendingGuardian(request));
     
     // 중복 관계 확인
-    if (relationshipRepository.existsByGuardianGuardianIdAndUserUserIdAndStatusNot(
-        guardian.getGuardianId(), user.getUserId(), RelationshipStatus.TERMINATED)) {
+    if (relationshipRepository.existsByGuardian_IdAndUser_UserIdAndStatusNot(
+        guardian.getId(), user.getId(), RelationshipStatus.TERMINATED)) {
       throw new IllegalStateException("이미 존재하거나 대기 중인 관계입니다");
     }
     
@@ -121,7 +121,7 @@ public class GuardianRelationshipService {
     }
     
     // 보호자 확인
-    if (!relationship.getGuardian().getGuardianId().equals(guardianId)) {
+    if (!relationship.getGuardian().getId().equals(guardianId)) {
       throw new IllegalArgumentException("권한이 없습니다");
     }
     
@@ -144,7 +144,7 @@ public class GuardianRelationshipService {
       .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 초대 토큰입니다"));
     
     // 보호자 확인
-    if (!relationship.getGuardian().getGuardianId().equals(guardianId)) {
+    if (!relationship.getGuardian().getId().equals(guardianId)) {
       throw new IllegalArgumentException("권한이 없습니다");
     }
     
@@ -353,7 +353,8 @@ public class GuardianRelationshipService {
     Guardian guardian = Guardian.builder()
       .email(request.getGuardianEmail())
       .name(request.getGuardianName())
-      .phoneNumber(request.getGuardianPhone())
+      // TODO: phoneNumber 필드 설정 필요
+      // .phoneNumber(request.getGuardianPhone())
       .isActive(false) // 초대 수락 전까지 비활성
       .build();
     
@@ -413,7 +414,7 @@ public class GuardianRelationshipService {
       .findByUserAndPermissionLevel(relationship.getUser().getUserId(), PermissionLevel.FULL);
     
     return otherGuardians.stream()
-      .anyMatch(gr -> gr.getGuardian().getGuardianId().equals(requesterId));
+      .anyMatch(gr -> gr.getGuardian().getId().equals(requesterId));
   }
   
   /**
@@ -422,7 +423,7 @@ public class GuardianRelationshipService {
   private GuardianRelationshipDto convertToDto(GuardianRelationship relationship) {
     GuardianRelationshipDto dto = new GuardianRelationshipDto();
     dto.setRelationshipId(relationship.getRelationshipId());
-    dto.setGuardianId(relationship.getGuardian().getGuardianId());
+    dto.setGuardianId(relationship.getGuardian().getId());
     dto.setGuardianName(relationship.getGuardian().getName());
     dto.setGuardianEmail(relationship.getGuardian().getEmail());
     dto.setUserId(relationship.getUser().getUserId());
@@ -456,12 +457,11 @@ public class GuardianRelationshipService {
    */
   private EmergencyContactDto convertToEmergencyContact(GuardianRelationship relationship) {
     return EmergencyContactDto.builder()
-      .guardianId(relationship.getGuardian().getGuardianId())
+      .id(relationship.getGuardian().getId())
       .name(relationship.getGuardian().getName())
-      .phoneNumber(relationship.getGuardian().getPhoneNumber())
-      .email(relationship.getGuardian().getEmail())
-      .relationshipType(relationship.getRelationshipType().getDescription())
-      .priority(relationship.getEmergencyPriority())
+      .phoneNumber(relationship.getGuardian().getPrimaryPhone())
+      .relationship(relationship.getRelationshipType().getDescription())
+      .isPrimary(relationship.getGuardian().getIsPrimary())
       .build();
   }
 }

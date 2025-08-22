@@ -1,5 +1,0 @@
-package com.bifai.reminder.bifai_app
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()

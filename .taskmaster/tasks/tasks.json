@@ -802,7 +802,7 @@
         "description": "BIF 사용자의 민감한 데이터를 보호하기 위한 포괄적인 보안 감사를 수행하고 취약점을 해결합니다.",
         "details": "- OWASP Top 10 취약점 점검\n- API 보안 강화\n- 데이터 암호화 검증\n- 접근 권한 감사\n- SQL 인젝션 방지 검증\n- XSS 방지 대책 확인\n- 보안 헤더 설정",
         "testStrategy": "- 침투 테스트\n- 보안 스캐닝 도구 실행\n- 권한 우회 시도 테스트\n- 암호화 강도 검증",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           17
         ],
@@ -849,7 +849,7 @@
       },
       "created": "2025-07-16T14:19:03.836Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-20T07:27:07.915Z"
+      "updated": "2025-08-20T07:34:47.857Z"
     }
   }
 }

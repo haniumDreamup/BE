@@ -1,80 +1,198 @@
 package com.bifai.reminder.bifai_backend.service;
 
 import com.bifai.reminder.bifai_backend.dto.guardian.*;
-import com.bifai.reminder.bifai_backend.entity.Schedule;
-import com.bifai.reminder.bifai_backend.entity.User;
-import com.bifai.reminder.bifai_backend.repository.ScheduleRepository;
-import com.bifai.reminder.bifai_backend.repository.UserRepository;
+import com.bifai.reminder.bifai_backend.entity.*;
+import com.bifai.reminder.bifai_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * 보호자 대시보드 서비스 (임시 구현)
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GuardianDashboardService {
   
   private final UserRepository userRepository;
+  private final GuardianRepository guardianRepository;
+  private final MedicationRepository medicationRepository;
+  private final MedicationAdherenceRepository adherenceRepository;
   private final ScheduleRepository scheduleRepository;
+  private final LocationHistoryRepository locationHistoryRepository;
+  private final ActivityLogRepository activityLogRepository;
+  private final DeviceRepository deviceRepository;
+  private final EmergencyRepository emergencyRepository;
   
+  /**
+   * 보호자 대시보드 데이터 조회
+   */
   @Transactional(readOnly = true)
   public GuardianDashboardDto getDashboard(Long guardianId, Long wardId) {
-    log.info("대시보드 조회 - guardian: {}, ward: {}", guardianId, wardId);
-    return GuardianDashboardDto.builder().build();
-  }
-  
-  @Transactional(readOnly = true)
-  public List<WardSummaryDto> getWardList(Long guardianId) {
-    log.info("보호 대상자 목록 조회 - guardian: {}", guardianId);
-    return new ArrayList<>();
-  }
-  
-  @Transactional(readOnly = true)
-  public List<RecentActivityDto> getRecentActivities(Long guardianId, Long wardId) {
-    log.info("최근 활동 조회 - guardian: {}, ward: {}", guardianId, wardId);
-    return new ArrayList<>();
-  }
-  
-  @Transactional(readOnly = true)
-  public List<MedicationStatusDto> getMedicationStatus(Long guardianId, Long wardId, LocalDate date) {
-    log.info("복약 상태 조회 - guardian: {}, ward: {}, date: {}", guardianId, wardId, date);
-    return new ArrayList<>();
-  }
-  
-  @Transactional(readOnly = true)
-  public LocationInfoDto getLocationInfo(Long guardianId, Long wardId) {
-    log.info("위치 정보 조회 - guardian: {}, ward: {}", guardianId, wardId);
-    return LocationInfoDto.builder().build();
-  }
-  
-  @Transactional(readOnly = true)
-  public HealthMetricsDto getHealthMetrics(Long guardianId, Long wardId, int days) {
-    return HealthMetricsDto.builder()
-        .periodDays(days)
-        .medicationAdherence(0.85)
-        .averageStepCount(5000)
-        .averageHeartRate(75)
-        .sleepQualityScore(7.5)
-        .activityLevel("MODERATE")
+    // 권한 확인
+    validateGuardianAccess(guardianId, wardId);
+    
+    User ward = userRepository.findById(wardId)
+        .orElseThrow(() -> new IllegalArgumentException("보호 대상자를 찾을 수 없습니다"));
+    
+    return GuardianDashboardDto.builder()
+        .wardInfo(buildWardInfo(ward))
+        .todaySummary(buildTodaySummary(ward))
+        .recentActivities(getRecentActivitiesList(ward, 10))
+        .alerts(getActiveAlerts(ward))
+        .healthSummary(buildHealthSummary(ward))
+        .locationSummary(buildLocationSummary(ward))
         .build();
   }
   
-  @Transactional
-  public void sendMessage(Long guardianId, Long wardId, String message, String type) {
-    log.info("메시지 전송 - from: {}, to: {}, type: {}", guardianId, wardId, type);
+  /**
+   * 보호 대상자 목록 조회
+   */
+  @Transactional(readOnly = true)
+  public List<WardSummaryDto> getWards(Long guardianId) {
+    List<Guardian> guardianships = guardianRepository.findByGuardianUserId(guardianId);
+    
+    return guardianships.stream()
+        .map(g -> buildWardSummary(g.getUser()))
+        .collect(Collectors.toList());
   }
   
+  /**
+   * 최근 활동 내역 조회
+   */
+  @Transactional(readOnly = true)
+  public List<ActivityLogDto> getRecentActivities(Long guardianId, Long wardId, int days) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    LocalDateTime since = LocalDateTime.now().minusDays(days);
+    User ward = userRepository.findById(wardId)
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+    List<ActivityLog> logs = activityLogRepository.findByUserAndActivityDateBetween(ward, since, LocalDateTime.now());
+    
+    return logs.stream()
+        .map(this::toActivityLogDto)
+        .collect(Collectors.toList());
+  }
+  
+  /**
+   * 약물 복용 현황 조회
+   */
+  @Transactional(readOnly = true)
+  public MedicationStatusDto getMedicationStatus(Long guardianId, Long wardId, LocalDate date) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    User ward = userRepository.findById(wardId)
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+    List<Medication> medications = medicationRepository.findByUserAndIsActiveTrueOrderByPriorityLevelDescCreatedAtDesc(ward);
+    List<MedicationAdherence> adherences = adherenceRepository.findByUserAndAdherenceDate(ward, date);
+    
+    int taken = (int) adherences.stream()
+        .filter(a -> a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN ||
+                     a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_EARLY ||
+                     a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_LATE)
+        .count();
+    int total = medications.size();
+    
+    return MedicationStatusDto.builder()
+        .date(date)
+        .totalMedications(total)
+        .takenMedications(taken)
+        .missedMedications(total - taken)
+        .pendingMedications(0) // TODO: 시간 기반 계산
+        .adherenceRate(total > 0 ? (taken * 100.0 / total) : 0)
+        .medications(buildMedicationDetails(medications, adherences))
+        .weeklyTrend(getWeeklyAdherenceTrend(wardId, date))
+        .build();
+  }
+  
+  /**
+   * 현재 위치 조회
+   */
+  @Transactional(readOnly = true)
+  public LocationInfoDto getCurrentLocation(Long guardianId, Long wardId) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    User ward = userRepository.findById(wardId).orElse(null);
+    LocationHistory latest = ward != null ? 
+        locationHistoryRepository.findByUserOrderByCreatedAtDesc(ward).stream()
+            .findFirst().orElse(null) : null;
+    
+    if (latest == null) {
+      return LocationInfoDto.builder()
+          .timestamp(LocalDateTime.now())
+          .build();
+    }
+    
+    return LocationInfoDto.builder()
+        .latitude(latest.getLatitude().doubleValue())
+        .longitude(latest.getLongitude().doubleValue())
+        .address(latest.getAddress())
+        .placeName(latest.getAddress())
+        .timestamp(latest.getCapturedAt())
+        .accuracy(latest.getAccuracy() != null ? latest.getAccuracy().doubleValue() : 0.0)
+        .movementStatus(detectMovementStatus(wardId))
+        .safeZone(checkSafeZoneStatus(latest))
+        .recentPlaces(getRecentPlaces(wardId, 5))
+        .trajectory(getRecentTrajectory(wardId, 2)) // 최근 2시간
+        .build();
+  }
+  
+  /**
+   * 건강 지표 조회
+   */
+  @Transactional(readOnly = true)
+  public HealthMetricsDto getHealthMetrics(Long guardianId, Long wardId, int days) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    LocalDate endDate = LocalDate.now();
+    LocalDate startDate = endDate.minusDays(days);
+    
+    // TODO: 실제 건강 메트릭 데이터 조회
+    return HealthMetricsDto.builder()
+        .periodDays(days)
+        .medicationAdherence(calculateAdherenceRate(wardId, startDate, endDate))
+        .averageStepCount(5000) // TODO: 실제 데이터
+        .averageHeartRate(75) // TODO: 실제 데이터
+        .sleepQualityScore(7.5) // TODO: 실제 데이터
+        .activityLevel("MODERATE") // TODO: 실제 계산
+        .build();
+  }
+  
+  /**
+   * 메시지 전송
+   */
+  @Transactional
+  public void sendMessage(Long guardianId, Long wardId, String message, String type) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    // TODO: FCM을 통한 메시지 전송
+    log.info("메시지 전송 - from: {}, to: {}, type: {}, message: {}", 
+        guardianId, wardId, type, message);
+    
+    // 활동 로그 기록
+    ActivityLog log = new ActivityLog();
+    log.setUser(userRepository.getReferenceById(wardId));
+    log.setActivityType(ActivityLog.ActivityType.APP_USAGE);
+    log.setActivityTitle("메시지 수신");
+    log.setActivityDescription("보호자로부터 메시지: " + message);
+    log.setActivityDate(LocalDateTime.now());
+    log.setSuccessStatus(ActivityLog.SuccessStatus.SUCCESS);
+    activityLogRepository.save(log);
+  }
+  
+  /**
+   * 리마인더 설정
+   */
   @Transactional
   public void setReminder(Long guardianId, Long wardId, SetReminderRequest request) {
-    log.info("리마인더 설정 - guardian: {}, ward: {}, title: {}", guardianId, wardId, request.getTitle());
+    validateGuardianAccess(guardianId, wardId);
     
     User user = userRepository.getReferenceById(wardId);
     Schedule schedule = new Schedule(
@@ -87,22 +205,70 @@ public class GuardianDashboardService {
     );
     schedule.setDescription(request.getDescription());
     schedule.setCreatedByType(Schedule.CreatorType.GUARDIAN);
+    
     scheduleRepository.save(schedule);
+    log.info("리마인더 설정 완료 - guardian: {}, ward: {}, reminder: {}", 
+        guardianId, wardId, request.getTitle());
   }
   
+  /**
+   * 긴급 연락처 조회
+   */
   @Transactional(readOnly = true)
   public List<EmergencyContactDto> getEmergencyContacts(Long guardianId, Long wardId) {
-    log.info("긴급 연락처 조회 - guardian: {}, ward: {}", guardianId, wardId);
-    return new ArrayList<>();
+    validateGuardianAccess(guardianId, wardId);
+    
+    // TODO: 긴급 연락처 엔티티에서 조회
+    List<EmergencyContactDto> contacts = new ArrayList<>();
+    
+    // 보호자 정보도 포함
+    User guardianUser = userRepository.findById(guardianId).orElse(null);
+    User wardUser = userRepository.findById(wardId).orElse(null);
+    Guardian guardian = guardianUser != null && wardUser != null ? 
+        guardianRepository.findByGuardianUserAndUser(guardianUser, wardUser).orElse(null) : null;
+    
+    if (guardian != null) {
+      User guardUser = guardian.getGuardianUser();
+      contacts.add(EmergencyContactDto.builder()
+          .name(guardUser.getName())
+          .phoneNumber(guardUser.getPhoneNumber())
+          .relationship(guardian.getRelationship())
+          .isPrimary(guardian.getIsPrimary())
+          .build());
+    }
+    
+    return contacts;
   }
   
+  /**
+   * 안부 확인 요청
+   */
   @Transactional
-  public void requestSafetyCheck(Long guardianId, Long wardId) {
+  public void requestCheckIn(Long guardianId, Long wardId) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    // TODO: 푸시 알림으로 안부 확인 요청 전송
     log.info("안부 확인 요청 - guardian: {}, ward: {}", guardianId, wardId);
+    
+    // 활동 로그 기록
+    ActivityLog log = new ActivityLog();
+    log.setUser(userRepository.getReferenceById(wardId));
+    log.setActivityType(ActivityLog.ActivityType.HELP_REQUEST);
+    log.setActivityTitle("안부 확인 요청");
+    log.setActivityDescription("보호자가 안부 확인을 요청했습니다");
+    log.setActivityDate(LocalDateTime.now());
+    log.setSuccessStatus(ActivityLog.SuccessStatus.SUCCESS);
+    activityLogRepository.save(log);
   }
   
+  /**
+   * 일일 보고서 생성
+   */
   @Transactional(readOnly = true)
   public DailyReportDto getDailyReport(Long guardianId, Long wardId, LocalDate date) {
+    validateGuardianAccess(guardianId, wardId);
+    
+    // TODO: 실제 데이터 조회 구현
     return DailyReportDto.builder()
         .date(date)
         .completedTasks(10)
@@ -113,9 +279,16 @@ public class GuardianDashboardService {
         .build();
   }
   
+  /**
+   * 주간 보고서 생성
+   */
   @Transactional(readOnly = true)
   public WeeklyReportDto getWeeklyReport(Long guardianId, Long wardId, LocalDate startDate) {
+    validateGuardianAccess(guardianId, wardId);
+    
     LocalDate endDate = startDate.plusDays(6);
+    
+    // TODO: 실제 데이터 조회 구현
     return WeeklyReportDto.builder()
         .startDate(startDate)
         .endDate(endDate)
@@ -126,9 +299,374 @@ public class GuardianDashboardService {
         .build();
   }
   
+  /**
+   * 보호자 설정 업데이트
+   */
   @Transactional
   public GuardianSettingsDto updateSettings(Long guardianId, GuardianSettingsDto settings) {
+    // TODO: 설정 저장 로직 구현
     log.info("보호자 설정 업데이트 - guardian: {}", guardianId);
     return settings;
+  }
+  
+  // === Private Helper Methods ===
+  
+  private void validateGuardianAccess(Long guardianId, Long wardId) {
+    boolean hasAccess = guardianRepository.existsByUserIdAndGuardianUserId(wardId, guardianId);
+    if (!hasAccess) {
+      throw new SecurityException("접근 권한이 없습니다");
+    }
+  }
+  
+  private GuardianDashboardDto.WardInfo buildWardInfo(User ward) {
+    Device primaryDevice = deviceRepository.findActiveDevicesByUserId(ward.getId())
+        .stream().findFirst().orElse(null);
+    
+    return GuardianDashboardDto.WardInfo.builder()
+        .id(ward.getId())
+        .name(ward.getName())
+        .profileImage(ward.getEmail())
+        .phoneNumber(ward.getPhoneNumber())
+        .age(calculateAge(ward))
+        .status(determineUserStatus(ward))
+        .lastActiveAt(ward.getUpdatedAt())
+        .batteryLevel(primaryDevice != null ? primaryDevice.getBatteryLevel() : null)
+        .build();
+  }
+  
+  private GuardianDashboardDto.TodaySummary buildTodaySummary(User ward) {
+    LocalDate today = LocalDate.now();
+    
+    // 약물 복용 현황
+    List<Medication> todayMeds = medicationRepository.findByUser_UserIdOrderByPriorityLevelDescCreatedAtDesc(ward.getId());
+    List<MedicationAdherence> adherences = adherenceRepository.findByUserAndAdherenceDate(ward, today);
+    int medsTaken = (int) adherences.stream()
+        .filter(a -> a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN)
+        .count();
+    
+    // 일정 완료 현황
+    LocalDateTime todayStart = today.atStartOfDay();
+    LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
+    List<Schedule> todaySchedules = scheduleRepository.findTodaySchedules(ward, todayStart, todayEnd);
+    int schedulesCompleted = (int) todaySchedules.stream()
+        .filter(s -> s.getLastExecutionTime() != null && 
+                    s.getLastExecutionTime().toLocalDate().equals(today))
+        .count();
+    
+    // 활동 점수 계산
+    int activityScore = calculateActivityScore(ward.getId(), today);
+    
+    return GuardianDashboardDto.TodaySummary.builder()
+        .medicationsTaken(medsTaken)
+        .medicationsTotal(todayMeds.size())
+        .schedulesCompleted(schedulesCompleted)
+        .schedulesTotal(todaySchedules.size())
+        .activityScore(activityScore)
+        .overallStatus(determineOverallStatus(activityScore, medsTaken, todayMeds.size()))
+        .build();
+  }
+  
+  private List<GuardianDashboardDto.RecentActivity> getRecentActivitiesList(User ward, int limit) {
+    List<ActivityLog> logs = activityLogRepository
+        .findByUserOrderByCreatedAtDesc(ward).stream()
+        .limit(limit)
+        .collect(Collectors.toList());
+    
+    return logs.stream()
+        .map(log -> GuardianDashboardDto.RecentActivity.builder()
+            .type(log.getActivityType().toString())
+            .title(log.getActivityTitle())
+            .description(log.getActivityDescription())
+            .timestamp(log.getCreatedAt())
+            .icon(getActivityIcon(log.getActivityType().toString()))
+            .status(log.getSuccessStatus().toString())
+            .build())
+        .collect(Collectors.toList());
+  }
+  
+  private List<GuardianDashboardDto.Alert> getActiveAlerts(User ward) {
+    // TODO: 실제 알림 데이터 조회
+    List<GuardianDashboardDto.Alert> alerts = new ArrayList<>();
+    
+    // 배터리 부족 확인
+    Device device = deviceRepository.findActiveDevicesByUserId(ward.getId())
+        .stream().findFirst().orElse(null);
+    
+    if (device != null && device.getBatteryLevel() != null && device.getBatteryLevel() < 20) {
+      alerts.add(GuardianDashboardDto.Alert.builder()
+          .level("MEDIUM")
+          .type("BATTERY_LOW")
+          .message("디바이스 배터리가 부족합니다 (" + device.getBatteryLevel() + "%)")
+          .timestamp(LocalDateTime.now())
+          .isRead(false)
+          .actionRequired("충전 알림 전송")
+          .build());
+    }
+    
+    return alerts;
+  }
+  
+  private GuardianDashboardDto.HealthSummary buildHealthSummary(User ward) {
+    LocalDate today = LocalDate.now();
+    LocalDate weekAgo = today.minusDays(7);
+    
+    double adherence = calculateAdherenceRate(ward.getId(), weekAgo, today);
+    
+    return GuardianDashboardDto.HealthSummary.builder()
+        .medicationAdherence(adherence)
+        .stepCount(5000) // TODO: 실제 데이터
+        .heartRate(75) // TODO: 실제 데이터
+        .sleepQuality("GOOD") // TODO: 실제 데이터
+        .lastHealthCheck(LocalDateTime.now())
+        .build();
+  }
+  
+  private GuardianDashboardDto.LocationSummary buildLocationSummary(User ward) {
+    LocationHistory latest = locationHistoryRepository
+        .findByUserOrderByCreatedAtDesc(ward).stream()
+        .findFirst()
+        .orElse(null);
+    
+    if (latest == null) {
+      return GuardianDashboardDto.LocationSummary.builder()
+          .safeZoneStatus("UNKNOWN")
+          .lastUpdated(LocalDateTime.now())
+          .build();
+    }
+    
+    return GuardianDashboardDto.LocationSummary.builder()
+        .latitude(latest.getLatitude().doubleValue())
+        .longitude(latest.getLongitude().doubleValue())
+        .address(latest.getAddress())
+        .safeZoneStatus(checkSafeZoneStatus(latest).toString())
+        .lastUpdated(latest.getCapturedAt())
+        .distanceFromHome(calculateDistanceFromHome(latest))
+        .build();
+  }
+  
+  private WardSummaryDto buildWardSummary(User ward) {
+    LocalDate today = LocalDate.now();
+    
+    // 오늘의 진행률 계산
+    List<Medication> todayMeds = medicationRepository.findByUserAndIsActiveTrueOrderByPriorityLevelDescCreatedAtDesc(ward);
+    List<MedicationAdherence> adherences = adherenceRepository.findByUserAndAdherenceDate(ward, today);
+    int medProgress = todayMeds.isEmpty() ? 100 : 
+        (int) (adherences.stream()
+            .filter(a -> a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN ||
+                         a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_EARLY ||
+                         a.getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_LATE)
+            .count() * 100.0 / todayMeds.size());
+    
+    LocalDateTime todayStart = today.atStartOfDay();
+    LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
+    List<Schedule> todaySchedules = scheduleRepository.findTodaySchedules(ward, todayStart, todayEnd);
+    int scheduleProgress = todaySchedules.isEmpty() ? 100 :
+        (int) (todaySchedules.stream()
+            .filter(s -> s.getLastExecutionTime() != null && 
+                        s.getLastExecutionTime().toLocalDate().equals(today))
+            .count() * 100.0 / todaySchedules.size());
+    
+    // 최근 위치
+    LocationHistory location = locationHistoryRepository
+        .findByUserOrderByCreatedAtDesc(ward).stream()
+        .findFirst()
+        .orElse(null);
+    
+    return WardSummaryDto.builder()
+        .id(ward.getId())
+        .name(ward.getName())
+        .profileImage(ward.getEmail())
+        .phoneNumber(ward.getPhoneNumber())
+        .age(calculateAge(ward))
+        .relationship("가족") // TODO: Guardian 엔티티에서 가져오기
+        .status(determineUserStatus(ward))
+        .lastActiveAt(ward.getUpdatedAt())
+        .batteryLevel(getLatestBatteryLevel(ward.getId()))
+        .hasUnreadAlerts(false) // TODO: 실제 알림 확인
+        .todayMedicationProgress(medProgress)
+        .todayScheduleProgress(scheduleProgress)
+        .statusMessage(generateStatusMessage(ward))
+        .lastKnownLocation(location != null ? location.getAddress() : "위치 정보 없음")
+        .emergencyContactAvailable(true)
+        .build();
+  }
+  
+  private ActivityLogDto toActivityLogDto(ActivityLog log) {
+    return ActivityLogDto.builder()
+        .id(log.getId())
+        .activityType(log.getActivityType().toString())
+        .title(log.getActivityTitle())
+        .description(log.getActivityDescription())
+        .timestamp(log.getCreatedAt())
+        .status(log.getSuccessStatus().toString())
+        .category(determineCategory(log.getActivityType().toString()))
+        .icon(getActivityIcon(log.getActivityType().toString()))
+        .colorCode(getActivityColor(log.getActivityType().toString()))
+        .importance(determineImportance(log.getActivityType().toString()))
+        .build();
+  }
+  
+  // 헬퍼 메서드들
+  private String determineUserStatus(User user) {
+    if (user.getLastLoginAt() == null) return "OFFLINE";
+    
+    long minutesSinceActive = ChronoUnit.MINUTES.between(user.getLastLoginAt(), LocalDateTime.now());
+    if (minutesSinceActive < 5) return "ONLINE";
+    if (minutesSinceActive < 60) return "IDLE";
+    return "OFFLINE";
+  }
+  
+  private String determineOverallStatus(int activityScore, int medsTaken, int medsTotal) {
+    if (activityScore >= 80 && (medsTotal == 0 || medsTaken == medsTotal)) {
+      return "GOOD";
+    } else if (activityScore >= 50 && (medsTotal == 0 || medsTaken >= medsTotal * 0.7)) {
+      return "NORMAL";
+    }
+    return "NEEDS_ATTENTION";
+  }
+  
+  private int calculateActivityScore(Long userId, LocalDate date) {
+    // TODO: 실제 활동 점수 계산 로직
+    return 75;
+  }
+  
+  private double calculateAdherenceRate(Long userId, LocalDate startDate, LocalDate endDate) {
+    // TODO: 실제 복용률 계산
+    return 85.0;
+  }
+  
+  private String getActivityIcon(String activityType) {
+    switch (activityType) {
+      case "MEDICATION_TAKEN": return "💊";
+      case "SCHEDULE_COMPLETED": return "✅";
+      case "LOCATION_CHANGE": return "📍";
+      case "EMERGENCY": return "🚨";
+      default: return "📝";
+    }
+  }
+  
+  private String getActivityColor(String activityType) {
+    switch (activityType) {
+      case "MEDICATION_TAKEN": return "#4CAF50";
+      case "SCHEDULE_COMPLETED": return "#2196F3";
+      case "LOCATION_CHANGE": return "#FF9800";
+      case "EMERGENCY": return "#F44336";
+      default: return "#757575";
+    }
+  }
+  
+  private String determineCategory(String activityType) {
+    if (activityType.contains("MEDICATION")) return "HEALTH";
+    if (activityType.contains("SCHEDULE")) return "DAILY_ROUTINE";
+    if (activityType.contains("LOCATION")) return "SAFETY";
+    if (activityType.contains("EMERGENCY")) return "SAFETY";
+    return "OTHER";
+  }
+  
+  private String determineImportance(String activityType) {
+    if (activityType.contains("EMERGENCY")) return "HIGH";
+    if (activityType.contains("MEDICATION")) return "HIGH";
+    if (activityType.contains("LOCATION")) return "MEDIUM";
+    return "LOW";
+  }
+  
+  private Integer getLatestBatteryLevel(Long userId) {
+    return deviceRepository.findActiveDevicesByUserId(userId).stream()
+        .findFirst()
+        .map(Device::getBatteryLevel)
+        .orElse(null);
+  }
+  
+  private String generateStatusMessage(User user) {
+    // 간단한 상태 메시지 생성
+    String status = determineUserStatus(user);
+    if ("ONLINE".equals(status)) {
+      return "현재 활동 중";
+    } else if ("IDLE".equals(status)) {
+      return "잠시 쉬는 중";
+    }
+    return "오프라인";
+  }
+  
+  private List<MedicationStatusDto.MedicationDetail> buildMedicationDetails(
+      List<Medication> medications, List<MedicationAdherence> adherences) {
+    // TODO: 실제 매핑 로직
+    return new ArrayList<>();
+  }
+  
+  private List<MedicationStatusDto.DailyAdherence> getWeeklyAdherenceTrend(Long userId, LocalDate date) {
+    // TODO: 주간 복용률 추이 계산
+    return new ArrayList<>();
+  }
+  
+  private String detectMovementStatus(Long userId) {
+    // TODO: 최근 위치 변화로 이동 상태 감지
+    return "STATIONARY";
+  }
+  
+  private LocationInfoDto.SafeZoneInfo checkSafeZoneStatus(LocationHistory location) {
+    // TODO: 안전 구역 확인 로직
+    return LocationInfoDto.SafeZoneInfo.builder()
+        .status("INSIDE")
+        .zoneName("집")
+        .distanceFromCenter(50.0)
+        .radius(500.0)
+        .alertEnabled(true)
+        .build();
+  }
+  
+  private List<LocationInfoDto.RecentPlace> getRecentPlaces(Long userId, int limit) {
+    // TODO: 최근 방문 장소 조회
+    return new ArrayList<>();
+  }
+  
+  private List<LocationInfoDto.LocationPoint> getRecentTrajectory(Long userId, int hours) {
+    // TODO: 최근 이동 경로 조회
+    return new ArrayList<>();
+  }
+  
+  private Double calculateDistanceFromHome(LocationHistory location) {
+    // TODO: 집으로부터 거리 계산
+    return 100.0;
+  }
+  
+  private List<ActivityLogDto> getActivitiesForDate(Long userId, LocalDate date) {
+    // TODO: 특정 날짜 활동 조회
+    return new ArrayList<>();
+  }
+  
+  private String getLocationSummaryForDate(Long userId, LocalDate date) {
+    // TODO: 특정 날짜 위치 요약
+    return "주로 집에서 활동";
+  }
+  
+  private String generateDailyAssessment(Long userId, LocalDate date) {
+    // TODO: 일일 평가 생성
+    return "전반적으로 양호한 하루였습니다";
+  }
+  
+  private int countActivities(Long userId, LocalDate startDate, LocalDate endDate) {
+    // TODO: 활동 수 계산
+    return 50;
+  }
+  
+  private List<String> getWeeklyHighlights(Long userId, LocalDate startDate, LocalDate endDate) {
+    // TODO: 주간 하이라이트
+    return List.of("약물 복용률 95% 달성", "모든 일정 완료");
+  }
+  
+  private List<String> getWeeklyConcerns(Long userId, LocalDate startDate, LocalDate endDate) {
+    // TODO: 주간 우려사항
+    return List.of("수요일 저녁 약 복용 지연");
+  }
+  
+  private List<String> generateRecommendations(Long userId, LocalDate startDate, LocalDate endDate) {
+    // TODO: 개선 권장사항
+    return List.of("저녁 약 알림 시간을 30분 앞당기기");
+  }
+  
+  private int calculateAge(User user) {
+    // 나이 계산 로직 - birthDate가 있다면 사용, 없으면 기본값
+    return 30; // TODO: 실제 나이 계산
   }
 }

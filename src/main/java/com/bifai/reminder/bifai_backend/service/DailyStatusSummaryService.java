@@ -16,6 +16,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 오늘의 상태 요약 서비스
@@ -84,8 +85,11 @@ public class DailyStatusSummaryService {
    */
   private MedicationStatus getMedicationStatus(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay) {
     // 오늘의 복약 일정 조회
+    // TODO: 실제 스케줄 기반 조회로 변경 필요
     List<Medication> todayMedications = medicationRepository
-      .findByUserIdAndScheduledTimeBetween(userId, startOfDay, endOfDay);
+      .findByUserId(userId).stream()
+      .filter(m -> m.getIsActive())
+      .collect(Collectors.toList());
     
     int totalMedications = todayMedications.size();
     int takenMedications = 0;
@@ -99,17 +103,21 @@ public class DailyStatusSummaryService {
     for (Medication medication : todayMedications) {
       // 복약 여부 확인
       Optional<MedicationAdherence> adherence = adherenceRepository
-        .findByMedicationIdAndScheduledDate(medication.getMedicationId(), LocalDate.now());
+        .findByMedication_IdAndAdherenceDate(medication.getId(), LocalDate.now());
       
-      if (adherence.isPresent() && adherence.get().getTaken()) {
+      if (adherence.isPresent() && 
+          (adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN ||
+           adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_EARLY ||
+           adherence.get().getAdherenceStatus() == MedicationAdherence.AdherenceStatus.TAKEN_LATE)) {
         takenMedications++;
-      } else if (medication.getScheduledTime().isBefore(now)) {
+      } else if (now.isAfter(now.minusHours(1))) { // TODO: 실제 스케줄 시간 확인 필요
         missedMedications++;
       } else {
         // 다음 복약 시간 확인
-        if (earliestUpcoming == null || medication.getScheduledTime().isBefore(earliestUpcoming)) {
-          earliestUpcoming = medication.getScheduledTime();
-          nextMedicationTime = formatTime(medication.getScheduledTime());
+        // TODO: 실제 스케줄 시간 기반으로 수정 필요
+        if (earliestUpcoming == null) {
+          earliestUpcoming = now.plusHours(1);
+          nextMedicationTime = formatTime(now.plusHours(1));
           nextMedicationName = medication.getMedicationName();
         }
       }
@@ -133,10 +141,8 @@ public class DailyStatusSummaryService {
    */
   private LocationStatus getLocationStatus(Long userId) {
     // 최근 위치 정보 조회
-    Optional<LocationHistory> lastLocation = locationRepository
-      .findTopByUserUserIdOrderByTimestampDesc(userId);
-    
-    if (lastLocation.isEmpty()) {
+    User user = userRepository.findById(userId).orElse(null);
+    if (user == null) {
       return LocationStatus.builder()
         .currentLocation("위치 정보 없음")
         .isInSafeZone(true)
@@ -144,9 +150,21 @@ public class DailyStatusSummaryService {
         .build();
     }
     
-    LocationHistory location = lastLocation.get();
+    List<LocationHistory> locations = locationRepository
+      .findByUserOrderByCreatedAtDesc(user);
+    
+    if (locations.isEmpty()) {
+      return LocationStatus.builder()
+        .currentLocation("위치 정보 없음")
+        .isInSafeZone(true)
+        .minutesSinceUpdate(0)
+        .build();
+    }
+    
+    LocationHistory location = locations.get(0);
+    
     LocalDateTime now = LocalDateTime.now();
-    long minutesSinceUpdate = ChronoUnit.MINUTES.between(location.getTimestamp(), now);
+    long minutesSinceUpdate = ChronoUnit.MINUTES.between(location.getCapturedAt(), now);
     
     // 주소 또는 장소명 생성
     String locationName = location.getAddress();
@@ -157,8 +175,8 @@ public class DailyStatusSummaryService {
     
     return LocationStatus.builder()
       .currentLocation(locationName)
-      .lastUpdated(location.getTimestamp())
-      .isInSafeZone(location.getIsInSafeZone() != null ? location.getIsInSafeZone() : true)
+      .lastUpdated(location.getCapturedAt())
+      .isInSafeZone(location.getInSafeZone() != null ? location.getInSafeZone() : true)
       .minutesSinceUpdate((int) minutesSinceUpdate)
       .build();
   }
@@ -169,7 +187,7 @@ public class DailyStatusSummaryService {
   private ActivityStatus getActivityStatus(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay) {
     // 오늘의 활동 로그 조회
     List<ActivityLog> todayActivities = activityLogRepository
-      .findByUserUserIdAndTimestampBetween(userId, startOfDay, endOfDay);
+      .findByUser_UserIdAndActivityDateBetween(userId, startOfDay, endOfDay);
     
     LocalDateTime lastActiveTime = null;
     int totalActiveMinutes = 0;
@@ -178,7 +196,7 @@ public class DailyStatusSummaryService {
     if (!todayActivities.isEmpty()) {
       // 마지막 활동 시간
       lastActiveTime = todayActivities.stream()
-        .map(ActivityLog::getTimestamp)
+        .map(ActivityLog::getActivityDate)
         .max(LocalDateTime::compareTo)
         .orElse(null);
       
@@ -187,7 +205,7 @@ public class DailyStatusSummaryService {
       
       // 화면 사용 시간 (앱 사용 로그만 계산)
       screenTimeMinutes = (int) todayActivities.stream()
-        .filter(log -> "APP_USAGE".equals(log.getActivityType()))
+        .filter(log -> log.getActivityType() == ActivityLog.ActivityType.APP_USAGE)
         .count() * 5;
     }
     
@@ -220,7 +238,7 @@ public class DailyStatusSummaryService {
   private ScheduleStatus getScheduleStatus(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay) {
     // 오늘의 일정 조회
     List<Schedule> todaySchedules = scheduleRepository
-      .findByUserUserIdAndScheduledTimeBetween(userId, startOfDay, endOfDay);
+      .findByUser_UserIdAndNextExecutionTimeBetween(userId, startOfDay, endOfDay);
     
     int totalSchedules = todaySchedules.size();
     int completedSchedules = 0;
@@ -232,15 +250,17 @@ public class DailyStatusSummaryService {
     LocalDateTime earliestUpcoming = null;
     
     for (Schedule schedule : todaySchedules) {
-      if (Boolean.TRUE.equals(schedule.getCompleted())) {
+      // 마지막 실행 시간이 오늘인 경우 완료로 간주
+      if (schedule.getLastExecutionTime() != null && 
+          schedule.getLastExecutionTime().toLocalDate().equals(LocalDate.now())) {
         completedSchedules++;
-      } else if (schedule.getScheduledTime().isAfter(now)) {
+      } else if (schedule.getNextExecutionTime() != null && schedule.getNextExecutionTime().isAfter(now)) {
         upcomingSchedules++;
         
         // 다음 일정 확인
-        if (earliestUpcoming == null || schedule.getScheduledTime().isBefore(earliestUpcoming)) {
-          earliestUpcoming = schedule.getScheduledTime();
-          nextScheduleTime = formatTime(schedule.getScheduledTime());
+        if (earliestUpcoming == null || schedule.getNextExecutionTime().isBefore(earliestUpcoming)) {
+          earliestUpcoming = schedule.getNextExecutionTime();
+          nextScheduleTime = formatTime(schedule.getNextExecutionTime());
           nextScheduleTitle = schedule.getTitle();
         }
       }
