@@ -81,7 +81,7 @@ class InteractionPatternAnalysisServiceTest {
     // given
     LocalDateTime testDate = LocalDateTime.now();
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(behaviorLogRepository.findByUserAndCreatedAtBetween(any(), any(), any()))
+    when(behaviorLogRepository.findByUserAndTimestampBetween(any(), any(), any()))
       .thenReturn(testLogs);
     when(patternRepository.save(any(InteractionPattern.class))).thenReturn(testPattern);
     when(patternRepository.calculateBaselineMetrics(any(), any(), any(), any()))
@@ -101,7 +101,7 @@ class InteractionPatternAnalysisServiceTest {
   void analyzeRealtimePattern_Success() throws Exception {
     // given
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(behaviorLogRepository.findByUserAndCreatedAtBetween(any(), any(), any()))
+    when(behaviorLogRepository.findByUserAndTimestampBetween(any(), any(), any()))
       .thenReturn(testLogs);
     when(patternRepository.save(any(InteractionPattern.class))).thenReturn(testPattern);
     when(patternRepository.calculateBaselineMetrics(any(), any(), any(), any()))
@@ -143,7 +143,7 @@ class InteractionPatternAnalysisServiceTest {
   void analyzeDailyPattern_NoLogs_ReturnsNull() {
     // given
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(behaviorLogRepository.findByUserAndCreatedAtBetween(any(), any(), any()))
+    when(behaviorLogRepository.findByUserAndTimestampBetween(any(), any(), any()))
       .thenReturn(new ArrayList<>());
     
     // when
@@ -170,7 +170,7 @@ class InteractionPatternAnalysisServiceTest {
     Object[] baselineData = new Object[]{5.0, 1800.0, 2.0, 2.0, 200.0, 0.5};
     
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-    when(behaviorLogRepository.findByUserAndCreatedAtBetween(any(), any(), any()))
+    when(behaviorLogRepository.findByUserAndTimestampBetween(any(), any(), any()))
       .thenReturn(createHighActivityLogs());
     when(patternRepository.calculateBaselineMetrics(any(), any(), any(), any()))
       .thenReturn(baselineData);

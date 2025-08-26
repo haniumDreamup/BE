@@ -1,9 +1,11 @@
 package com.bifai.reminder.bifai_backend.resilience;
 
+import com.bifai.reminder.bifai_backend.config.TestBaseConfig;
 import com.bifai.reminder.bifai_backend.service.ResilientExternalApiService;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -21,9 +26,18 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Circuit Breaker 테스트
+ * Circuit Breaker 통합 테스트
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+  "spring.batch.job.enabled=false",
+  "spring.http.client.factory=simple"
+})
+@Import(TestBaseConfig.class)
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+  "spring.ai.openai.api-key=test-key",
+  "fcm.enabled=false"
+})
 @DisplayName("Circuit Breaker 패턴 테스트")
 class CircuitBreakerTest {
   

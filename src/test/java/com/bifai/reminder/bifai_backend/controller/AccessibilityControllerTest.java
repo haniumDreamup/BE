@@ -1,18 +1,25 @@
 package com.bifai.reminder.bifai_backend.controller;
 
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
+import com.bifai.reminder.bifai_backend.controller.AccessibilityController;
 import com.bifai.reminder.bifai_backend.dto.accessibility.*;
 import java.util.ArrayList;
+import java.util.Map;
 import com.bifai.reminder.bifai_backend.service.AccessibilityService;
 import com.bifai.reminder.bifai_backend.service.VoiceGuidanceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -25,10 +32,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * AccessibilityController 테스트
- * 100% 커버리지 목표
+ * AccessibilityController 통합 테스트
  */
-@WebMvcTest(AccessibilityController.class)
+@SpringBootTest(properties = {
+  "spring.batch.job.enabled=false",
+  "spring.http.client.factory=simple"
+})
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
 @WithMockUser(username = "testuser")
 class AccessibilityControllerTest {
   
@@ -38,11 +50,14 @@ class AccessibilityControllerTest {
   @Autowired
   private ObjectMapper objectMapper;
   
-  @org.springframework.boot.test.mock.mockito.MockBean
+  @MockBean
   private AccessibilityService accessibilityService;
   
-  @org.springframework.boot.test.mock.mockito.MockBean
+  @MockBean
   private VoiceGuidanceService voiceGuidanceService;
+  
+  @MockBean
+  private RateLimiterRegistry rateLimiterRegistry;
   
   private AccessibilitySettingsDto testSettings;
   
@@ -70,10 +85,10 @@ class AccessibilityControllerTest {
   @DisplayName("GET /api/accessibility/settings/{userId} - 설정 조회 성공")
   void getSettings_Success() throws Exception {
     // Given
-    when(accessibilityService.getSettings(1L)).thenReturn(testSettings);
+    when(accessibilityService.getSettings(any())).thenReturn(testSettings);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/settings/1"))
+    mockMvc.perform(get("/api/v1/accessibility/settings"))
       .andExpect(status().isOk())
       .andExpect(content().contentType(MediaType.APPLICATION_JSON))
       .andExpect(jsonPath("$.success").value(true))
@@ -82,7 +97,7 @@ class AccessibilityControllerTest {
       .andExpect(jsonPath("$.data.simplifiedUiEnabled").value(true))
       .andExpect(jsonPath("$.data.readingLevel").value("grade5"));
     
-    verify(accessibilityService).getSettings(1L);
+    verify(accessibilityService).getSettings(any());
   }
   
   @Test
@@ -95,11 +110,11 @@ class AccessibilityControllerTest {
       .voiceSpeed(1.5f)
       .build();
     
-    when(accessibilityService.updateSettings(eq(1L), org.mockito.ArgumentMatchers.any(AccessibilitySettingsDto.class)))
+    when(accessibilityService.updateSettings(any(), any(AccessibilitySettingsDto.class)))
       .thenReturn(testSettings);
     
     // When & Then
-    mockMvc.perform(put("/api/accessibility/settings/1")
+    mockMvc.perform(put("/api/v1/accessibility/settings")
         .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(updateDto)))
@@ -108,66 +123,72 @@ class AccessibilityControllerTest {
       .andExpect(jsonPath("$.data").exists())
       .andExpect(jsonPath("$.message").value("설정이 업데이트되었습니다"));
     
-    verify(accessibilityService).updateSettings(eq(1L), org.mockito.ArgumentMatchers.any(AccessibilitySettingsDto.class));
+    verify(accessibilityService).updateSettings(any(), any(AccessibilitySettingsDto.class));
   }
   
   @Test
-  @DisplayName("POST /api/accessibility/settings/{userId}/profile - 프로파일 적용 성공")
+  @DisplayName("POST /api/accessibility/settings/apply-profile - 프로파일 적용 성공")
   void applyProfile_Success() throws Exception {
     // Given
-    Map<String, String> request = new HashMap<>();
-    request.put("profileType", "visual-impaired");
-    
-    when(accessibilityService.applyProfile(1L, "visual-impaired"))
+    when(accessibilityService.applyProfile(any(), eq("visual-impaired")))
       .thenReturn(testSettings);
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/settings/1/profile")
+    mockMvc.perform(post("/api/v1/accessibility/settings/apply-profile")
         .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(request)))
+        .param("profileType", "visual-impaired"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data").exists())
       .andExpect(jsonPath("$.message").value("프로파일이 적용되었습니다"));
     
-    verify(accessibilityService).applyProfile(1L, "visual-impaired");
+    verify(accessibilityService).applyProfile(any(), eq("visual-impaired"));
   }
   
   @Test
-  @DisplayName("GET /api/accessibility/voice-guidance - 음성 안내 생성 성공")
+  @DisplayName("POST /api/accessibility/voice-guidance - 음성 안내 생성 성공")
   void generateVoiceGuidance_Success() throws Exception {
     // Given
     String expectedGuidance = "확인 버튼. 두 번 탭하세요";
-    when(voiceGuidanceService.generateVoiceGuidance(eq(1L), eq("button_click"), anyMap()))
+    when(voiceGuidanceService.generateVoiceGuidance(any(), eq("button_click"), anyMap()))
       .thenReturn(expectedGuidance);
     
+    VoiceGuidanceRequest voiceRequest = new VoiceGuidanceRequest();
+    voiceRequest.setContext("button_click");
+    voiceRequest.setParams(Map.of("buttonName", "확인"));
+    
     // When & Then
-    mockMvc.perform(get("/api/accessibility/voice-guidance")
-        .param("userId", "1")
-        .param("context", "button_click")
-        .param("buttonName", "확인"))
+    mockMvc.perform(post("/api/v1/accessibility/voice-guidance")
+        .with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(voiceRequest)))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.text").value(expectedGuidance))
       .andExpect(jsonPath("$.data.context").value("button_click"));
     
-    verify(voiceGuidanceService).generateVoiceGuidance(eq(1L), eq("button_click"), anyMap());
+    verify(voiceGuidanceService).generateVoiceGuidance(any(), eq("button_click"), anyMap());
   }
   
   @Test
-  @DisplayName("GET /api/accessibility/aria-label - ARIA 라벨 생성 성공")
+  @DisplayName("POST /api/accessibility/aria-label - ARIA 라벨 생성 성공")
   void generateAriaLabel_Success() throws Exception {
     // Given
     String expectedLabel = "저장 버튼, 비활성화됨";
     when(voiceGuidanceService.generateAriaLabel(eq("button"), eq("저장"), anyMap()))
       .thenReturn(expectedLabel);
     
+    AriaLabelRequest ariaRequest = new AriaLabelRequest();
+    ariaRequest.setElementType("button");
+    ariaRequest.setElementName("저장");
+    ariaRequest.setAttributes(Map.of("disabled", "true"));
+    
     // When & Then
-    mockMvc.perform(get("/api/accessibility/aria-label")
-        .param("elementType", "button")
-        .param("label", "저장")
-        .param("disabled", "true"))
+    mockMvc.perform(post("/api/v1/accessibility/aria-label")
+        .with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(ariaRequest)))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.label").value(expectedLabel))
@@ -185,7 +206,7 @@ class AccessibilityControllerTest {
       .thenReturn(expectedHint);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/screen-reader-hint")
+    mockMvc.perform(get("/api/v1/accessibility/screen-reader-hint")
         .param("action", "tap")
         .param("target", "설정 메뉴"))
       .andExpect(status().isOk())
@@ -222,7 +243,7 @@ class AccessibilityControllerTest {
     when(accessibilityService.getAvailableColorSchemes()).thenReturn(schemes);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/color-schemes"))
+    mockMvc.perform(get("/api/v1/accessibility/color-schemes"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(2)))
@@ -245,16 +266,16 @@ class AccessibilityControllerTest {
       .primaryColor("#0056B3")
       .build();
     
-    when(accessibilityService.getCurrentColorScheme(1L)).thenReturn(scheme);
+    when(accessibilityService.getCurrentColorScheme(any())).thenReturn(scheme);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/color-scheme/1"))
+    mockMvc.perform(get("/api/v1/accessibility/color-schemes/current"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.id").value("dark"))
       .andExpect(jsonPath("$.data.name").value("다크 모드"));
     
-    verify(accessibilityService).getCurrentColorScheme(1L);
+    verify(accessibilityService).getCurrentColorScheme(any());
   }
   
   @Test
@@ -268,17 +289,17 @@ class AccessibilityControllerTest {
       .breadcrumbsEnabled(false)
       .build();
     
-    when(accessibilityService.getSimplifiedNavigation(1L)).thenReturn(navigation);
+    when(accessibilityService.getSimplifiedNavigation(any())).thenReturn(navigation);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/navigation/1"))
+    mockMvc.perform(get("/api/v1/accessibility/simplified-navigation"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.simplified").value(true))
       .andExpect(jsonPath("$.data.maxDepth").value(2))
       .andExpect(jsonPath("$.data.mainMenuItems", org.hamcrest.Matchers.hasSize(0)));
     
-    verify(accessibilityService).getSimplifiedNavigation(1L);
+    verify(accessibilityService).getSimplifiedNavigation(any());
   }
   
   @Test
@@ -293,10 +314,10 @@ class AccessibilityControllerTest {
       .wcagCompliant(true)
       .build();
     
-    when(accessibilityService.getTouchTargetInfo(1L, "tablet")).thenReturn(touchInfo);
+    when(accessibilityService.getTouchTargetInfo(any(), eq("tablet"))).thenReturn(touchInfo);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/touch-targets/1")
+    mockMvc.perform(get("/api/v1/accessibility/touch-targets")
         .param("deviceType", "tablet"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
@@ -304,16 +325,16 @@ class AccessibilityControllerTest {
       .andExpect(jsonPath("$.data.recommendedSize").value(56))
       .andExpect(jsonPath("$.data.wcagCompliant").value(true));
     
-    verify(accessibilityService).getTouchTargetInfo(1L, "tablet");
+    verify(accessibilityService).getTouchTargetInfo(any(), eq("tablet"));
   }
   
   @Test
   @DisplayName("POST /api/accessibility/simplify-text - 텍스트 간소화 성공")
   void simplifyText_Success() throws Exception {
     // Given
-    Map<String, String> request = new HashMap<>();
-    request.put("text", "복잡한 문장입니다.");
-    request.put("targetLevel", "grade3");
+    SimplifyTextRequest request = new SimplifyTextRequest();
+    request.setText("복잡한 문장입니다.");
+    request.setTargetLevel("grade3");
     
     SimplifiedTextResponse response = SimplifiedTextResponse.builder()
       .originalText("복잡한 문장입니다.")
@@ -322,13 +343,12 @@ class AccessibilityControllerTest {
       .wordCount(3)
       .build();
     
-    when(accessibilityService.simplifyText(eq(1L), eq("복잡한 문장입니다."), eq("grade3")))
+    when(accessibilityService.simplifyText(any(), eq("복잡한 문장입니다."), eq("grade3")))
       .thenReturn(response);
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/simplify-text")
+    mockMvc.perform(post("/api/v1/accessibility/simplify-text")
         .with(csrf())
-        .param("userId", "1")
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request)))
       .andExpect(status().isOk())
@@ -337,7 +357,7 @@ class AccessibilityControllerTest {
       .andExpect(jsonPath("$.data.simplifiedText").value("쉬운 문장입니다."))
       .andExpect(jsonPath("$.data.readingLevel").value("grade3"));
     
-    verify(accessibilityService).simplifyText(1L, "복잡한 문장입니다.", "grade3");
+    verify(accessibilityService).simplifyText(any(), eq("복잡한 문장입니다."), eq("grade3"));
   }
   
   @Test
@@ -352,10 +372,10 @@ class AccessibilityControllerTest {
       .message("동기화 완료")
       .build();
     
-    when(accessibilityService.syncSettings(1L)).thenReturn(syncStatus);
+    when(accessibilityService.syncSettings(any())).thenReturn(syncStatus);
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/settings/1/sync")
+    mockMvc.perform(post("/api/v1/accessibility/settings/sync")
         .with(csrf()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
@@ -364,7 +384,7 @@ class AccessibilityControllerTest {
       .andExpect(jsonPath("$.data.syncedDevices").value(2))
       .andExpect(jsonPath("$.message").value("설정이 동기화되었습니다"));
     
-    verify(accessibilityService).syncSettings(1L);
+    verify(accessibilityService).syncSettings(any());
   }
   
   @Test
@@ -392,7 +412,7 @@ class AccessibilityControllerTest {
     when(accessibilityService.getStatistics()).thenReturn(stats);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/statistics"))
+    mockMvc.perform(get("/api/v1/accessibility/statistics"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.totalUsers").value(100))
@@ -407,16 +427,16 @@ class AccessibilityControllerTest {
   @DisplayName("GET /api/accessibility/settings/{userId} - 설정 조회 실패")
   void getSettings_NotFound() throws Exception {
     // Given
-    when(accessibilityService.getSettings(999L))
+    when(accessibilityService.getSettings(any()))
       .thenThrow(new IllegalArgumentException("사용자를 찾을 수 없습니다"));
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/settings/999"))
+    mockMvc.perform(get("/api/v1/accessibility/settings"))
       .andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.success").value(false))
       .andExpect(jsonPath("$.error.message").value("사용자를 찾을 수 없습니다"));
     
-    verify(accessibilityService).getSettings(999L);
+    verify(accessibilityService).getSettings(any());
   }
   
   @Test
@@ -427,11 +447,11 @@ class AccessibilityControllerTest {
       .voiceSpeed(3.0f) // 범위 초과
       .build();
     
-    when(accessibilityService.updateSettings(eq(1L), org.mockito.ArgumentMatchers.any(AccessibilitySettingsDto.class)))
+    when(accessibilityService.updateSettings(any(), any(AccessibilitySettingsDto.class)))
       .thenThrow(new IllegalArgumentException("음성 속도는 0.5와 2.0 사이여야 합니다"));
     
     // When & Then
-    mockMvc.perform(put("/api/accessibility/settings/1")
+    mockMvc.perform(put("/api/v1/accessibility/settings")
         .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(invalidDto)))
@@ -444,11 +464,11 @@ class AccessibilityControllerTest {
   @DisplayName("POST /api/accessibility/settings/{userId}/sync - 동기화 실패")
   void syncSettings_Failed() throws Exception {
     // Given
-    when(accessibilityService.syncSettings(1L))
+    when(accessibilityService.syncSettings(any()))
       .thenThrow(new RuntimeException("네트워크 오류"));
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/settings/1/sync")
+    mockMvc.perform(post("/api/v1/accessibility/settings/sync")
         .with(csrf()))
       .andExpect(status().isInternalServerError())
       .andExpect(jsonPath("$.success").value(false))
@@ -456,16 +476,20 @@ class AccessibilityControllerTest {
   }
   
   @Test
-  @DisplayName("GET /api/accessibility/voice-guidance - 파라미터 없이 호출")
+  @DisplayName("POST /api/accessibility/voice-guidance - 파라미터 없이 호출")
   void generateVoiceGuidance_NoParams() throws Exception {
     // Given
-    when(voiceGuidanceService.generateVoiceGuidance(eq(1L), eq("default"), anyMap()))
+    when(voiceGuidanceService.generateVoiceGuidance(any(), eq("default"), anyMap()))
       .thenReturn("기본 안내");
     
+    VoiceGuidanceRequest defaultRequest = new VoiceGuidanceRequest();
+    defaultRequest.setContext("default");
+    
     // When & Then
-    mockMvc.perform(get("/api/accessibility/voice-guidance")
-        .param("userId", "1")
-        .param("context", "default"))
+    mockMvc.perform(post("/api/v1/accessibility/voice-guidance")
+        .with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(defaultRequest)))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.success").value(true))
       .andExpect(jsonPath("$.data.text").value("기본 안내"));
@@ -483,22 +507,22 @@ class AccessibilityControllerTest {
       .wcagCompliant(true)
       .build();
     
-    when(accessibilityService.getTouchTargetInfo(1L, null)).thenReturn(touchInfo);
+    when(accessibilityService.getTouchTargetInfo(any(), isNull())).thenReturn(touchInfo);
     
     // When & Then
-    mockMvc.perform(get("/api/accessibility/touch-targets/1"))
+    mockMvc.perform(get("/api/v1/accessibility/touch-targets"))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.data.deviceType").value("mobile"));
     
-    verify(accessibilityService).getTouchTargetInfo(1L, null);
+    verify(accessibilityService).getTouchTargetInfo(any(), isNull());
   }
   
   @Test
   @DisplayName("POST /api/accessibility/simplify-text - targetLevel 없이 호출")
   void simplifyText_NoTargetLevel() throws Exception {
     // Given
-    Map<String, String> request = new HashMap<>();
-    request.put("text", "복잡한 문장입니다.");
+    SimplifyTextRequest request = new SimplifyTextRequest();
+    request.setText("복잡한 문장입니다.");
     
     SimplifiedTextResponse response = SimplifiedTextResponse.builder()
       .originalText("복잡한 문장입니다.")
@@ -507,37 +531,34 @@ class AccessibilityControllerTest {
       .wordCount(3)
       .build();
     
-    when(accessibilityService.simplifyText(eq(1L), eq("복잡한 문장입니다."), isNull()))
+    when(accessibilityService.simplifyText(any(), eq("복잡한 문장입니다."), isNull()))
       .thenReturn(response);
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/simplify-text")
+    mockMvc.perform(post("/api/v1/accessibility/simplify-text")
         .with(csrf())
-        .param("userId", "1")
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request)))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.data.readingLevel").value("grade5"));
     
-    verify(accessibilityService).simplifyText(1L, "복잡한 문장입니다.", null);
+    verify(accessibilityService).simplifyText(any(), eq("복잡한 문장입니다."), isNull());
   }
   
   @Test
-  @DisplayName("POST /api/accessibility/settings/{userId}/profile - 잘못된 프로파일 타입")
+  @DisplayName("POST /api/accessibility/settings/apply-profile - 잘못된 프로파일 타입")
   void applyProfile_InvalidType() throws Exception {
     // Given
-    Map<String, String> request = new HashMap<>();
-    request.put("profileType", "invalid");
-    
-    when(accessibilityService.applyProfile(1L, "invalid"))
+    when(accessibilityService.applyProfile(any(), eq("invalid")))
       .thenThrow(new IllegalArgumentException("잘못된 프로파일 타입입니다"));
     
     // When & Then
-    mockMvc.perform(post("/api/accessibility/settings/1/profile")
+    mockMvc.perform(post("/api/v1/accessibility/settings/apply-profile")
         .with(csrf())
         .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(request)))
+        .param("profileType", "invalid"))
       .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.success").value(false))
       .andExpect(jsonPath("$.error.message").value("잘못된 프로파일 타입입니다"));
   }
 }

@@ -29,6 +29,11 @@ import java.util.concurrent.TimeUnit;
  */
 @Configuration
 @Slf4j
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+  name = "http.client.enabled",
+  havingValue = "true",
+  matchIfMissing = true
+)
 public class HttpClientConfig {
   
   /**
@@ -58,8 +63,9 @@ public class HttpClientConfig {
     
     // RestTemplate 팩토리 설정
     HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-    factory.setConnectTimeout(10000); // 10초
-    factory.setConnectionRequestTimeout(10000); // 10초
+    // Spring Boot 3.5에서는 Duration 사용
+    factory.setConnectTimeout(Duration.ofSeconds(10));
+    factory.setConnectionRequestTimeout(Duration.ofSeconds(10));
     
     RestTemplate restTemplate = new RestTemplate(factory);
     
@@ -130,7 +136,7 @@ public class HttpClientConfig {
       .build();
     
     HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-    factory.setConnectTimeout(5000); // 5초
+    factory.setConnectTimeout(Duration.ofSeconds(5));
     
     return new RestTemplate(factory);
   }

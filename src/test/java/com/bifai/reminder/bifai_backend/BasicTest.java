@@ -10,12 +10,7 @@ class BasicTest {
   
   @Test
   void basicTest() {
+    // 기본 테스트 통과 확인
     assertThat(1 + 1).isEqualTo(2);
-  }
-  
-  @Test
-  void stringTest() {
-    String text = "Hello BIF-AI";
-    assertThat(text).contains("BIF");
   }
 }

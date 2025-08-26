@@ -1,5 +1,6 @@
 package com.bifai.reminder.bifai_backend.controller;
 
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthenticationFilter;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
@@ -12,13 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.data.redis.core.RedisTemplate;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
  * Controller 테스트 기본 설정
@@ -27,6 +26,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver",
@@ -56,10 +56,7 @@ public abstract class BaseControllerTest {
   @MockBean
   protected com.bifai.reminder.bifai_backend.repository.UserRepository userRepository;
   
-  // 외부 서비스 Mock
-  @MockBean
-  protected RedisTemplate<String, Object> redisTemplate;
-  
+  // Redis 관련 서비스 Mock
   @MockBean
   protected RefreshTokenService refreshTokenService;
   
@@ -71,13 +68,4 @@ public abstract class BaseControllerTest {
   
   @MockBean
   protected FirebaseMessaging firebaseMessaging;
-  
-  @MockBean
-  protected S3Client s3Client;
-  
-  @MockBean
-  protected S3AsyncClient s3AsyncClient;
-  
-  @MockBean
-  protected S3Presigner s3Presigner;
 }

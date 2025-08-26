@@ -1,23 +1,17 @@
 package com.bifai.reminder.bifai_backend.websocket;
 
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
 import com.bifai.reminder.bifai_backend.dto.websocket.*;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
-import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
-import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
-import com.google.cloud.vision.v1.ImageAnnotatorClient;
-import com.google.firebase.messaging.FirebaseMessaging;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
@@ -46,9 +40,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  * WebSocket 통합 테스트
  * 실제 WebSocket 연결과 STOMP 프로토콜을 검증
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+  "spring.batch.job.enabled=false",
+  "spring.http.client.factory=simple"
+})
 @ActiveProfiles("test")
-@Disabled("WebSocket 테스트 환경 문제로 일시 비활성화")
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
     "spring.datasource.driver-class-name=org.h2.Driver",
@@ -73,26 +70,8 @@ class WebSocketIntegrationTest {
   @MockBean
   private RedisTemplate<String, Object> redisTemplate;
   
-  @MockBean
-  private RefreshTokenService refreshTokenService;
   
-  @MockBean
-  private RedisCacheService redisCacheService;
   
-  @MockBean
-  private ImageAnnotatorClient imageAnnotatorClient;
-  
-  @MockBean
-  private FirebaseMessaging firebaseMessaging;
-  
-  @MockBean
-  private S3Client s3Client;
-  
-  @MockBean
-  private S3AsyncClient s3AsyncClient;
-  
-  @MockBean
-  private S3Presigner s3Presigner;
 
   @Autowired
   private UserRepository userRepository;

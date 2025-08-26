@@ -108,7 +108,7 @@ public class OptimizedDashboardService {
       userId, startDate, endDate
     );
     
-    List<Object> activityIntensity = activityLogRepository.getDailyActivityIntensity(
+    List<Object[]> activityIntensity = activityLogRepository.getDailyActivityIntensity(
       userId, startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX)
     );
     
@@ -269,7 +269,7 @@ public class OptimizedDashboardService {
   /**
    * 활동 강도 파싱
    */
-  private List<ActivityIntensity> parseActivityIntensity(List<Object> intensity) {
+  private List<ActivityIntensity> parseActivityIntensity(List<Object[]> intensity) {
     // 활동 강도 데이터 파싱
     return new ArrayList<>();
   }
@@ -277,7 +277,7 @@ public class OptimizedDashboardService {
   /**
    * 트렌드 방향 계산
    */
-  private String calculateTrendDirection(List<Object> medicationStats, List<Object> activityStats) {
+  private String calculateTrendDirection(List<Object> medicationStats, List<Object[]> activityStats) {
     // 주간 트렌드 방향 계산
     return "STABLE";
   }

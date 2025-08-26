@@ -11,14 +11,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.data.redis.core.RedisTemplate;
-import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
-import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
-import com.google.cloud.vision.v1.ImageAnnotatorClient;
-import com.google.firebase.messaging.FirebaseMessaging;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import org.springframework.context.annotation.Import;
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = BifaiBackendApplication.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver",
@@ -49,30 +44,6 @@ class BasicIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
-  
-  @MockBean
-  private RedisTemplate<String, Object> redisTemplate;
-  
-  @MockBean
-  private RefreshTokenService refreshTokenService;
-  
-  @MockBean
-  private RedisCacheService redisCacheService;
-  
-  @MockBean
-  private ImageAnnotatorClient imageAnnotatorClient;
-  
-  @MockBean
-  private FirebaseMessaging firebaseMessaging;
-  
-  @MockBean
-  private S3Client s3Client;
-  
-  @MockBean
-  private S3AsyncClient s3AsyncClient;
-  
-  @MockBean
-  private S3Presigner s3Presigner;
 
   @Test
   @DisplayName("애플리케이션 컨텍스트 로드 성공")

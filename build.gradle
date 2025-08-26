@@ -93,8 +93,16 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-bulkhead:2.1.0'
 	implementation 'io.github.resilience4j:resilience4j-retry:2.1.0'
 	
-	// Apache HttpClient for RestTemplate
-	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+	// Apache HttpClient 5 for RestTemplate (Spring Boot 3.5 필수)
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+	implementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
+	implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
+	implementation 'org.apache.httpcomponents.core5:httpcore5-reactive:5.2.5'
+	
+	// 테스트에서도 사용 가능하도록 testImplementation 추가
+	testImplementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+	testImplementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
+	testImplementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
 	
 	// WebFlux for WebClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
@@ -110,8 +118,8 @@ dependencies {
 	implementation 'com.google.cloud:google-cloud-vision'
 	
 	// AWS SDK for future cloud integration
-	implementation platform('software.amazon.awssdk:bom:2.20.56')
-	implementation 'software.amazon.awssdk:s3'
+	// AWS SDK 제거 - EC2만 사용하므로 S3 불필요
+	// HttpClient 4 제거 - HttpClient 5로 통일
 	
 	// Firebase Cloud Messaging for push notifications
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
@@ -123,6 +131,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'com.github.kstyrc:embedded-redis:0.6'
+	// AWS SDK 테스트 의존성 제거
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

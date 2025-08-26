@@ -1,5 +1,6 @@
 package com.bifai.reminder.bifai_backend.websocket;
 
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
@@ -7,9 +8,6 @@ import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
 import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.firebase.messaging.FirebaseMessaging;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -18,6 +16,7 @@ import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -49,11 +48,15 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * WebSocket 인증 테스트
+ * WebSocket 인증 통합 테스트
  * JWT 토큰 검증, 권한 체크, 인증 실패 시나리오 검증
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+  "spring.batch.job.enabled=false",
+  "spring.http.client.factory=simple"
+})
 @ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver",
@@ -87,15 +90,6 @@ class WebSocketAuthenticationTest {
   
   @MockBean
   private FirebaseMessaging firebaseMessaging;
-  
-  @MockBean
-  private S3Client s3Client;
-  
-  @MockBean
-  private S3AsyncClient s3AsyncClient;
-  
-  @MockBean
-  private S3Presigner s3Presigner;
 
   @Value("${app.jwt.secret}")
   private String jwtSecret;

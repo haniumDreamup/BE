@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest
 @ActiveProfiles("test")
-@Import({TestAutoConfiguration.class, TestConfig.class})
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     // Redis Mock 사용
     "redis.mock.enabled=true",

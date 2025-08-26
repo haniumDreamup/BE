@@ -15,7 +15,7 @@ import java.util.List;
  * CORS 보안 설정
  * 허용된 도메인만 접근 가능하도록 제한
  */
-@Configuration
+// @Configuration - Disabled to avoid conflict with existing CORS configuration
 @Slf4j
 public class CorsSecurityConfig {
   

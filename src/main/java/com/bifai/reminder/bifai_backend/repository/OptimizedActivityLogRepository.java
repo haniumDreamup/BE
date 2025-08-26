@@ -20,16 +20,16 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
   /**
    * 주간 활동 요약 (단일 쿼리로 집계)
    */
-  @Query("SELECT DATE(a.timestamp) as activityDate, " +
+  @Query("SELECT DATE(a.activityDate) as activityDate, " +
          "COUNT(a) as activityCount, " +
          "a.activityType, " +
-         "MIN(a.timestamp) as firstActivity, " +
-         "MAX(a.timestamp) as lastActivity " +
+         "MIN(a.activityDate) as firstActivity, " +
+         "MAX(a.activityDate) as lastActivity " +
          "FROM ActivityLog a " +
          "WHERE a.user.userId = :userId " +
-         "AND a.timestamp BETWEEN :startTime AND :endTime " +
-         "GROUP BY DATE(a.timestamp), a.activityType " +
-         "ORDER BY DATE(a.timestamp) DESC")
+         "AND a.activityDate BETWEEN :startTime AND :endTime " +
+         "GROUP BY DATE(a.activityDate), a.activityType " +
+         "ORDER BY DATE(a.activityDate) DESC")
   List<Object[]> getWeeklyActivitySummary(
     @Param("userId") Long userId,
     @Param("startTime") LocalDateTime startTime,
@@ -38,14 +38,14 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
   /**
    * 시간대별 활동 패턴 분석 (인덱스 활용)
    */
-  @Query(value = "SELECT /*+ INDEX(activity_logs idx_activity_user_timestamp) */ " +
-                 "HOUR(timestamp) as hour, " +
+  @Query(value = "SELECT /*+ INDEX(activity_logs idx_activity_user_activity_date) */ " +
+                 "HOUR(activity_date) as hour, " +
                  "COUNT(*) as count, " +
                  "activity_type " +
                  "FROM activity_logs " +
                  "WHERE user_id = :userId " +
-                 "AND timestamp >= :startTime " +
-                 "GROUP BY HOUR(timestamp), activity_type " +
+                 "AND activity_date >= :startTime " +
+                 "GROUP BY HOUR(activity_date), activity_type " +
                  "ORDER BY hour",
          nativeQuery = true)
   List<Object[]> getHourlyActivityPattern(
@@ -55,17 +55,15 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
   /**
    * 활동 강도 계산 (배치 처리)
    */
-  @Query("SELECT NEW com.bifai.reminder.bifai_backend.dto.dashboard.ActivityIntensity(" +
-         "DATE(a.timestamp), " +
-         "COUNT(a), " +
-         "SUM(a.durationMinutes), " +
-         "AVG(a.intensityScore)) " +
+  @Query("SELECT CAST(a.activityDate AS date) as date, " +
+         "COUNT(a) as count, " +
+         "COALESCE(SUM(a.durationMinutes), 0L) as duration " +
          "FROM ActivityLog a " +
          "WHERE a.user.userId = :userId " +
-         "AND a.timestamp BETWEEN :startTime AND :endTime " +
-         "GROUP BY DATE(a.timestamp) " +
-         "ORDER BY DATE(a.timestamp)")
-  List<Object> getDailyActivityIntensity(
+         "AND a.activityDate BETWEEN :startTime AND :endTime " +
+         "GROUP BY CAST(a.activityDate AS date) " +
+         "ORDER BY CAST(a.activityDate AS date)")
+  List<Object[]> getDailyActivityIntensity(
     @Param("userId") Long userId,
     @Param("startTime") LocalDateTime startTime,
     @Param("endTime") LocalDateTime endTime);
@@ -75,7 +73,7 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
    */
   @Query(value = "SELECT * FROM activity_logs " +
                  "WHERE user_id = :userId " +
-                 "ORDER BY timestamp DESC " +
+                 "ORDER BY activity_date DESC " +
                  "LIMIT :limit",
          nativeQuery = true)
   List<ActivityLog> findRecentActivities(
@@ -85,18 +83,18 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
   /**
    * 비활동 시간 감지
    */
-  @Query("SELECT a1.timestamp, a2.timestamp " +
+  @Query("SELECT a1.activityDate, a2.activityDate " +
          "FROM ActivityLog a1, ActivityLog a2 " +
          "WHERE a1.user.userId = :userId " +
          "AND a2.user.userId = :userId " +
-         "AND a2.timestamp = (" +
-         "  SELECT MIN(a3.timestamp) " +
+         "AND a2.activityDate = (" +
+         "  SELECT MIN(a3.activityDate) " +
          "  FROM ActivityLog a3 " +
          "  WHERE a3.user.userId = :userId " +
-         "  AND a3.timestamp > a1.timestamp" +
+         "  AND a3.activityDate > a1.activityDate" +
          ") " +
-         "AND TIMESTAMPDIFF(HOUR, a1.timestamp, a2.timestamp) > :inactiveHours " +
-         "ORDER BY a1.timestamp")
+         "AND TIMESTAMPDIFF(HOUR, a1.activityDate, a2.activityDate) > :inactiveHours " +
+         "ORDER BY a1.activityDate")
   List<Object[]> findInactivePeriods(
     @Param("userId") Long userId,
     @Param("inactiveHours") int inactiveHours);
@@ -107,7 +105,7 @@ public interface OptimizedActivityLogRepository extends JpaRepository<ActivityLo
   @Query("SELECT a.activityType, COUNT(a), SUM(a.durationMinutes) " +
          "FROM ActivityLog a " +
          "WHERE a.user.userId = :userId " +
-         "AND a.timestamp >= :startTime " +
+         "AND a.activityDate >= :startTime " +
          "GROUP BY a.activityType")
   List<Object[]> getActivityTypeStatistics(
     @Param("userId") Long userId,

@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "app.jwt.refresh-token-expiration-ms=604800000",
     "spring.data.redis.timeout=2000"
 })
-@Import({JpaConfig.class, TestDatabaseConfig.class})
+@Import({JpaConfig.class, RepositoryTestConfig.class})
 class DatabaseConfigTest {
     
     @Autowired

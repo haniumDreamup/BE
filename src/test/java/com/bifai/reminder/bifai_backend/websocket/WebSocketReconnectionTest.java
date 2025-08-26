@@ -9,9 +9,6 @@ import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
 import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.firebase.messaging.FirebaseMessaging;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +41,10 @@ import static org.assertj.core.api.Assertions.*;
  * WebSocket 재연결 및 복구 테스트
  * 네트워크 단절, 자동 재연결, 메시지 복구 등을 검증
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+  "spring.batch.job.enabled=false",
+  "spring.http.client.factory=simple"
+})
 @ActiveProfiles("test")
 @Disabled("WebSocket 테스트 환경 문제로 일시 비활성화")
 @TestPropertySource(properties = {
@@ -82,15 +82,6 @@ class WebSocketReconnectionTest {
   
   @MockBean
   private FirebaseMessaging firebaseMessaging;
-  
-  @MockBean
-  private S3Client s3Client;
-  
-  @MockBean
-  private S3AsyncClient s3AsyncClient;
-  
-  @MockBean
-  private S3Presigner s3Presigner;
 
   @Autowired
   private UserRepository userRepository;

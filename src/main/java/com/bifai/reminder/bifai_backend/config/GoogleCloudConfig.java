@@ -18,6 +18,7 @@ import java.io.IOException;
  */
 @Slf4j
 @Configuration
+@org.springframework.context.annotation.Profile("!test")
 public class GoogleCloudConfig {
   
   @Value("${google.cloud.credentials.path:}")

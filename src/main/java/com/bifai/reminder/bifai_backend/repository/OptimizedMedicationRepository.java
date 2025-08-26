@@ -25,25 +25,26 @@ public interface OptimizedMedicationRepository extends JpaRepository<Medication,
    */
   @Query("SELECT DISTINCT m FROM Medication m " +
          "LEFT JOIN FETCH m.user u " +
-         "LEFT JOIN FETCH m.intakeTimes " +
          "WHERE m.user.userId = :userId " +
          "AND m.isActive = true " +
-         "AND m.scheduledTime BETWEEN :startTime AND :endTime " +
-         "ORDER BY m.scheduledTime, m.priorityLevel DESC")
+         "AND m.startDate <= :currentDate " +
+         "AND (m.endDate IS NULL OR m.endDate >= :currentDate) " +
+         "ORDER BY m.priorityLevel DESC")
   List<Medication> findDashboardMedications(
     @Param("userId") Long userId,
-    @Param("startTime") LocalDateTime startTime,
-    @Param("endTime") LocalDateTime endTime);
+    @Param("currentDate") LocalDate currentDate);
   
   /**
    * 복약 순응도와 함께 조회 (JOIN FETCH로 N+1 해결)
    */
   @Query("SELECT DISTINCT m FROM Medication m " +
          "LEFT JOIN FETCH m.user u " +
-         "LEFT JOIN FETCH m.adherenceRecords a " +
          "WHERE m.user.userId = :userId " +
-         "AND a.adherenceDate BETWEEN :startDate AND :endDate " +
-         "ORDER BY a.adherenceDate DESC, m.priorityLevel DESC")
+         "AND m.isActive = true " +
+         "AND EXISTS (SELECT 1 FROM MedicationAdherence a " +
+         "           WHERE a.medication = m " +
+         "           AND a.adherenceDate BETWEEN :startDate AND :endDate) " +
+         "ORDER BY m.priorityLevel DESC")
   List<Medication> findMedicationsWithAdherence(
     @Param("userId") Long userId,
     @Param("startDate") LocalDate startDate,
@@ -73,7 +74,7 @@ public interface OptimizedMedicationRepository extends JpaRepository<Medication,
          "SUM(CASE WHEN a.adherenceStatus = 'TAKEN' OR a.adherenceStatus = 'TAKEN_EARLY' OR a.adherenceStatus = 'TAKEN_LATE' THEN 1 ELSE 0 END), " +
          "AVG(a.delayMinutes)) " +
          "FROM Medication m " +
-         "LEFT JOIN m.adherenceRecords a " +
+         "LEFT JOIN MedicationAdherence a ON a.medication = m " +
          "WHERE m.user.userId = :userId " +
          "AND a.adherenceDate BETWEEN :startDate AND :endDate " +
          "GROUP BY m.id, m.medicationName, m.priorityLevel " +

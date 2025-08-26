@@ -21,7 +21,7 @@ public interface GuardianRelationshipRepository extends JpaRepository<GuardianRe
   /**
    * 특정 보호자와 사용자 간의 관계 조회
    */
-  Optional<GuardianRelationship> findByGuardianGuardianIdAndUserUserId(Long guardianId, Long userId);
+  Optional<GuardianRelationship> findByGuardian_IdAndUser_UserId(Long guardianId, Long userId);
   
   /**
    * 특정 사용자의 모든 보호자 관계 조회

@@ -46,7 +46,7 @@ public class InteractionPatternAnalysisService {
     LocalDateTime endOfDay = startOfDay.plusDays(1);
     
     // 해당 일자의 로그 조회
-    List<UserBehaviorLog> logs = behaviorLogRepository.findByUserAndCreatedAtBetween(
+    List<UserBehaviorLog> logs = behaviorLogRepository.findByUserAndTimestampBetween(
       user, startOfDay, endOfDay);
     
     if (logs.isEmpty()) {
@@ -92,7 +92,7 @@ public class InteractionPatternAnalysisService {
       LocalDateTime now = LocalDateTime.now();
       LocalDateTime oneHourAgo = now.minusHours(1);
       
-      List<UserBehaviorLog> logs = behaviorLogRepository.findByUserAndCreatedAtBetween(
+      List<UserBehaviorLog> logs = behaviorLogRepository.findByUserAndTimestampBetween(
         user, oneHourAgo, now);
       
       if (logs.size() < 5) { // 최소 5개 이상의 로그가 있어야 분석

@@ -62,37 +62,4 @@ public class SecurityHeaderConfig {
     }
   }
   
-  /**
-   * Spring Security 보안 설정
-   */
-  @Bean
-  public SecurityFilterChain securityHeaders(HttpSecurity http) throws Exception {
-    http.headers(headers -> headers
-      // XSS 보호
-      .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-      
-      // Content Type Options
-      .contentTypeOptions(contentType -> {})
-      
-      // Frame Options
-      .frameOptions(frame -> frame.deny())
-      
-      // HSTS
-      .httpStrictTransportSecurity(hsts -> hsts
-        .includeSubDomains(true)
-        .maxAgeInSeconds(31536000))
-      
-      // CSP
-      .contentSecurityPolicy(csp -> csp
-        .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'"))
-      
-      // Cache Control
-      .cacheControl(cache -> {})
-      
-      // 커스텀 헤더
-      .addHeaderWriter(new StaticHeadersWriter("X-Custom-Security", "BIF-AI"))
-    );
-    
-    return http.build();
-  }
 }

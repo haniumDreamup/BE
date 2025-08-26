@@ -2,6 +2,7 @@ package com.bifai.reminder.bifai_backend.config;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -54,7 +55,9 @@ public class InputValidationConfig implements Filter {
         httpRequest.getRequestURI());
       
       // 400 Bad Request 반환
-      response.getWriter().write("잘못된 요청입니다");
+      ((HttpServletResponse) response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      response.setContentType("application/json;charset=UTF-8");
+      response.getWriter().write("{\"error\":\"잘못된 요청입니다\"}");
       return;
     }
     

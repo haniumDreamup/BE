@@ -37,7 +37,7 @@ public class ImageAnalysisService {
 
   private final ImageAnalysisRepository imageAnalysisRepository;
   private final UserRepository userRepository;
-  private final S3Service s3Service;
+  private final LocalFileService localFileService;
   private final VoiceGuidanceService voiceGuidanceService;
   private final ObjectMapper objectMapper;
 

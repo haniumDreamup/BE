@@ -25,7 +25,10 @@ public class ResponseOptimizationAdvice implements ResponseBodyAdvice<Object> {
   public boolean supports(MethodParameter returnType, 
                          Class<? extends HttpMessageConverter<?>> converterType) {
     // 이미 OptimizedApiResponse로 래핑된 경우 제외
-    return !returnType.getParameterType().equals(OptimizedApiResponse.class);
+    // ApiResponse도 제외하여 이중 래핑 방지
+    Class<?> paramType = returnType.getParameterType();
+    return !paramType.equals(OptimizedApiResponse.class) && 
+           !paramType.equals(com.bifai.reminder.bifai_backend.dto.ApiResponse.class);
   }
   
   @Override
@@ -39,6 +42,11 @@ public class ResponseOptimizationAdvice implements ResponseBodyAdvice<Object> {
     // null 응답 처리
     if (body == null) {
       return OptimizedApiResponse.success(null);
+    }
+    
+    // String 응답은 그대로 반환 (StringHttpMessageConverter 호환성)
+    if (body instanceof String) {
+      return body;
     }
     
     // 페이징 응답 처리

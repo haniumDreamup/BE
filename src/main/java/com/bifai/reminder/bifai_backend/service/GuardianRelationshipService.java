@@ -280,7 +280,7 @@ public class GuardianRelationshipService {
   @Transactional(readOnly = true)
   public List<GuardianRelationshipDto> getGuardianUsers(Long guardianId) {
     List<GuardianRelationship> relationships = 
-      relationshipRepository.findByGuardianGuardianIdAndStatus(guardianId, RelationshipStatus.ACTIVE);
+      relationshipRepository.findByGuardian_IdAndStatus(guardianId, RelationshipStatus.ACTIVE);
     
     return relationships.stream()
       .map(this::convertToDto)
@@ -318,7 +318,7 @@ public class GuardianRelationshipService {
    * 활동 시간 업데이트
    */
   public void updateLastActiveTime(Long guardianId, Long userId) {
-    relationshipRepository.findByGuardianGuardianIdAndUserUserId(guardianId, userId)
+    relationshipRepository.findByGuardian_IdAndUser_UserId(guardianId, userId)
       .ifPresent(relationship -> {
         relationship.updateLastActiveTime();
         relationshipRepository.save(relationship);

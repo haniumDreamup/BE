@@ -1,8 +1,6 @@
 package com.bifai.reminder.bifai_backend.security.oauth2;
 
-import com.bifai.reminder.bifai_backend.config.TestApplicationConfig;
-import com.bifai.reminder.bifai_backend.config.TestRedisConfiguration;
-import com.bifai.reminder.bifai_backend.config.TestServiceConfig;
+import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
 import com.bifai.reminder.bifai_backend.entity.Role;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.RoleRepository;
@@ -35,7 +33,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Disabled("NoSuchBeanDefinitionException 문제로 일시 비활성화")
-@Import({TestApplicationConfig.class, TestRedisConfiguration.class, TestServiceConfig.class})
+@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
   "spring.datasource.url=jdbc:h2:mem:testdb",
   "spring.jpa.hibernate.ddl-auto=create-drop",

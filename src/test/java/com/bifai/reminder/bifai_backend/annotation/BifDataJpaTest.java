@@ -1,7 +1,7 @@
 package com.bifai.reminder.bifai_backend.annotation;
 
 import com.bifai.reminder.bifai_backend.config.JpaConfig;
-import com.bifai.reminder.bifai_backend.config.TestJpaConfig;
+import com.bifai.reminder.bifai_backend.config.RepositoryTestConfig;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
@@ -19,6 +19,6 @@ import java.lang.annotation.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-@Import({TestJpaConfig.class})
+@Import({RepositoryTestConfig.class})
 public @interface BifDataJpaTest {
 }

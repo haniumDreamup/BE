@@ -10,6 +10,7 @@ import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsServi
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -35,8 +36,8 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@Profile("!test")
 @RequiredArgsConstructor
-@org.springframework.context.annotation.Profile("!simple")
 public class SecurityConfig {
 
     private final BifUserDetailsService userDetailsService;
@@ -77,9 +78,12 @@ public class SecurityConfig {
                 // === 공개 엔드포인트 ===
                 // 헬스체크
                 .requestMatchers("/health/**").permitAll()
+                .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers("/api/v1/health/**").permitAll()
                 // 테스트 엔드포인트
                 .requestMatchers("/api/v1/test/**").permitAll()
+                // 존재하지 않는 엔드포인트 처리 (404 반환)
+                .requestMatchers("/api/nonexistent").permitAll()
                 // H2 콘솔 (개발 환경)
                 .requestMatchers("/h2-console/**").permitAll()
                 // 인증 API (로그인, 회원가입 등)
