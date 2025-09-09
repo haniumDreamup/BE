@@ -21,51 +21,115 @@ import java.util.List;
 public class NotificationService {
   
   private final GuardianRepository guardianRepository;
+  private final com.bifai.reminder.bifai_backend.service.notification.FcmService fcmService;
+  private final com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler notificationScheduler;
+  private final com.bifai.reminder.bifai_backend.repository.UserRepository userRepository;
+  private final com.bifai.reminder.bifai_backend.repository.DeviceRepository deviceRepository;
 
   /**
    * 보호자에게 긴급 상황 알림 전송
    */
   public void sendEmergencyNotification(Guardian guardian, Emergency emergency) {
-    // TODO: 실제 알림 전송 로직 구현
-    // 1. Push 알림 (FCM)
-    // 2. SMS 알림
-    // 3. 이메일 알림
-    
-    log.info("긴급 상황 알림 전송: guardianId={}, emergencyId={}, type={}", 
-        guardian.getId(), emergency.getId(), emergency.getType());
+    try {
+      String emergencyTitle = "🚨 긴급 상황 발생";
+      String emergencyMessage = String.format("%s님에게 긴급 상황이 발생했습니다: %s", 
+          emergency.getUser().getUsername(), emergency.getType().name());
+      
+      // 1. Push 알림 (FCM) - 보호자의 사용자 계정으로 전송
+      if (guardian.getGuardianUser() != null) {
+        sendPushNotification(guardian.getGuardianUser().getUserId(), emergencyTitle, emergencyMessage);
+      }
+      
+      // 2. SMS 알림 - 긴급 상황이므로 항상 전송
+      if (guardian.getPrimaryPhone() != null) {
+        sendSmsNotification(guardian.getPrimaryPhone(), emergencyTitle + " - " + emergencyMessage);
+      }
+      
+      // 3. 이메일 알림 - 상세 정보 포함
+      if (guardian.getEmail() != null) {
+        String detailedMessage = String.format(
+            "긴급 상황 상세 정보\\n\\n" +
+            "대상자: %s\\n" +
+            "발생 시간: %s\\n" +
+            "긴급 상황 유형: %s\\n\\n" +
+            "즉시 대상자의 상태를 확인하시고, 필요시 119에 신고해주세요.",
+            emergency.getUser().getUsername(),
+            emergency.getCreatedAt(),
+            emergency.getType().name()
+        );
+        sendEmailNotification(guardian.getEmail(), emergencyTitle, detailedMessage);
+      }
+      
+      log.info("긴급 상황 알림 전송 완료: guardianId={}, emergencyId={}, type={}", 
+          guardian.getId(), emergency.getId(), emergency.getType());
+          
+    } catch (Exception e) {
+      log.error("긴급 상황 알림 전송 실패: guardianId={}, emergencyId={}, error={}", 
+          guardian.getId(), emergency.getId(), e.getMessage());
+      throw new RuntimeException("긴급 알림 전송에 실패했습니다", e);
+    }
   }
 
   /**
    * 일반 푸시 알림 전송
    */
   public void sendPushNotification(Long userId, String title, String message) {
-    // TODO: FCM을 통한 푸시 알림 구현
-    log.info("푸시 알림 전송: userId={}, title={}", userId, title);
+    try {
+      String fcmToken = getFcmTokenForUser(userId);
+      if (fcmToken != null) {
+        fcmService.sendPushNotification(fcmToken, title, message, null);
+        log.info("푸시 알림 전송 완료: userId={}, title={}", userId, title);
+      } else {
+        log.warn("FCM 토큰을 찾을 수 없음: userId={}", userId);
+      }
+    } catch (Exception e) {
+      log.error("푸시 알림 전송 실패: userId={}, error={}", userId, e.getMessage());
+    }
   }
   
   /**
    * 알림 생성 및 전송
    */
   public void createNotification(Long userId, String title, String message) {
-    // TODO: 알림 저장 및 전송 로직 구현
-    log.info("알림 생성: userId={}, title={}, message={}", userId, title, message);
-    sendPushNotification(userId, title, message);
+    try {
+      log.info("알림 생성: userId={}, title={}, message={}", userId, title, message);
+      
+      // TODO: 향후 알림 히스토리 저장이 필요한 경우 데이터베이스 저장 로직 추가
+      // notificationRepository.save(new Notification(userId, title, message));
+      
+      // FCM을 통한 푸시 알림 전송
+      sendPushNotification(userId, title, message);
+      
+    } catch (Exception e) {
+      log.error("알림 생성 및 전송 실패: userId={}, error={}", userId, e.getMessage());
+      throw new RuntimeException("알림 전송에 실패했습니다", e);
+    }
   }
 
   /**
    * SMS 알림 전송
    */
   public void sendSmsNotification(String phoneNumber, String message) {
-    // TODO: SMS 전송 서비스 연동
-    log.info("SMS 알림 전송: phoneNumber={}", phoneNumber);
+    // SMS 전송은 별도의 SMS 서비스 (예: AWS SNS, 국내 SMS 서비스) 연동 필요
+    // 현재는 로깅으로 대체하고 향후 필요시 구현
+    log.info("SMS 알림 전송 요청: phoneNumber={}, message={}", 
+        phoneNumber.substring(0, 3) + "****" + phoneNumber.substring(phoneNumber.length()-4), message);
+    
+    // TODO: 실제 SMS 서비스 연동
+    // 예시: smsService.sendSms(phoneNumber, message);
   }
 
   /**
    * 이메일 알림 전송
    */
   public void sendEmailNotification(String email, String subject, String content) {
-    // TODO: 이메일 전송 서비스 구현
-    log.info("이메일 알림 전송: email={}, subject={}", email, subject);
+    // 이메일 전송은 별도의 이메일 서비스 (예: Spring Mail, AWS SES) 연동 필요
+    // 현재는 로깅으로 대체하고 향후 필요시 구현
+    String maskedEmail = email.substring(0, 3) + "***@" + email.substring(email.indexOf("@") + 1);
+    log.info("이메일 알림 전송 요청: email={}, subject={}", maskedEmail, subject);
+    
+    // TODO: 실제 이메일 서비스 연동
+    // 예시: emailService.sendEmail(email, subject, content);
   }
 
   /**
@@ -202,6 +266,32 @@ public class NotificationService {
       case RESOLVED: return "해결됨";
       case FALSE_POSITIVE: return "오탐지";
       default: return "알 수 없음";
+    }
+  }
+  
+  /**
+   * 사용자의 FCM 토큰 조회
+   */
+  private String getFcmTokenForUser(Long userId) {
+    try {
+      // 사용자의 활성 디바이스 찾기
+      List<com.bifai.reminder.bifai_backend.entity.Device> activeDevices = deviceRepository.findActiveDevicesByUserId(userId);
+      
+      if (activeDevices.isEmpty()) {
+        return null;
+      }
+      
+      // 가장 최근에 사용된 디바이스의 FCM 토큰 반환
+      com.bifai.reminder.bifai_backend.entity.Device primaryDevice = activeDevices.stream()
+          .filter(d -> d.getFcmToken() != null && !d.getFcmToken().isEmpty())
+          .findFirst()
+          .orElse(null);
+      
+      return primaryDevice != null ? primaryDevice.getFcmToken() : null;
+      
+    } catch (Exception e) {
+      log.error("FCM 토큰 조회 실패: userId={}, error={}", userId, e.getMessage());
+      return null;
     }
   }
   

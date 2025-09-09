@@ -1,77 +1,99 @@
 version: '3.8'
 
 services:
+  # MySQL Database
   mysql:
     image: mysql:8.0
     container_name: bifai-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root1234
-      MYSQL_DATABASE: bifai_db
-      MYSQL_USER: bifai_user
-      MYSQL_PASSWORD: bifai_pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-bifai_db}
+      MYSQL_USER: ${DB_USER:-bifai_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-bifaipassword}
+      TZ: Asia/Seoul
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
     networks:
       - bifai-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis - 추후 필요시 주석 해제
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: bifai-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - bifai-network
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 5s
-  #     timeout: 3s
-  #     retries: 5
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bifai-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bifai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Spring Boot Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bifai-backend
+    container_name: bifai-app
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-bifai_db}
+      DB_USER: ${DB_USER:-bifai_user}
+      DB_PASSWORD: ${DB_PASSWORD:-bifaipassword}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
       - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bifai_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: bifai_user
-      SPRING_DATASOURCE_PASSWORD: bifai_pass
-      # SPRING_DATA_REDIS_HOST: redis
-      # SPRING_DATA_REDIS_PORT: 6379
-      JWT_SECRET: docker-jwt-secret-key-for-bifai-backend-application-with-minimum-64-bytes-required-for-hs512-algorithm
-      JWT_EXPIRATION: 3600000
-      JWT_REFRESH_EXPIRATION: 604800000
-      # AWS 설정 (필요시 추가)
-      # AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      # AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      # AWS_REGION: ap-northeast-2
     depends_on:
       mysql:
         condition: service_healthy
-      # redis:
-      #   condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - app-logs:/var/log/bifai
+      - app-files:/var/bifai/files
     networks:
       - bifai-network
-    volumes:
-      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Nginx (Optional - for production)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: bifai-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - bifai-network
 
 networks:
   bifai-network:
     driver: bridge
 
 volumes:
-  mysql_data:
-  # redis_data:
+  mysql-data:
+  redis-data:
+  app-logs:
+  app-files:

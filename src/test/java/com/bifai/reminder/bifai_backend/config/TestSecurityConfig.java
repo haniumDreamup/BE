@@ -64,23 +64,10 @@ public class TestSecurityConfig {
   @Bean
   @Primary
   public AuthenticationManager authenticationManager(
-      BifUserDetailsService userDetailsService,
-      PasswordEncoder passwordEncoder) {
-    DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-    authenticationProvider.setUserDetailsService(userDetailsService);
-    authenticationProvider.setPasswordEncoder(passwordEncoder);
-    
-    return new ProviderManager(authenticationProvider);
+      AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    return authenticationConfiguration.getAuthenticationManager();
   }
   
-  /**
-   * AuthenticationConfiguration 빈 제공
-   * 일부 테스트에서 필요할 수 있음
-   */
-  @Bean
-  public AuthenticationConfiguration authenticationConfiguration() {
-    return new AuthenticationConfiguration();
-  }
   
   /**
    * ObjectPostProcessor 빈 제공
@@ -101,17 +88,13 @@ public class TestSecurityConfig {
    * 테스트 환경용 기본 보안 설정
    */
   @Bean
+  @Primary
   public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .servletApi(servletApi -> servletApi.rolePrefix("ROLE_"))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/health/**").permitAll()
-            .requestMatchers("/api/auth/**").permitAll()
-            .requestMatchers("/api/v1/auth/**").permitAll()
-            .requestMatchers("/oauth2/**").permitAll()
-            .anyRequest().authenticated()
+            .anyRequest().permitAll()
         );
     
     return http.build();

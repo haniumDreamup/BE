@@ -6,9 +6,11 @@ import com.bifai.reminder.bifai_backend.entity.ImageAnalysis;
 import com.bifai.reminder.bifai_backend.entity.ImageAnalysis.AnalysisStatus;
 import com.bifai.reminder.bifai_backend.entity.ImageAnalysis.AnalysisType;
 import com.bifai.reminder.bifai_backend.entity.ImageAnalysis.SafetyLevel;
+import com.bifai.reminder.bifai_backend.entity.MediaFile;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.ImageAnalysisRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
+import com.bifai.reminder.bifai_backend.service.mobile.MediaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,14 +39,10 @@ public class ImageAnalysisService {
 
   private final ImageAnalysisRepository imageAnalysisRepository;
   private final UserRepository userRepository;
-  private final LocalFileService localFileService;
+  private final MediaService mediaService;
   private final VoiceGuidanceService voiceGuidanceService;
   private final ObjectMapper objectMapper;
-
-  // AI 서비스들 (추후 구현)
-  // private final YoloService yoloService;
-  // private final OcrService ocrService;
-  // private final OpenAIService openAIService;
+  private final OpenAIService openAIService;
 
   /**
    * 이미지 업로드 및 분석 시작
@@ -60,10 +58,11 @@ public class ImageAnalysisService {
         .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
     // S3에 이미지 업로드
-    String imageUrl = uploadToS3(imageFile, userId);
+    MediaFile mediaFile = uploadToS3(imageFile, userId);
+    String imageUrl = mediaService.getFileUrl(mediaFile);
     
     // 분석 엔티티 생성
-    ImageAnalysis analysis = createImageAnalysis(user, imageUrl, request);
+    ImageAnalysis analysis = createImageAnalysis(user, mediaFile, imageUrl, request);
     
     // 비동기로 AI 분석 시작
     processImageAsync(analysis, request);
@@ -75,18 +74,16 @@ public class ImageAnalysisService {
   /**
    * S3 업로드
    */
-  private String uploadToS3(MultipartFile file, Long userId) throws IOException {
-    String fileName = String.format("images/%d/%s_%s", 
-        userId,
-        UUID.randomUUID().toString(),
-        file.getOriginalFilename()
-    );
-    
-    // TODO: 실제 S3 업로드 구현
-    // return s3Service.uploadFile(file, fileName);
-    
-    // 임시 URL 반환
-    return "https://bifai-images.s3.ap-northeast-2.amazonaws.com/" + fileName;
+  private MediaFile uploadToS3(MultipartFile file, Long userId) throws IOException {
+    try {
+      MediaFile mediaFile = mediaService.uploadFile(userId, file, MediaFile.UploadType.ACTIVITY);
+      log.info("이미지 S3 업로드 완료: 사용자 {}, 미디어파일 ID {}, S3 키 {}", 
+          userId, mediaFile.getId(), mediaFile.getS3Key());
+      return mediaFile;
+    } catch (Exception e) {
+      log.error("S3 업로드 실패: 사용자 {}, 파일명 {}", userId, file.getOriginalFilename(), e);
+      throw new IOException("이미지 업로드에 실패했습니다: " + e.getMessage(), e);
+    }
   }
 
   /**
@@ -94,6 +91,7 @@ public class ImageAnalysisService {
    */
   private ImageAnalysis createImageAnalysis(
       User user, 
+      MediaFile mediaFile,
       String imageUrl, 
       ImageUploadRequest request) {
     
@@ -108,6 +106,10 @@ public class ImageAnalysisService {
         .address(request.getAddress())
         .analysisStatus(AnalysisStatus.UPLOADED)
         .build();
+    
+    // MediaFile과의 연관관계 설정 (필요한 경우 ImageAnalysis 엔티티에 mediaFile 필드 추가)
+    log.debug("이미지 분석 엔티티 생성: 미디어파일 ID {}, S3키 {}", 
+        mediaFile.getId(), mediaFile.getS3Key());
     
     return imageAnalysisRepository.save(analysis);
   }
@@ -131,7 +133,7 @@ public class ImageAnalysisService {
       analysis.setExtractedText(extractedText);
       
       // 3. 상황 해석 (OpenAI)
-      Map<String, String> interpretation = interpretSituation(
+      Map<String, String> interpretation = openAIService.interpretSituation(
           objects, 
           extractedText, 
           request.getUserQuestion(),
@@ -195,26 +197,6 @@ public class ImageAnalysisService {
     return "출구";
   }
 
-  /**
-   * 상황 해석 (OpenAI)
-   */
-  private Map<String, String> interpretSituation(
-      List<Map<String, Object>> objects,
-      String extractedText,
-      String userQuestion,
-      String context) {
-    
-    // TODO: 실제 OpenAI API 호출
-    // String prompt = buildPrompt(objects, extractedText, userQuestion, context);
-    // return openAIService.interpret(prompt);
-    
-    // 임시 데이터
-    Map<String, String> result = new HashMap<>();
-    result.put("description", "앞에 출구가 있습니다. 사람이 한 명 보입니다.");
-    result.put("action", "출구 쪽으로 가세요.");
-    result.put("safety", "SAFE");
-    return result;
-  }
 
   /**
    * 음성 안내 제공

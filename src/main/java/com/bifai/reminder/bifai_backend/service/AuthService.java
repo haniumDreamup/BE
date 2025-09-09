@@ -7,6 +7,7 @@ import com.bifai.reminder.bifai_backend.repository.GuardianRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -205,12 +206,14 @@ public class AuthService {
      * 사용자 로그인 처리 (토큰 생성 및 응답 구성)
      */
     private AuthResponse loginUser(User user) {
-        // 인증 객체 생성
+        // BifUserDetails 래핑
+        BifUserDetails userDetails = new BifUserDetails(user);
+        
+        // 인증 객체 생성 - Principal을 BifUserDetails로 설정
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getUsername(),
+                userDetails,  // UserDetails 객체를 principal로 사용
                 null,
-                // 현재는 기본 USER 권한만 부여
-                java.util.Collections.singletonList(() -> "ROLE_USER")
+                userDetails.getAuthorities()  // BifUserDetails에서 권한 정보 가져오기
         );
 
         // JWT 토큰 생성

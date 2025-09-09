@@ -22,25 +22,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * 사용자명으로 사용자 찾기 (활성 사용자만)
-     * roles를 함께 페치하여 N+1 문제 방지
      */
-    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE u.username = :username AND u.isActive = true")
     Optional<User> findByUsername(@Param("username") String username);
 
     /**
      * 이메일로 사용자 찾기 (활성 사용자만)
-     * roles를 함께 페치하여 N+1 문제 방지
      */
-    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.isActive = true")
     Optional<User> findByEmail(@Param("email") String email);
 
     /**
      * 사용자명 또는 이메일로 사용자 찾기 (활성 사용자만)
-     * roles를 함께 페치하여 N+1 문제 방지
      */
-    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM User u WHERE (u.username = :usernameOrEmail OR u.email = :usernameOrEmail) AND u.isActive = true")
     Optional<User> findByUsernameOrEmail(@Param("usernameOrEmail") String usernameOrEmail);
 

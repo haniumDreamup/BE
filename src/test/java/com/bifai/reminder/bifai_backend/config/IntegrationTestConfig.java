@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Profile;
   TestInfrastructureConfig.class,
   TestExternalServicesConfig.class,
   TestSecurityConfig.class,
-  TestHttpClientConfig.class,
   TestWebSocketConfig.class
 })
 public class IntegrationTestConfig {

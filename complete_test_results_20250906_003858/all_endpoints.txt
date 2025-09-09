@@ -1,0 +1,55 @@
+BIF-AI Backend 전체 엔드포인트 목록
+추출 시간: #오후
+==============================
+
+=== AccessibilityController ===
+  POST /accessibility/voice-guidance
+  POST /accessibility/aria-label
+  GET /accessibility/screen-reader-hint
+  GET /accessibility/settings
+  PUT /accessibility/settings
+  POST /accessibility/settings/apply-profile
+  GET /accessibility/color-schemes
+  GET /accessibility/color-schemes/current
+  GET /accessibility/simplified-navigation
+  GET /accessibility/touch-targets
+  POST /accessibility/simplify-text
+  POST /accessibility/settings/sync
+  GET /accessibility/statistics
+
+=== AdminController ===
+  GET /admin/statistics
+  GET /admin/sessions
+  DELETE /admin/sessions/{userId}
+  GET /admin/auth-logs
+  GET /admin/settings
+  PUT /admin/settings
+  POST /admin/backup
+  DELETE /admin/cache
+
+=== AuthController ===
+  POST /auth/register
+  POST /auth/login
+  POST /auth/refresh
+  POST /auth/logout
+  GET /auth/health
+
+=== EmergencyContactController ===
+  POST /emergency-contacts
+  PUT /emergency-contacts/{contactId}
+  DELETE /emergency-contacts/{contactId}
+  GET /emergency-contacts/{contactId}
+  GET /emergency-contacts
+  GET /emergency-contacts/active
+  GET /emergency-contacts/available
+  GET /emergency-contacts/medical
+  POST /emergency-contacts/{contactId}/verify
+  PATCH /emergency-contacts/{contactId}/toggle-active
+  PUT /emergency-contacts/priorities
+  POST /emergency-contacts/{contactId}/contact-record
+
+=== EmergencyController ===
+  POST /emergency/alert
+  POST /emergency/fall-detection
+  GET /emergency/status/{emergencyId}
+  GET /emergency/history/{userId}

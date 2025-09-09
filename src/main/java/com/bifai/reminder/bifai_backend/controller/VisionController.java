@@ -27,6 +27,10 @@ import java.util.List;
 @RequestMapping("/api/v1/vision")
 @RequiredArgsConstructor
 @Tag(name = "Vision API", description = "이미지 분석 관련 API")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    value = "google.cloud.vision.enabled", 
+    havingValue = "true"
+)
 public class VisionController {
   
   private final GoogleVisionService googleVisionService;

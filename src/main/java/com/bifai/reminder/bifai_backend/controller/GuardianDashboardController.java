@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * 보호자 대시보드 컨트롤러
  */
 @RestController
-@RequestMapping("/api/guardian/dashboard")
+@RequestMapping("/api/v1/guardian/dashboard")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Guardian Dashboard", description = "보호자 대시보드 API")

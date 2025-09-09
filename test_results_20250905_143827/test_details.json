@@ -1,0 +1,673 @@
+[
+{
+  "test_number": 1,
+  "method": "GET",
+  "endpoint": "/health",
+  "description": "Health Check - 정상",
+  "expected_status": 200,
+  "actual_status": 200,
+  "request_data": ,
+  "response_body": {"s":true,"d":{"message":"Application is running","status":"UP"},"t":[2025,9,5,5,38,27,834621630]},
+  "timestamp": "2025-09-05T05:38:27Z"
+}
+,
+{
+  "test_number": 2,
+  "method": "GET",
+  "endpoint": "/test/health",
+  "description": "Test Health - 정상",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,27,869007713],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:27Z"
+}
+,
+{
+  "test_number": 3,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 필수 필드 누락",
+  "expected_status": 400,
+  "actual_status": 400,
+  "request_data": {"username":"test"},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,27,906050422],"error":{"code":"VALIDATION_ERROR","message":"비밀번호 확인을 입력해주세요, 이름을 입력해주세요, 이메일을 입력해주세요, 비밀번호를 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,27,906312172]},
+  "timestamp": "2025-09-05T05:38:27Z"
+}
+,
+{
+  "test_number": 4,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 잘못된 이메일 형식",
+  "expected_status": 400,
+  "actual_status": 400,
+  "request_data": {"username":"testuser1","email":"invalid-email","password":"Test1234!","confirmPassword":"Test1234!","fullName":"테스트 사용자","agreeToTerms":true,"agreeToPrivacyPolicy":true},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,27,934424963],"error":{"code":"VALIDATION_ERROR","message":"올바른 이메일 형식을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,27,934644255]},
+  "timestamp": "2025-09-05T05:38:27Z"
+}
+,
+{
+  "test_number": 5,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 비밀번호 불일치",
+  "expected_status": 400,
+  "actual_status": 400,
+  "request_data": {"username":"testuser2","email":"test2@example.com","password":"Test1234!","confirmPassword":"Different123!","fullName":"테스트 사용자","agreeToTerms":true,"agreeToPrivacyPolicy":true},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,27,960843380],"error":{"code":"VALIDATION_ERROR","message":"비밀번호가 일치하지 않습니다","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,27,961051047]},
+  "timestamp": "2025-09-05T05:38:27Z"
+}
+,
+{
+  "test_number": 6,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 약관 미동의",
+  "expected_status": 400,
+  "actual_status": 400,
+  "request_data": {"username":"testuser3","email":"test3@example.com","password":"Test1234!","confirmPassword":"Test1234!","fullName":"테스트 사용자","agreeToTerms":false,"agreeToPrivacyPolicy":false},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,27,987866588],"error":{"code":"VALIDATION_ERROR","message":"이용약관에 동의해주세요, 개인정보 처리방침에 동의해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,27,988017797]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 7,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 정상 (신규 사용자)",
+  "expected_status": 201,
+  "actual_status": 500,
+  "request_data": {"username":"testuser3268","email":"test3268@example.com","password":"Test1234!","confirmPassword":"Test1234!","fullName":"테스트 사용자","birthDate":"1990-01-01","agreeToTerms":true,"agreeToPrivacyPolicy":true},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,276327380],"error":{"code":"VALIDATION_ERROR","message":"회원가입 중 오류가 발생했습니다","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,276542672]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 8,
+  "method": "POST",
+  "endpoint": "/auth/register",
+  "description": "회원가입 - 중복 사용자명",
+  "expected_status": 409,
+  "actual_status": 500,
+  "request_data": {"username":"testuser3268","email":"another@example.com","password":"Test1234!","confirmPassword":"Test1234!","fullName":"다른 사용자","agreeToTerms":true,"agreeToPrivacyPolicy":true},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,570039838],"error":{"code":"VALIDATION_ERROR","message":"회원가입 중 오류가 발생했습니다","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,570232922]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 9,
+  "method": "POST",
+  "endpoint": "/auth/login",
+  "description": "로그인 - 존재하지 않는 사용자",
+  "expected_status": 401,
+  "actual_status": 400,
+  "request_data": {"username":"nonexistent","password":"Test1234!"},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,620544589],"error":{"code":"VALIDATION_ERROR","message":"사용자명 또는 이메일을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,620695339]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 10,
+  "method": "POST",
+  "endpoint": "/auth/login",
+  "description": "로그인 - 잘못된 비밀번호",
+  "expected_status": 401,
+  "actual_status": 400,
+  "request_data": {"username":"testuser3268","password":"WrongPassword!"},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,650499047],"error":{"code":"VALIDATION_ERROR","message":"사용자명 또는 이메일을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,650679714]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 11,
+  "method": "POST",
+  "endpoint": "/auth/login",
+  "description": "로그인 - 정상",
+  "expected_status": 200,
+  "actual_status": 400,
+  "request_data": {"username":"testuser3268","password":"Test1234!"},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,692521339],"error":{"code":"VALIDATION_ERROR","message":"사용자명 또는 이메일을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,692684255]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 12,
+  "method": "POST",
+  "endpoint": "/auth/refresh",
+  "description": "토큰 갱신 - 토큰 없음",
+  "expected_status": 401,
+  "actual_status": 400,
+  "request_data": {},
+  "response_body": {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,721801130],"error":{"code":"VALIDATION_ERROR","message":"Refresh Token이 필요합니다","userAction":"입력값을 확인해주세요"}},"t":[2025,9,5,5,38,28,722017339]},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 13,
+  "method": "GET",
+  "endpoint": "/users/profile",
+  "description": "프로필 조회 - 인증 없음",
+  "expected_status": 401,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,747682130],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 14,
+  "method": "POST",
+  "endpoint": "/emergency/report",
+  "description": "긴급상황 신고 - 위치 정보 없음",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {"type":"LOST","description":"길을 잃었습니다"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,773631047],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 15,
+  "method": "POST",
+  "endpoint": "/emergency/report",
+  "description": "긴급상황 신고 - 정상",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": {"type":"LOST","latitude":37.5665,"longitude":126.9780,"description":"길을 잃었습니다"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,798969505],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 16,
+  "method": "GET",
+  "endpoint": "/emergency/history",
+  "description": "긴급상황 이력 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,824035047],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 17,
+  "method": "GET",
+  "endpoint": "/guardians",
+  "description": "보호자 목록 조회 - 인증 없음",
+  "expected_status": 401,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,849050630],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 18,
+  "method": "GET",
+  "endpoint": "/notifications",
+  "description": "알림 목록 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,875025964],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 19,
+  "method": "GET",
+  "endpoint": "/notifications/unread",
+  "description": "읽지 않은 알림 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,900979630],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 20,
+  "method": "PUT",
+  "endpoint": "/notifications/1/read",
+  "description": "알림 읽음 처리 - 존재하지 않는 알림",
+  "expected_status": 404,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,927776964],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 21,
+  "method": "GET",
+  "endpoint": "/schedules",
+  "description": "일정 목록 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,953461672],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 22,
+  "method": "POST",
+  "endpoint": "/schedules",
+  "description": "일정 생성 - 필수 필드 누락",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {"title":""},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,28,977182464],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:28Z"
+}
+,
+{
+  "test_number": 23,
+  "method": "POST",
+  "endpoint": "/schedules",
+  "description": "일정 생성 - 정상",
+  "expected_status": 201,
+  "actual_status": 500,
+  "request_data": {"title":"병원 방문","description":"정기 검진","startTime":"2025-09-10T10:00:00","location":"서울대학교병원"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,2225047],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 24,
+  "method": "GET",
+  "endpoint": "/schedules/1",
+  "description": "특정 일정 조회 - 존재하지 않는 ID",
+  "expected_status": 404,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,27412797],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 25,
+  "method": "DELETE",
+  "endpoint": "/schedules/99999",
+  "description": "일정 삭제 - 존재하지 않는 ID",
+  "expected_status": 404,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,52499672],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 26,
+  "method": "POST",
+  "endpoint": "/images/analyze",
+  "description": "이미지 분석 - 이미지 없음",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,80446089],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 27,
+  "method": "GET",
+  "endpoint": "/images/history",
+  "description": "이미지 분석 이력",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,106202880],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 28,
+  "method": "GET",
+  "endpoint": "/geofences",
+  "description": "지오펜스 목록 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,131188964],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 29,
+  "method": "POST",
+  "endpoint": "/geofences",
+  "description": "지오펜스 생성 - 잘못된 좌표",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {"name":"집","latitude":"invalid","longitude":"invalid","radius":100},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,156646964],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 30,
+  "method": "POST",
+  "endpoint": "/geofences",
+  "description": "지오펜스 생성 - 정상",
+  "expected_status": 201,
+  "actual_status": 500,
+  "request_data": {"name":"집","latitude":37.5665,"longitude":126.9780,"radius":100},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,181345464],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 31,
+  "method": "POST",
+  "endpoint": "/sos/trigger",
+  "description": "SOS 발동",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": {"latitude":37.5665,"longitude":126.9780},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,206690755],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 32,
+  "method": "GET",
+  "endpoint": "/sos/status",
+  "description": "SOS 상태 확인",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,231512672],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 33,
+  "method": "GET",
+  "endpoint": "/accessibility/settings",
+  "description": "접근성 설정 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,255585839],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 34,
+  "method": "PUT",
+  "endpoint": "/accessibility/settings",
+  "description": "접근성 설정 변경",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": {"fontSize":"large","highContrast":true,"voiceGuidance":true},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,279874755],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 35,
+  "method": "GET",
+  "endpoint": "/admin/users",
+  "description": "관리자 - 사용자 목록 (권한 없음)",
+  "expected_status": 403,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,304475006],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 36,
+  "method": "GET",
+  "endpoint": "/admin/stats",
+  "description": "관리자 - 통계 (권한 없음)",
+  "expected_status": 403,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,329298756],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 37,
+  "method": "GET",
+  "endpoint": "/admin/logs",
+  "description": "관리자 - 로그 조회 (권한 없음)",
+  "expected_status": 403,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,353741131],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 38,
+  "method": "GET",
+  "endpoint": "/oauth2/authorization/kakao",
+  "description": "카카오 OAuth2 인증 URL",
+  "expected_status": 302,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,378482172],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 39,
+  "method": "GET",
+  "endpoint": "/oauth2/authorization/naver",
+  "description": "네이버 OAuth2 인증 URL",
+  "expected_status": 302,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,403143422],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 40,
+  "method": "GET",
+  "endpoint": "/oauth2/authorization/google",
+  "description": "구글 OAuth2 인증 URL",
+  "expected_status": 302,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,428399964],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 41,
+  "method": "POST",
+  "endpoint": "/vision/analyze",
+  "description": "비전 분석 - 이미지 URL 없음",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,453213631],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 42,
+  "method": "POST",
+  "endpoint": "/vision/analyze",
+  "description": "비전 분석 - 잘못된 URL",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {"imageUrl":"not-a-url"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,479583256],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 43,
+  "method": "GET",
+  "endpoint": "/behavior/analysis",
+  "description": "행동 분석 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,506826922],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 44,
+  "method": "POST",
+  "endpoint": "/behavior/log",
+  "description": "행동 로그 기록",
+  "expected_status": 201,
+  "actual_status": 500,
+  "request_data": {"action":"BUTTON_CLICK","target":"home_button","timestamp":"2025-09-05T12:00:00"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,532870464],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 45,
+  "method": "GET",
+  "endpoint": "/experiments/active",
+  "description": "활성 실험 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,564184756],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 46,
+  "method": "POST",
+  "endpoint": "/experiments/track",
+  "description": "실험 이벤트 추적",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": {"experimentId":"exp_001","variant":"A","event":"click"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,599437297],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 47,
+  "method": "POST",
+  "endpoint": "/mobile/auth/login",
+  "description": "모바일 로그인",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": {"username":"testuser3268","password":"Test1234!"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,624928047],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 48,
+  "method": "GET",
+  "endpoint": "/mobile/config",
+  "description": "모바일 설정 조회",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,648318464],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 49,
+  "method": "POST",
+  "endpoint": "/pose/analyze",
+  "description": "자세 분석 - 데이터 없음",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,673592839],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 50,
+  "method": "GET",
+  "endpoint": "/pose/history",
+  "description": "자세 분석 이력",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,696682756],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 51,
+  "method": "GET",
+  "endpoint": "/emergency-contacts",
+  "description": "긴급 연락처 목록",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,758251589],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 52,
+  "method": "POST",
+  "endpoint": "/emergency-contacts",
+  "description": "긴급 연락처 추가 - 전화번호 없음",
+  "expected_status": 400,
+  "actual_status": 500,
+  "request_data": {"name":"응급실"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,786891381],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 53,
+  "method": "POST",
+  "endpoint": "/emergency-contacts",
+  "description": "긴급 연락처 추가 - 정상",
+  "expected_status": 201,
+  "actual_status": 500,
+  "request_data": {"name":"응급실","phoneNumber":"119","relationship":"EMERGENCY"},
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,813475089],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 54,
+  "method": "GET",
+  "endpoint": "/guardian-dashboard/overview",
+  "description": "보호자 대시보드 개요",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,842073839],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 55,
+  "method": "GET",
+  "endpoint": "/guardian-dashboard/alerts",
+  "description": "보호자 알림",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,870018047],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+,
+{
+  "test_number": 56,
+  "method": "GET",
+  "endpoint": "/guardian-dashboard/location",
+  "description": "피보호자 위치",
+  "expected_status": 200,
+  "actual_status": 500,
+  "request_data": ,
+  "response_body": {"success":false,"data":null,"message":null,"timestamp":[2025,9,5,5,38,29,896421089],"error":{"code":"INTERNAL_ERROR","message":"일시적인 오류가 발생했습니다","userAction":"잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 알려주세요"}},
+  "timestamp": "2025-09-05T05:38:29Z"
+}
+]

@@ -1,7 +1,11 @@
 package com.bifai.reminder.bifai_backend.config;
 
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.cloud.texttospeech.v1.TextToSpeechClient;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.bifai.reminder.bifai_backend.service.GoogleTtsService;
+import com.bifai.reminder.bifai_backend.service.OpenAIService;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +30,18 @@ public class TestExternalServicesConfig {
   
   @MockBean
   private ImageAnnotatorClient imageAnnotatorClient;
+  
+  @MockBean
+  private TextToSpeechClient textToSpeechClient;
+  
+  @MockBean 
+  private GoogleTtsService googleTtsService;
+  
+  @MockBean
+  private ChatClient chatClient;
+  
+  @MockBean
+  private OpenAIService openAIService;
   
   @MockBean
   private FirebaseMessaging firebaseMessaging;

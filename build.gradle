@@ -5,8 +5,8 @@ plugins {
 	id 'jacoco'
 }
 
-// Docker 테스트 스크립트 import
-apply from: 'test-docker.gradle'
+// Docker 테스트 스크립트 import (주석 처리)
+// apply from: 'test-docker.gradle'
 
 group = 'com.bifai.reminder'
 version = '0.0.1-SNAPSHOT'
@@ -93,16 +93,16 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-bulkhead:2.1.0'
 	implementation 'io.github.resilience4j:resilience4j-retry:2.1.0'
 	
-	// Apache HttpClient 5 for RestTemplate (Spring Boot 3.5 필수)
-	implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
-	implementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
-	implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
-	implementation 'org.apache.httpcomponents.core5:httpcore5-reactive:5.2.5'
+	// HTTP Client for RestTemplate - let Spring Boot auto-configure
+	// implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+	// implementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
+	// implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
+	// implementation 'org.apache.httpcomponents.core5:httpcore5-reactive:5.2.5'
 	
 	// 테스트에서도 사용 가능하도록 testImplementation 추가
-	testImplementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
-	testImplementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
-	testImplementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
+	// testImplementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+	// testImplementation 'org.apache.httpcomponents.core5:httpcore5:5.2.5'
+	// testImplementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.5'
 	
 	// WebFlux for WebClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
@@ -116,6 +116,14 @@ dependencies {
 	// Google Cloud Vision API
 	implementation platform('com.google.cloud:libraries-bom:26.61.0')
 	implementation 'com.google.cloud:google-cloud-vision'
+	
+	// AWS SDK for S3 file upload
+	implementation platform('software.amazon.awssdk:bom:2.21.29')
+	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:sts'
+	
+	// Google Cloud Text-to-Speech API
+	implementation 'com.google.cloud:google-cloud-texttospeech'
 	
 	// AWS SDK for future cloud integration
 	// AWS SDK 제거 - EC2만 사용하므로 S3 불필요
@@ -138,6 +146,18 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 	finalizedBy jacocoTestReport
+	
+	// JVM 메모리 설정 최적화
+	jvmArgs = [
+		'-Xmx4g',
+		'-XX:MaxMetaspaceSize=512m',
+		'-XX:+UseG1GC',
+		'-XX:G1HeapRegionSize=16m'
+	]
+	
+	// 테스트 병렬 실행 설정
+	systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+	systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
 }
 
 // JaCoCo 설정

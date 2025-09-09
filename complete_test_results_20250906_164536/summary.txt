@@ -1,0 +1,133 @@
+✅ PASS: Admin statistics
+✅ PASS: Admin sessions
+✅ PASS: Admin delete session
+✅ PASS: Admin auth logs
+✅ PASS: Admin get settings
+✅ PASS: Admin update settings
+✅ PASS: Admin backup
+✅ PASS: Admin clear cache
+✅ PASS: Guardian invite
+✅ PASS: Accept invitation
+✅ PASS: Reject invitation
+✅ PASS: Update permissions
+✅ PASS: Suspend relationship
+✅ PASS: Reactivate relationship
+✅ PASS: Delete relationship
+✅ PASS: Get user relationships
+✅ PASS: Get guardian relationships
+✅ PASS: Get emergency contacts
+✅ PASS: Check permission
+✅ PASS: Update activity
+✅ PASS: Vision analyze
+✅ PASS: Vision detect danger
+✅ PASS: Emergency alert
+✅ PASS: Fall detection
+✅ PASS: Emergency status
+✅ PASS: Emergency history
+✅ PASS: Active emergencies
+✅ PASS: Resolve emergency
+✅ PASS: FCM token register
+✅ PASS: FCM token delete
+✅ PASS: Notification settings get
+✅ PASS: Notification settings update
+✅ PASS: Notification test
+✅ PASS: Emergency notification
+✅ PASS: Validate token
+✅ PASS: Pose data
+✅ PASS: Pose data batch
+✅ PASS: Fall status
+✅ PASS: Fall event feedback
+❌ FAIL: OAuth2 login URLs (Got 500, Expected 403)
+✅ PASS: SOS trigger
+✅ PASS: SOS cancel
+✅ PASS: SOS history
+✅ PASS: SOS quick
+❌ FAIL: API health (Got 404, Expected 200)
+✅ PASS: API v1 health
+✅ PASS: Root health (expected 404)
+✅ PASS: Daily summary
+✅ PASS: Weekly summary
+✅ PASS: Integrated dashboard
+✅ PASS: Auth register
+✅ PASS: Auth login
+✅ PASS: Auth refresh
+✅ PASS: Auth logout
+✅ PASS: Auth health
+✅ PASS: Image analyze
+✅ PASS: Image analysis result
+✅ PASS: Image quick analyze
+✅ PASS: Update geofence
+✅ PASS: Delete geofence
+✅ PASS: Get geofence
+✅ PASS: Paged geofences
+✅ PASS: Geofences by type
+✅ PASS: Toggle geofence
+✅ PASS: Update priorities
+✅ PASS: Geofence stats
+✅ PASS: Mobile login
+✅ PASS: Mobile refresh
+✅ PASS: Mobile logout
+✅ PASS: Mobile auth check
+✅ PASS: Behavior log
+✅ PASS: Behavior batch
+✅ PASS: Behavior pageview
+✅ PASS: Behavior click
+✅ PASS: Behavior error
+✅ PASS: Get emergency contacts
+✅ PASS: Update emergency contact
+✅ PASS: Delete emergency contact
+✅ PASS: Get emergency contact
+✅ PASS: Active emergency contacts
+✅ PASS: Available emergency contacts
+✅ PASS: Medical emergency contacts
+✅ PASS: Verify emergency contact
+✅ PASS: Toggle emergency contact
+✅ PASS: Update contact priorities
+✅ PASS: Contact record
+✅ PASS: Test health
+✅ PASS: Get experiment
+✅ PASS: Update experiment
+✅ PASS: Start experiment
+✅ PASS: Pause experiment
+✅ PASS: Resume experiment
+✅ PASS: Complete experiment
+✅ PASS: Assign experiment
+✅ PASS: Convert experiment
+✅ PASS: Experiment analysis
+✅ PASS: My experiments
+✅ PASS: Feature flag
+✅ PASS: Opt out experiment
+✅ PASS: Experiment groups
+✅ PASS: Experiment variants
+✅ PASS: My guardians
+✅ PASS: Protected users
+✅ PASS: Approve guardian
+✅ PASS: Reject guardian
+✅ PASS: Guardian permissions
+✅ PASS: Delete guardian
+✅ PASS: Delete guardian relationship
+✅ PASS: Voice guidance
+✅ PASS: ARIA label
+✅ PASS: Screen reader hint
+✅ PASS: Accessibility settings get
+✅ PASS: Accessibility settings update
+✅ PASS: Apply profile
+✅ PASS: Color schemes
+✅ PASS: Current color scheme
+✅ PASS: Simplified navigation
+✅ PASS: Touch targets
+✅ PASS: Simplify text
+✅ PASS: Sync settings
+✅ PASS: Accessibility statistics
+✅ PASS: Get current user
+✅ PASS: Update current user
+✅ PASS: Get user by ID
+✅ PASS: Deactivate user
+✅ PASS: Activate user
+✅ PASS: Update user roles
+=== 📊 완전한 테스트 결과 요약 ===
+🕒 테스트 완료 시간: #오후
+📊 총 테스트 수: 127
+✅ 성공: 125
+❌ 실패: 2
+📈 성공률: 98%

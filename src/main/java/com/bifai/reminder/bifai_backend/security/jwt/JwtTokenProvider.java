@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Objects;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -59,44 +61,127 @@ public class JwtTokenProvider {
      * Access Token 생성
      */
     public String generateAccessToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return createToken(userPrincipal.getUsername(), "access", jwtAccessTokenExpirationMs);
+        return createTokenFromAuthentication(authentication, "access", jwtAccessTokenExpirationMs);
     }
     
     /**
      * Refresh Token 생성
      */
     public String generateRefreshToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return createToken(userPrincipal.getUsername(), "refresh", jwtRefreshTokenExpirationMs);
+        return createTokenFromAuthentication(authentication, "refresh", jwtRefreshTokenExpirationMs);
     }
     
     /**
      * User 엔티티로 Access Token 생성 (OAuth2 로그인용)
      */
     public String createAccessToken(User user) {
-        return createToken(user.getEmail(), "access", jwtAccessTokenExpirationMs);
+        Objects.requireNonNull(user, "User cannot be null");
+        Objects.requireNonNull(user.getEmail(), "User email cannot be null");
+        Objects.requireNonNull(user.getUserId(), "User ID cannot be null");
+        
+        if (user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("User email cannot be empty");
+        }
+        
+        return createTokenWithUserId(user.getEmail(), user.getUserId(), "access", jwtAccessTokenExpirationMs);
     }
     
     /**
      * User 엔티티로 Refresh Token 생성 (OAuth2 로그인용)
      */
     public String createRefreshToken(User user) {
-        return createToken(user.getEmail(), "refresh", jwtRefreshTokenExpirationMs);
+        Objects.requireNonNull(user, "User cannot be null");
+        Objects.requireNonNull(user.getEmail(), "User email cannot be null");
+        Objects.requireNonNull(user.getUserId(), "User ID cannot be null");
+        
+        if (user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("User email cannot be empty");
+        }
+        
+        return createTokenWithUserId(user.getEmail(), user.getUserId(), "refresh", jwtRefreshTokenExpirationMs);
     }
     
+    /**
+     * Authentication으로부터 안전하게 토큰 생성
+     */
+    private String createTokenFromAuthentication(Authentication authentication, String tokenType, long expirationMs) {
+        String username = extractUsernameFromAuthentication(authentication);
+        if (username == null) {
+            throw new IllegalArgumentException("Cannot extract username from authentication");
+        }
+        return createToken(username, tokenType, expirationMs);
+    }
+    
+    /**
+     * Authentication에서 안전하게 username 추출
+     */
+    private String extractUsernameFromAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            log.error("Authentication is null");
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            log.error("Authentication principal is null");
+            return null;
+        }
+        
+        // UserDetails 구현체인 경우
+        if (principal instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) principal;
+            log.debug("Extracting username from UserDetails: {}", userDetails.getUsername());
+            return userDetails.getUsername();
+        }
+        
+        // String인 경우 (일부 인증 시나리오에서 발생할 수 있음)
+        if (principal instanceof String) {
+            log.debug("Extracting username from String principal: {}", principal);
+            return (String) principal;
+        }
+        
+        log.error("Unexpected principal type: {}. Expected UserDetails or String.", 
+                principal.getClass().getSimpleName());
+        return null;
+    }
+
     /**
      * JWT 토큰 생성 (내부 메서드)
      */
     private String createToken(String username, String tokenType, long expirationMs) {
+        return createTokenWithUserId(username, null, tokenType, expirationMs);
+    }
+    
+    /**
+     * user_id 클레임을 포함한 JWT 토큰 생성 (내부 메서드)
+     */
+    private String createTokenWithUserId(String username, Long userId, String tokenType, long expirationMs) {
+        Objects.requireNonNull(username, "Username cannot be null");
+        Objects.requireNonNull(tokenType, "Token type cannot be null");
+        
+        if (username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        
+        if (expirationMs <= 0) {
+            throw new IllegalArgumentException("Expiration time must be positive");
+        }
+        
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMs);
 
-        return Jwts.builder()
+        JwtBuilder jwtBuilder = Jwts.builder()
                 .setSubject(username) // 토큰 주체 (사용자 식별자)
                 .claim("type", tokenType) // 토큰 타입 (access/refresh)
                 .setIssuedAt(now) // 토큰 발급 시간
-                .setExpiration(expiration) // 토큰 만료 시간
+                .setExpiration(expiration); // 토큰 만료 시간
+        
+        // userId가 있으면 클레임에 추가
+        if (userId != null) {
+            jwtBuilder.claim("user_id", userId);
+        }
+        
+        return jwtBuilder
                 .signWith(jwtSecret, SignatureAlgorithm.HS512) // 서명
                 .compact();
     }
@@ -105,9 +190,21 @@ public class JwtTokenProvider {
      * 토큰에서 사용자명 추출
      */
     public String getUsernameFromToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            log.warn("Token is null or empty");
+            return null;
+        }
+        
         try {
             Claims claims = getClaims(token);
-            return claims.getSubject();
+            String subject = claims.getSubject();
+            
+            if (subject == null || subject.trim().isEmpty()) {
+                log.warn("Token subject is null or empty");
+                return null;
+            }
+            
+            return subject;
         } catch (Exception e) {
             log.error("토큰에서 사용자명 추출 실패", e);
             return null;
@@ -221,16 +318,41 @@ public class JwtTokenProvider {
     
     /**
      * 토큰에서 사용자 ID 추출
-     * User 엔티티와 연동하여 실제 userId를 반환
+     * JWT 토큰의 user_id 클레임에서 직접 추출
      */
     public Long getUserId(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            log.warn("Token is null or empty when extracting user ID");
+            return null;
+        }
+        
         try {
-            String username = getUsernameFromToken(token);
-            // 이메일을 기반으로 사용자 ID를 조회해야 함
-            // 실제 구현에서는 UserRepository를 주입받아 사용해야 함
-            // 임시로 1L 반환 (실제 구현 필요)
-            log.debug("Getting user ID for username: {}", username);
-            return 1L; // TODO: UserRepository를 통해 실제 userId 조회 필요
+            Claims claims = getClaims(token);
+            Object userIdClaim = claims.get("user_id");
+            
+            if (userIdClaim == null) {
+                log.warn("user_id claim not found in token");
+                return null;
+            }
+            
+            // Long 또는 Integer로 저장될 수 있으므로 안전하게 변환
+            if (userIdClaim instanceof Number) {
+                return ((Number) userIdClaim).longValue();
+            }
+            
+            // String으로 저장된 경우도 처리
+            if (userIdClaim instanceof String) {
+                try {
+                    return Long.parseLong((String) userIdClaim);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid user_id format in token: {}", userIdClaim);
+                    return null;
+                }
+            }
+            
+            log.warn("Unexpected user_id type in token: {}", userIdClaim.getClass());
+            return null;
+            
         } catch (Exception e) {
             log.error("토큰에서 사용자 ID 추출 실패", e);
             return null;

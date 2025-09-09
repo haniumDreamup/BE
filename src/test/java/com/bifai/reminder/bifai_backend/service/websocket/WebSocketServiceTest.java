@@ -280,4 +280,62 @@ class WebSocketServiceTest {
     LocationUpdateMessage stationaryResult = webSocketService.processLocationUpdate("test@example.com", stationaryRequest);
     assertThat(stationaryResult.getMessage()).contains("한 곳에 머물러 있어요");
   }
+
+  @Test
+  @DisplayName("낙상 알림 브로드캐스트 - 보호자에게 전송")
+  void broadcastFallAlert_Success() {
+    // given
+    when(userRepository.findById(1L))
+        .thenReturn(Optional.of(testUser));
+    when(guardianRepository.findByUserAndIsActiveTrue(testUser))
+        .thenReturn(Arrays.asList(testGuardian));
+
+    // when
+    webSocketService.broadcastFallAlert(1L, "낙상이 감지되었습니다", "심각", 0.95);
+
+    // then
+    verify(messagingTemplate).convertAndSendToUser(
+        eq("test@example.com"),
+        eq("/queue/fall-alert"),
+        any(Object.class)
+    );
+    
+    verify(messagingTemplate).convertAndSend(
+        eq("/user/guardian@example.com/queue/emergency"),
+        any(Object.class)
+    );
+  }
+
+  @Test
+  @DisplayName("포즈 스트림 처리")
+  void processPoseStream_Success() {
+    // given
+    PoseStreamRequest.PoseLandmark landmark = PoseStreamRequest.PoseLandmark.builder()
+        .id(1)
+        .x(0.5f)
+        .y(0.3f)
+        .z(0.1f)
+        .visibility(0.95f)
+        .build();
+
+    PoseStreamRequest request = PoseStreamRequest.builder()
+        .frameId(12345L)
+        .landmarks(Arrays.asList(landmark))
+        .confidenceScore(0.95f)
+        .timestamp(System.currentTimeMillis())
+        .sessionId("test-session")
+        .build();
+
+    when(userRepository.findByEmail("test@example.com"))
+        .thenReturn(Optional.of(testUser));
+
+    // when
+    PoseStreamMessage result = webSocketService.processPoseStream("test@example.com", request);
+
+    // then
+    assertThat(result).isNotNull();
+    assertThat(result.getUserId()).isEqualTo(1L);
+    assertThat(result.getFrameId()).isEqualTo(12345L);
+    assertThat(result.getConfidenceScore()).isEqualTo(0.95f);
+  }
 }

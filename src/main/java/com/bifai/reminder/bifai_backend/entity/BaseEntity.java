@@ -22,23 +22,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 public abstract class BaseEntity extends BaseTimeEntity {
     
-    /**
-     * 엔티티 생성자
-     * 
-     * <p>Spring Security Context에서 자동으로 설정됩니다.
-     * 최초 생성 후에는 수정되지 않습니다.</p>
-     */
     @CreatedBy
-    @Column(updatable = false, length = 100)
-    private String createdBy;
+    @Column(name = "created_by", updatable = false)
+    private Long createdBy;
     
-    /**
-     * 엔티티 수정자
-     * 
-     * <p>마지막으로 엔티티를 수정한 사용자 정보를 저장합니다.
-     * 엔티티가 수정될 때마다 자동으로 업데이트됩니다.</p>
-     */
     @LastModifiedBy
-    @Column(length = 100)
-    private String modifiedBy;
+    @Column(name = "updated_by")
+    private Long updatedBy;
 } 

@@ -76,4 +76,9 @@ public interface GeofenceRepository extends JpaRepository<Geofence, Long> {
    * 우선순위별 정렬된 활성 지오펜스
    */
   List<Geofence> findByUserAndIsActiveTrueOrderByPriorityDesc(User user);
+  
+  /**
+   * 사용자 ID와 활성화 상태로 지오펜스 조회
+   */
+  List<Geofence> findByUserUserIdAndIsActive(Long userId, boolean isActive);
 }

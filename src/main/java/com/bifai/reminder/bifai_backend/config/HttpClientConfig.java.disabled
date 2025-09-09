@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
   name = "http.client.enabled",
   havingValue = "true",
-  matchIfMissing = true
+  matchIfMissing = false
 )
 public class HttpClientConfig {
   

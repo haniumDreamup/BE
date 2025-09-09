@@ -3,6 +3,7 @@ package com.bifai.reminder.bifai_backend.controller;
 import com.bifai.reminder.bifai_backend.dto.image.ImageAnalysisResponse;
 import com.bifai.reminder.bifai_backend.dto.image.ImageUploadRequest;
 import com.bifai.reminder.bifai_backend.dto.response.BifApiResponse;
+import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthUtils;
 import com.bifai.reminder.bifai_backend.service.ImageAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ import java.io.IOException;
 public class ImageAnalysisController {
 
   private final ImageAnalysisService imageAnalysisService;
+  private final JwtAuthUtils jwtAuthUtils;
 
   /**
    * 이미지 업로드 및 분석
@@ -74,7 +76,19 @@ public class ImageAnalysisController {
     }
     
     try {
-      Long userId = 1L; // TODO: UserDetails에서 userId 추출
+      Long userId = jwtAuthUtils.getCurrentUserId();
+      if (userId == null) {
+        log.error("인증된 사용자 ID를 찾을 수 없습니다");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(BifApiResponse.error(
+                "UNAUTHORIZED",
+                "인증이 필요합니다",
+                "다시 로그인해주세요"
+            ));
+      }
+      
+      log.info("이미지 분석 요청: 사용자 ID {}, 파일명 {}", 
+          userId, imageFile.getOriginalFilename());
       
       ImageAnalysisResponse response = imageAnalysisService
           .uploadAndAnalyze(userId, imageFile, request);
@@ -152,7 +166,19 @@ public class ImageAnalysisController {
         .build();
     
     try {
-      Long userId = 1L; // TODO: UserDetails에서 userId 추출
+      Long userId = jwtAuthUtils.getCurrentUserId();
+      if (userId == null) {
+        log.error("빠른 분석에서 인증된 사용자 ID를 찾을 수 없습니다");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(BifApiResponse.error(
+                "UNAUTHORIZED",
+                "인증이 필요합니다",
+                "다시 로그인해주세요"
+            ));
+      }
+      
+      log.warn("빠른 분석 요청: 사용자 ID {}, 위치 {},{}", 
+          userId, latitude, longitude);
       
       ImageAnalysisResponse response = imageAnalysisService
           .uploadAndAnalyze(userId, imageFile, quickRequest);

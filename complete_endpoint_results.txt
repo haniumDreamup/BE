@@ -1,0 +1,177 @@
+[0;34m╔══════════════════════════════════════════════════════╗[0m
+[0;34m║   BIF-AI Backend 모든 154개 엔드포인트 완전 테스트    ║[0m
+[0;34m╚══════════════════════════════════════════════════════╝[0m
+
+[0;36m1단계: 모든 컨트롤러에서 실제 엔드포인트 추출 중...[0m
+[1;33m  분석 중: AccessibilityController[0m
+    [0;32m✓[0m POST /accessibility/voice-guidance
+    [0;32m✓[0m POST /accessibility/aria-label
+    [0;32m✓[0m GET /accessibility/screen-reader-hint
+    [0;32m✓[0m GET /accessibility/settings
+    [0;32m✓[0m PUT /accessibility/settings
+    [0;32m✓[0m POST /accessibility/settings/apply-profile
+    [0;32m✓[0m GET /accessibility/color-schemes
+    [0;32m✓[0m GET /accessibility/color-schemes/current
+    [0;32m✓[0m GET /accessibility/simplified-navigation
+    [0;32m✓[0m GET /accessibility/touch-targets
+    [0;32m✓[0m POST /accessibility/simplify-text
+    [0;32m✓[0m POST /accessibility/settings/sync
+    [0;32m✓[0m GET /accessibility/statistics
+[1;33m  분석 중: AdminController[0m
+    [0;32m✓[0m GET /admin/statistics
+    [0;32m✓[0m GET /admin/sessions
+    [0;32m✓[0m DELETE /admin/sessions/{userId}
+    [0;32m✓[0m GET /admin/auth-logs
+    [0;32m✓[0m GET /admin/settings
+    [0;32m✓[0m PUT /admin/settings
+    [0;32m✓[0m POST /admin/backup
+    [0;32m✓[0m DELETE /admin/cache
+[1;33m  분석 중: AuthController[0m
+    [0;32m✓[0m POST /auth/register
+    [0;32m✓[0m POST /auth/login
+    [0;32m✓[0m POST /auth/refresh
+    [0;32m✓[0m POST /auth/logout
+    [0;32m✓[0m GET /auth/health
+[1;33m  분석 중: EmergencyContactController[0m
+    [0;32m✓[0m POST /emergency-contacts
+    [0;32m✓[0m PUT /emergency-contacts/{contactId}
+    [0;32m✓[0m DELETE /emergency-contacts/{contactId}
+    [0;32m✓[0m GET /emergency-contacts/{contactId}
+    [0;32m✓[0m GET /emergency-contacts
+    [0;32m✓[0m GET /emergency-contacts/active
+    [0;32m✓[0m GET /emergency-contacts/available
+    [0;32m✓[0m GET /emergency-contacts/medical
+    [0;32m✓[0m POST /emergency-contacts/{contactId}/verify
+    [0;32m✓[0m PATCH /emergency-contacts/{contactId}/toggle-active
+    [0;32m✓[0m PUT /emergency-contacts/priorities
+    [0;32m✓[0m POST /emergency-contacts/{contactId}/contact-record
+[1;33m  분석 중: EmergencyController[0m
+    [0;32m✓[0m POST /emergency/alert
+    [0;32m✓[0m POST /emergency/fall-detection
+    [0;32m✓[0m GET /emergency/status/{emergencyId}
+    [0;32m✓[0m GET /emergency/history/{userId}
+    [0;32m✓[0m GET /emergency/active
+    [0;32m✓[0m PUT /emergency/{emergencyId}/resolve
+[1;33m  분석 중: ExperimentController[0m
+    [0;32m✓[0m POST /experiments
+    [0;32m✓[0m GET /experiments
+    [0;32m✓[0m GET /experiments/{experimentKey}
+    [0;32m✓[0m PUT /experiments/{experimentKey}
+    [0;32m✓[0m POST /experiments/{experimentKey}/start
+    [0;32m✓[0m POST /experiments/{experimentKey}/pause
+    [0;32m✓[0m POST /experiments/{experimentKey}/resume
+    [0;32m✓[0m POST /experiments/{experimentKey}/complete
+    [0;32m✓[0m POST /experiments/{experimentKey}/assign
+    [0;32m✓[0m POST /experiments/{experimentKey}/convert
+    [0;32m✓[0m GET /experiments/{experimentKey}/analysis
+    [0;32m✓[0m GET /experiments/my-experiments
+    [0;32m✓[0m GET /experiments/feature-flags/{flagKey}
+    [0;32m✓[0m POST /experiments/{experimentKey}/opt-out
+    [0;32m✓[0m POST /experiments/{experimentKey}/groups
+    [0;32m✓[0m POST /experiments/{experimentKey}/variants
+[1;33m  분석 중: ExperimentCreateRequest[0m
+[1;33m  분석 중: ExperimentUpdateRequest[0m
+[1;33m  분석 중: GeofenceController[0m
+    [0;32m✓[0m POST /geofences
+    [0;32m✓[0m PUT /geofences/{geofenceId}
+    [0;32m✓[0m DELETE /geofences/{geofenceId}
+    [0;32m✓[0m GET /geofences/{geofenceId}
+    [0;32m✓[0m GET /geofences
+    [0;32m✓[0m GET /geofences/paged
+    [0;32m✓[0m GET /geofences/type/{type}
+    [0;32m✓[0m PATCH /geofences/{geofenceId}/toggle
+    [0;32m✓[0m PUT /geofences/priorities
+    [0;32m✓[0m GET /geofences/stats
+[1;33m  분석 중: GroupConfigRequest[0m
+[1;33m  분석 중: GuardianController[0m
+    [0;32m✓[0m GET /guardians/my
+    [0;32m✓[0m GET /guardians/protected-users
+    [0;32m✓[0m POST /guardians
+    [0;32m✓[0m PUT /guardians/{guardianId}/approve
+    [0;32m✓[0m PUT /guardians/{guardianId}/reject
+    [0;32m✓[0m PUT /guardians/{guardianId}/permissions
+    [0;32m✓[0m DELETE /guardians/{guardianId}
+    [0;32m✓[0m DELETE /guardians/relationships/{guardianId}
+[1;33m  분석 중: GuardianDashboardController[0m
+    [0;32m✓[0m GET /api/guardian/dashboard/daily-summary/{userId}
+    [0;32m✓[0m GET /api/guardian/dashboard/weekly-summary/{userId}
+    [0;32m✓[0m GET /api/guardian/dashboard/integrated/{userId}
+[1;33m  분석 중: GuardianRelationshipController[0m
+    [0;32m✓[0m POST /api/guardian-relationships/invite
+    [0;32m✓[0m POST /api/guardian-relationships/accept-invitation
+    [0;32m✓[0m POST /api/guardian-relationships/reject-invitation
+    [0;32m✓[0m PUT /api/guardian-relationships/{relationshipId}/permissions
+    [0;32m✓[0m POST /api/guardian-relationships/{relationshipId}/suspend
+    [0;32m✓[0m POST /api/guardian-relationships/{relationshipId}/reactivate
+    [0;32m✓[0m DELETE /api/guardian-relationships/{relationshipId}
+    [0;32m✓[0m GET /api/guardian-relationships/user/{userId}
+    [0;32m✓[0m GET /api/guardian-relationships/guardian/{guardianId}
+    [0;32m✓[0m GET /api/guardian-relationships/user/{userId}/emergency-contacts
+    [0;32m✓[0m GET /api/guardian-relationships/check-permission
+    [0;32m✓[0m POST /api/guardian-relationships/update-activity
+[1;33m  분석 중: HealthController[0m
+    [0;32m✓[0m GET /api/health
+    [0;32m✓[0m GET /health
+    [0;32m✓[0m GET /health
+[1;33m  분석 중: ImageAnalysisController[0m
+    [0;32m✓[0m POST /images/analyze
+    [0;32m✓[0m GET /images/analysis/{analysisId}
+    [0;32m✓[0m POST /images/quick-analyze
+[1;33m  분석 중: NotificationController[0m
+    [0;32m✓[0m POST /notifications/fcm-token
+    [0;32m✓[0m DELETE /notifications/fcm-token/{deviceId}
+    [0;32m✓[0m GET /notifications/settings
+    [0;32m✓[0m PUT /notifications/settings
+    [0;32m✓[0m POST /notifications/test
+    [0;32m✓[0m POST /notifications/emergency
+    [0;32m✓[0m POST /notifications/validate-token
+[1;33m  분석 중: OAuth2Controller[0m
+    [0;32m✓[0m GET /auth/oauth2/login-urls
+[1;33m  분석 중: PoseController[0m
+    [0;32m✓[0m POST /pose/data
+    [0;32m✓[0m POST /pose/data/batch
+    [0;32m✓[0m GET /pose/fall-status/{userId}
+    [0;32m✓[0m POST /pose/fall-event/{eventId}/feedback
+[1;33m  분석 중: SosController[0m
+    [0;32m✓[0m POST /sos/trigger
+    [0;32m✓[0m PUT /sos/{emergencyId}/cancel
+    [0;32m✓[0m GET /sos/history
+    [0;32m✓[0m POST /sos/quick
+[1;33m  분석 중: TestController[0m
+    [0;32m✓[0m GET /test/health
+[1;33m  분석 중: UserBehaviorController[0m
+    [0;32m✓[0m POST /behavior/log
+    [0;32m✓[0m POST /behavior/batch
+    [0;32m✓[0m POST /behavior/pageview
+    [0;32m✓[0m POST /behavior/click
+    [0;32m✓[0m POST /behavior/error
+[1;33m  분석 중: UserController[0m
+    [0;32m✓[0m GET /users/me
+    [0;32m✓[0m PUT /users/me
+    [0;32m✓[0m GET /users/{userId}
+    [0;32m✓[0m GET /users
+    [0;32m✓[0m PUT /users/{userId}/deactivate
+    [0;32m✓[0m PUT /users/{userId}/activate
+    [0;32m✓[0m PUT /users/{userId}/roles
+[1;33m  분석 중: VariantConfigRequest[0m
+[1;33m  분석 중: VisionController[0m
+    [0;32m✓[0m POST /vision/analyze
+    [0;32m✓[0m POST /vision/detect-danger
+[1;33m  분석 중: WebSocketController[0m
+[0;36m추출 완료: 130 개의 엔드포인트를 발견했습니다[0m
+
+[0;36m2단계: 모든 엔드포인트에 대해 체계적 테스트 실행...[0m
+
+[1;33m사용자 생성 및 로그인 중...[0m
+grep: invalid option -- P
+usage: grep [-abcdDEFGHhIiJLlMmnOopqRSsUVvwXxZz] [-A num] [-B num] [-C[num]]
+	[-e pattern] [-f file] [--binary-files=value] [--color=when]
+	[--context[=num]] [--directories=action] [--label] [--line-buffered]
+	[--null] [pattern] [file ...]
+[0;32m✓ 사용자 생성 및 토큰 획득 성공[0m
+
+[0;34m[1/130][0m Testing: POST /accessibility/voice-guidance
+  Description: 기본 POST - 빈 데이터
+  Expected Status: 400
+  [0;31m✗ FAIL[0m (Expected: 400, Got: 403)
+    Response: ...

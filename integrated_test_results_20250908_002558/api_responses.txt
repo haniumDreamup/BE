@@ -1,0 +1,10 @@
+=== POST /auth/register ===
+Expected Status: 201
+Actual Status: 400
+Response Body: {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,8,0,25,58,519505000],"error":{"code":"VALIDATION_ERROR","message":"사용자명은 영문, 숫자, 밑줄(_)만 사용할 수 있습니다, 이름을 입력해주세요, 비밀번호 확인을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,8,0,25,58,519601000]}
+
+=== POST /auth/login ===
+Expected Status: 200
+Actual Status: 400
+Response Body: {"s":true,"d":{"success":false,"data":null,"message":null,"timestamp":[2025,9,8,0,25,58,534146000],"error":{"code":"VALIDATION_ERROR","message":"사용자명 또는 이메일을 입력해주세요","userAction":"입력값을 확인해주세요"}},"t":[2025,9,8,0,25,58,534233000]}
+

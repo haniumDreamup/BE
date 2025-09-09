@@ -1,15 +1,12 @@
 package com.bifai.reminder.bifai_backend.service;
 
-import com.bifai.reminder.bifai_backend.dto.auth.AuthResponse;
-import com.bifai.reminder.bifai_backend.dto.auth.LoginRequest;
-import com.bifai.reminder.bifai_backend.dto.auth.RefreshTokenRequest;
-import com.bifai.reminder.bifai_backend.dto.auth.RegisterRequest;
+import com.bifai.reminder.bifai_backend.dto.auth.*;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.GuardianRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
-import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import com.bifai.reminder.bifai_backend.service.cache.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -266,5 +264,130 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refreshToken(request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Refresh Token이 아닙니다");
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void logout_Success() {
+        // given
+        Authentication mockAuth = mock(Authentication.class);
+        when(mockAuth.isAuthenticated()).thenReturn(true);
+        when(mockAuth.getName()).thenReturn("testuser");
+        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
+        
+        // SecurityContext 모킹
+        try (var contextHolderMock = mockStatic(org.springframework.security.core.context.SecurityContextHolder.class)) {
+            org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+            when(securityContext.getAuthentication()).thenReturn(mockAuth);
+            contextHolderMock.when(org.springframework.security.core.context.SecurityContextHolder::getContext).thenReturn(securityContext);
+            
+            // when
+            authService.logout();
+            
+            // then
+            verify(refreshTokenService).deleteRefreshToken(1L);
+            contextHolderMock.verify(org.springframework.security.core.context.SecurityContextHolder::clearContext);
+        }
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 인증 정보 없음")
+    void logout_NoAuthentication() {
+        // given
+        try (var contextHolderMock = mockStatic(org.springframework.security.core.context.SecurityContextHolder.class)) {
+            org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+            when(securityContext.getAuthentication()).thenReturn(null);
+            contextHolderMock.when(org.springframework.security.core.context.SecurityContextHolder::getContext).thenReturn(securityContext);
+            
+            // when
+            authService.logout();
+            
+            // then
+            verify(refreshTokenService, never()).deleteRefreshToken(anyLong());
+            contextHolderMock.verify(org.springframework.security.core.context.SecurityContextHolder::clearContext);
+        }
+    }
+
+    @Test
+    @DisplayName("회원가입 실패 - 이용약관 미동의")
+    void register_Fail_TermsNotAgreed() {
+        // given
+        registerRequest.setAgreeToTerms(false);
+        
+        // when & then
+        assertThatThrownBy(() -> authService.register(registerRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이용약관에 동의해주세요");
+    }
+
+    @Test
+    @DisplayName("회원가입 실패 - 개인정보처리방침 미동의")
+    void register_Fail_PrivacyPolicyNotAgreed() {
+        // given
+        registerRequest.setAgreeToPrivacyPolicy(false);
+        
+        // when & then
+        assertThatThrownBy(() -> authService.register(registerRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("개인정보 처리방침에 동의해주세요");
+    }
+
+    @Test
+    @DisplayName("토큰 갱신 실패 - Redis에서 토큰 검증 실패")
+    void refreshToken_Fail_TokenNotInRedis() {
+        // given
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("validToken");
+        
+        when(jwtTokenProvider.validateToken("validToken")).thenReturn(true);
+        when(jwtTokenProvider.getTokenType("validToken")).thenReturn("refresh");
+        when(refreshTokenService.validateRefreshToken("validToken")).thenReturn(null);
+        
+        // when & then
+        assertThatThrownBy(() -> authService.refreshToken(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("유효하지 않은 Refresh Token입니다");
+    }
+
+    @Test
+    @DisplayName("토큰 갱신 실패 - 비활성화된 사용자")
+    void refreshToken_Fail_InactiveUser() {
+        // given
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("validToken");
+        User inactiveUser = User.builder()
+                .userId(1L)
+                .username("testuser")
+                .email("test@example.com")
+                .isActive(false) // 비활성화
+                .build();
+        
+        when(jwtTokenProvider.validateToken("validToken")).thenReturn(true);
+        when(jwtTokenProvider.getTokenType("validToken")).thenReturn("refresh");
+        when(refreshTokenService.validateRefreshToken("validToken")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(inactiveUser));
+        
+        // when & then
+        assertThatThrownBy(() -> authService.refreshToken(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("사용자를 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 사용자를 찾을 수 없음")
+    void login_Fail_UserNotFound() {
+        // given
+        Authentication authentication = mock(Authentication.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(userRepository.findByUsernameOrEmail(loginRequest.getUsernameOrEmail()))
+                .thenReturn(Optional.empty());
+        
+        // when & then
+        assertThatThrownBy(() -> authService.login(loginRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("사용자를 찾을 수 없습니다");
+        
+        verify(refreshTokenService, never()).saveRefreshToken(anyLong(), anyString(), anyLong());
     }
 }

@@ -48,17 +48,15 @@ class GoogleVisionServiceTest {
   }
   
   @Test
-  @DisplayName("Vision API 클라이언트가 null일 때 빈 결과 반환")
-  void analyzeImage_WhenClientIsNull_ReturnsEmptyResult() throws IOException {
+  @DisplayName("Vision API 클라이언트가 null일 때 예외 발생")
+  void analyzeImage_WhenClientIsNull_ThrowsException() {
     // Given
     googleVisionService = new GoogleVisionService(null);
     
-    // When
-    var result = googleVisionService.analyzeImage(testImage);
-    
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getSimpleDescription()).isEqualTo("이미지를 분석할 수 없습니다");
+    // When & Then
+    assertThatThrownBy(() -> googleVisionService.analyzeImage(testImage))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("이미지 분석 서비스를 사용할 수 없습니다");
   }
   
   @Test
@@ -330,5 +328,85 @@ class GoogleVisionServiceTest {
         .contains("발견한 것: 사람")
         .contains("글자가 있어요: 출입금지")
         .contains("사람 1명이 보여요");
+  }
+  
+  @Test
+  @DisplayName("VisionAnalysisResult.empty() 테스트")
+  void visionAnalysisResult_Empty_Success() {
+    // When
+    var emptyResult = GoogleVisionService.VisionAnalysisResult.empty();
+    
+    // Then
+    assertThat(emptyResult).isNotNull();
+    assertThat(emptyResult.getObjects()).isEmpty();
+    assertThat(emptyResult.getLabels()).isEmpty();
+    assertThat(emptyResult.getFaces()).isEmpty();
+    assertThat(emptyResult.getText()).isNull();
+    assertThat(emptyResult.getSafetyInfo()).isNull();
+    assertThat(emptyResult.getSimpleDescription()).isEqualTo("이미지를 분석할 수 없습니다");
+  }
+  
+  @Test
+  @DisplayName("BoundingBox.from() - null BoundingPoly")
+  void boundingBox_FromNullPoly_ReturnsNull() {
+    // When
+    var boundingBox = GoogleVisionService.BoundingBox.from(null);
+    
+    // Then
+    assertThat(boundingBox).isNull();
+  }
+  
+  @Test
+  @DisplayName("BoundingBox.from() - 빈 vertices")
+  void boundingBox_FromEmptyVertices_ReturnsDefault() {
+    // Given
+    BoundingPoly emptyPoly = BoundingPoly.newBuilder().build();
+    
+    // When
+    var boundingBox = GoogleVisionService.BoundingBox.from(emptyPoly);
+    
+    // Then
+    assertThat(boundingBox).isNotNull();
+    assertThat(boundingBox.getX1()).isEqualTo(0.0f);
+    assertThat(boundingBox.getY1()).isEqualTo(0.0f);
+    assertThat(boundingBox.getX2()).isEqualTo(1.0f);
+    assertThat(boundingBox.getY2()).isEqualTo(1.0f);
+  }
+  
+  @Test
+  @DisplayName("번역되지 않는 영어 단어 테스트")
+  void analyzeImage_WithUnknownObject_Success() throws IOException {
+    // Given
+    LocalizedObjectAnnotation unknownObject = LocalizedObjectAnnotation.newBuilder()
+        .setName("spacecraft") // 사전에 없는 단어
+        .setScore(0.95f)
+        .setBoundingPoly(BoundingPoly.newBuilder()
+            .addNormalizedVertices(NormalizedVertex.newBuilder().setX(0.1f).setY(0.1f))
+            .addNormalizedVertices(NormalizedVertex.newBuilder().setX(0.9f).setY(0.9f)))
+        .build();
+    
+    AnnotateImageResponse objectResponse = AnnotateImageResponse.newBuilder()
+        .addLocalizedObjectAnnotations(unknownObject)
+        .build();
+    
+    AnnotateImageResponse emptyResponse = AnnotateImageResponse.newBuilder().build();
+    
+    BatchAnnotateImagesResponse batchResponse = BatchAnnotateImagesResponse.newBuilder()
+        .addResponses(objectResponse)
+        .addResponses(emptyResponse)
+        .addResponses(emptyResponse)
+        .addResponses(emptyResponse)
+        .addResponses(emptyResponse)
+        .build();
+    
+    when(visionClient.batchAnnotateImages(anyList())).thenReturn(batchResponse);
+    
+    // When
+    var result = googleVisionService.analyzeImage(testImage);
+    
+    // Then
+    assertThat(result.getObjects()).hasSize(1);
+    assertThat(result.getObjects().get(0).getName()).isEqualTo("spacecraft"); // 원본 반환
+    assertThat(result.getSimpleDescription()).contains("발견한 것: spacecraft");
   }
 }

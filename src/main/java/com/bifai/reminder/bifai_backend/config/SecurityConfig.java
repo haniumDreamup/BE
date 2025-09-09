@@ -1,16 +1,12 @@
 package com.bifai.reminder.bifai_backend.config;
 
-import com.bifai.reminder.bifai_backend.security.BifAccessDeniedHandler;
-import com.bifai.reminder.bifai_backend.security.BifAuthenticationEntryPoint;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthenticationFilter;
-import com.bifai.reminder.bifai_backend.security.oauth2.CustomOAuth2UserService;
-import com.bifai.reminder.bifai_backend.security.oauth2.OAuth2AuthenticationFailureHandler;
-import com.bifai.reminder.bifai_backend.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,7 +21,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.context.annotation.Lazy;
 
 import java.util.Arrays;
 
@@ -33,20 +28,17 @@ import java.util.Arrays;
  * Spring Security 설정 - JWT 기반 인증 및 권한 관리
  * BIF 사용자를 위한 보안 설정
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("!test")
+@Order(1) // 높은 우선순위로 변경
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!test")
 public class SecurityConfig {
 
     private final BifUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final BifAuthenticationEntryPoint authenticationEntryPoint;
-    private final BifAccessDeniedHandler accessDeniedHandler;
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     /**
      * Spring Security 필터 체인 설정
@@ -54,7 +46,6 @@ public class SecurityConfig {
      * <p>BIF-AI 시스템의 보안 정책을 정의합니다:</p>
      * <ul>
      *   <li>JWT 기반 인증 (Stateless)</li>
-     *   <li>OAuth2 소셜 로그인 지원</li>
      *   <li>CORS 설정으로 모바일 앱 지원</li>
      *   <li>공개/보호 엔드포인트 분리</li>
      * </ul>
@@ -64,8 +55,9 @@ public class SecurityConfig {
      * @throws Exception 설정 중 발생할 수 있는 예외
      */
     @Bean
-    @Lazy
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        log.info("Configuring Spring Security with JWT support");
+        
         http
             // CSRF 비활성화 - JWT를 사용하므로 CSRF 토큰 불필요
             .csrf(csrf -> csrf.disable())
@@ -77,23 +69,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // === 공개 엔드포인트 ===
                 // 헬스체크
-                .requestMatchers("/health/**").permitAll()
-                .requestMatchers("/api/health/**").permitAll()
-                .requestMatchers("/api/v1/health/**").permitAll()
+                .requestMatchers("/health/**", "/api/v1/health/**").permitAll()
                 // 테스트 엔드포인트
-                .requestMatchers("/api/v1/test/**").permitAll()
-                // 존재하지 않는 엔드포인트 처리 (404 반환)
-                .requestMatchers("/api/nonexistent").permitAll()
+                .requestMatchers("/test/**", "/api/v1/test/**").permitAll()
+                // 인증 API
+                .requestMatchers("/auth/**", "/api/v1/auth/**").permitAll()
                 // H2 콘솔 (개발 환경)
                 .requestMatchers("/h2-console/**").permitAll()
-                // 인증 API (로그인, 회원가입 등)
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                // OAuth2 관련 엔드포인트
-                .requestMatchers("/oauth2/**").permitAll()
-                .requestMatchers("/login/oauth2/**").permitAll()
                 // Swagger UI
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
                 // === 보호 엔드포인트 ===
                 // 그 외 모든 요청은 인증 필요
@@ -101,28 +85,10 @@ public class SecurityConfig {
             )
             // H2 콘솔을 위한 iframe 허용
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-            
-            // === OAuth2 로그인 설정 ===
-            .oauth2Login(oauth2 -> oauth2
-                // 사용자 정보 엔드포인트 처리
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService) // 커스텀 사용자 서비스
-                )
-                // 성공/실패 핸들러
-                .successHandler(oAuth2AuthenticationSuccessHandler)
-                .failureHandler(oAuth2AuthenticationFailureHandler)
-            )
-            
-            // === 예외 처리 설정 ===
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(authenticationEntryPoint) // 인증 실패 처리
-                .accessDeniedHandler(accessDeniedHandler)         // 권한 부족 처리
-            )
-            
-            // === JWT 필터 추가 ===
-            // UsernamePasswordAuthenticationFilter 앞에 JWT 필터 추가
+            // JWT 인증 필터 추가 - UsernamePasswordAuthenticationFilter 전에 실행
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
+        log.info("Spring Security configuration completed successfully with JWT filter");
         return http.build();
     }
 
@@ -143,21 +109,28 @@ public class SecurityConfig {
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // BIF 사용자를 위한 안전한 비밀번호 암호화
-        // work factor 12 사용 (보안성과 성능의 균형)
+        log.debug("Creating BCryptPasswordEncoder with work factor 12");
         return new BCryptPasswordEncoder(12);
     }
 
+    /**
+     * DaoAuthenticationProvider 설정
+     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
+        log.debug("Creating DaoAuthenticationProvider");
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
+    /**
+     * AuthenticationManager 빈 설정
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        log.debug("Creating AuthenticationManager");
         return config.getAuthenticationManager();
     }
 
@@ -178,6 +151,7 @@ public class SecurityConfig {
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        log.debug("Creating CORS configuration");
         CorsConfiguration configuration = new CorsConfiguration();
         
         // 허용할 도메인 패턴 설정
@@ -206,11 +180,13 @@ public class SecurityConfig {
         // 인증 정보 포함 허용 (JWT 토큰 전송을 위해 필요)
         configuration.setAllowCredentials(true);
         
-        // preflight 요청 캠시 시간 (1시간)
+        // preflight 요청 캐시 시간 (1시간)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // 모든 경로에 적용
+        
+        log.info("CORS configuration created: allowed origins = {}", configuration.getAllowedOriginPatterns());
         return source;
     }
 }

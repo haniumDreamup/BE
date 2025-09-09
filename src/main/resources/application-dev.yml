@@ -1,32 +1,62 @@
 spring:
-  # Development Database Configuration - Using H2 for easy setup
+  # Development Database Configuration - Using H2 temporarily for testing
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:bifai_db;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password: 
     driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: BifHikariCP-Dev
   
   # JPA Development Settings
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        hbm2ddl.auto: update
+        globally_quoted_identifiers: true
+        use_sql_comments: false
+  
+  # MySQL Development Settings
+  sql:
+    init:
+      mode: never
   
   # Redis Development Configuration
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 5
+          max-idle: 5
+          min-idle: 2
+          max-wait: -1ms
   
-  # H2 Console for Development
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  # Disable batch processing for local testing
+  batch:
+    job:
+      enabled: false
+  
+  # Disable OpenAI auto-configuration for development
+  ai:
+    openai:
+      api-key: sk-dummy-key-for-development-only-not-a-real-key-placeholder
+      base-url: http://localhost:3001/v1  # Point to non-existent service to disable
+      autoconfigure:
+        enabled: false
 
 # Development Server Configuration
 server:
@@ -49,15 +79,23 @@ flyway:
   locations: classpath:db/migration
   validate-on-migrate: true
 
-# Development Security (less restrictive)
+# Development Application Configuration
 app:
-  security:
-    jwt:
-      secret: ${JWT_SECRET:dev-secret-key-for-testing-only-change-in-production}
-      expiration: 86400000 # 24 hours
-      refresh-expiration: 604800000 # 7 days
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key-for-testing-only-change-in-production}
+    access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
+    refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
   cors:
-    allowed-origins: http://localhost:3000,http://localhost:8080
+    allowed-origins: 
+      - http://localhost:3000
+      - http://localhost:8080
+      - http://localhost:3001
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS
     allowed-headers: "*"
     allow-credentials: true
+    max-age: 3600
+  file:
+    storage-type: ${FILE_STORAGE_TYPE:local}
+    storage-path: ${FILE_STORAGE_PATH:/tmp/bifai/files}
+    max-size: 10485760  # 10MB
+    allowed-extensions: jpg,jpeg,png,gif,pdf,mp4,avi

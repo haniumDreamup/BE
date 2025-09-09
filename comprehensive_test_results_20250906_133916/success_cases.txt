@@ -1,0 +1,23 @@
+[2025-09-06 13:39:16] SUCCESS: GET http://localhost:8080/api/v1/health -> HTTP 200 (Expected: 200) - API health check
+[2025-09-06 13:39:16] SUCCESS: GET http://localhost:8080/api/v1/auth/health -> HTTP 200 (Expected: 200) - Auth service health
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/users/me -> HTTP 403 (Expected: 403) - User profile without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/admin/statistics -> HTTP 403 (Expected: 403) - Admin statistics without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/notifications/settings -> HTTP 403 (Expected: 403) - Notification settings without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/emergency-contacts -> HTTP 403 (Expected: 403) - Emergency contacts without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/guardians/my -> HTTP 403 (Expected: 403) - Guardian info without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/accessibility/settings -> HTTP 403 (Expected: 403) - Accessibility settings without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/mobile/auth/check -> HTTP 403 (Expected: 403) - Mobile auth check without token
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/experiments/my-experiments -> HTTP 403 (Expected: 403) - My experiments without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/experiments/test-exp -> HTTP 403 (Expected: 403) - Specific experiment without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/experiments/feature-flags/test-flag -> HTTP 403 (Expected: 403) - Feature flag without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/emergency/active -> HTTP 403 (Expected: 403) - Active emergencies without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/sos/history -> HTTP 403 (Expected: 403) - SOS history without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/emergency-contacts -> HTTP 403 (Expected: 403) - Emergency contacts list without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/emergency-contacts/active -> HTTP 403 (Expected: 403) - Active emergency contacts without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/geofences/paged -> HTTP 403 (Expected: 403) - Paged geofences without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/geofences/stats -> HTTP 403 (Expected: 403) - Geofence statistics without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/geofences/type/HOME -> HTTP 403 (Expected: 403) - Geofences by type without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/notifications/settings -> HTTP 403 (Expected: 403) - Notification settings without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/admin/statistics -> HTTP 403 (Expected: 403) - Admin statistics without auth
+[2025-09-06 13:39:17] SUCCESS: GET http://localhost:8080/api/v1/admin/sessions -> HTTP 403 (Expected: 403) - Admin sessions without auth
+[2025-09-06 13:39:17] SUCCESS: DELETE http://localhost:8080/api/v1/admin/cache -> HTTP 403 (Expected: 403) - Admin cache clear without auth

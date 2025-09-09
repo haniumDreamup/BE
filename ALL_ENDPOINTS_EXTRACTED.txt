@@ -1,0 +1,197 @@
+=== BIF-AI Backend 모든 API 엔드포인트 ===
+추출 시간: #오후
+
+📁 Controller: AdminController
+   19:@RequestMapping("/api/v1/admin")
+   31:    @GetMapping("/statistics")
+   51:    @GetMapping("/sessions")
+   71:    @DeleteMapping("/sessions/{userId}")
+   91:    @GetMapping("/auth-logs")
+   115:    @GetMapping("/settings")
+   135:    @PutMapping("/settings")
+   156:    @PostMapping("/backup")
+   176:    @DeleteMapping("/cache")
+
+📁 Controller: WebSocketController
+
+📁 Controller: GuardianRelationshipController
+   24:@RequestMapping("/api/guardian-relationships")
+   35:  @PostMapping("/invite")
+   60:  @PostMapping("/accept-invitation")
+   83:  @PostMapping("/reject-invitation")
+   103:  @PutMapping("/{relationshipId}/permissions")
+   129:  @PostMapping("/{relationshipId}/suspend")
+   151:  @PostMapping("/{relationshipId}/reactivate")
+   173:  @DeleteMapping("/{relationshipId}")
+   196:  @GetMapping("/user/{userId}")
+   213:  @GetMapping("/guardian/{guardianId}")
+   229:  @GetMapping("/user/{userId}/emergency-contacts")
+   245:  @GetMapping("/check-permission")
+   263:  @PostMapping("/update-activity")
+
+📁 Controller: VisionController
+   27:@RequestMapping("/api/v1/vision")
+   38:  @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   80:  @PostMapping(value = "/detect-danger", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+📁 Controller: EmergencyController
+   32:@RequestMapping("/api/v1/emergency")
+   47:  @PostMapping("/alert")
+   70:  @PostMapping("/fall-detection")
+   93:  @GetMapping("/status/{emergencyId}")
+   120:  @GetMapping("/history/{userId}")
+   146:  @GetMapping("/active")
+   171:  @PutMapping("/{emergencyId}/resolve")
+
+📁 Controller: NotificationController
+   22:@RequestMapping("/api/v1/notifications")
+   31:  @PostMapping("/fcm-token")
+   50:  @DeleteMapping("/fcm-token/{deviceId}")
+   65:  @GetMapping("/settings")
+   75:  @PutMapping("/settings")
+   90:  @PostMapping("/test")
+   108:  @PostMapping("/emergency")
+   130:  @PostMapping("/validate-token")
+
+📁 Controller: PoseController
+   26:@RequestMapping("/api/v1/pose")
+   33:  @PostMapping("/data")
+   58:  @PostMapping("/data/batch")
+   83:  @GetMapping("/fall-status/{userId}")
+   107:  @PostMapping("/fall-event/{eventId}/feedback")
+
+📁 Controller: OAuth2Controller
+   40:@RequestMapping("/api/v1/auth/oauth2")
+   100:  @GetMapping("/login-urls")
+
+📁 Controller: SosController
+   26:@RequestMapping("/api/v1/sos")
+   37:  @PostMapping("/trigger")
+   60:  @PutMapping("/{emergencyId}/cancel")
+   80:  @GetMapping("/history")
+   101:  @PostMapping("/quick")
+
+📁 Controller: HealthController
+   16:  @GetMapping("/api/health")
+   24:  @GetMapping("/api/v1/health")
+   32:  @GetMapping("/health")
+
+📁 Controller: GuardianDashboardController
+   21:@RequestMapping("/api/guardian/dashboard")
+   33:  @GetMapping("/daily-summary/{userId}")
+   66:  @GetMapping("/weekly-summary/{userId}")
+   106:  @GetMapping("/integrated/{userId}")
+
+📁 Controller: AuthController
+   38:@RequestMapping("/auth")
+   105:    @PostMapping("/register")
+   194:    @PostMapping("/login")
+   250:    @PostMapping("/refresh")
+   313:    @PostMapping("/logout")
+   335:    @GetMapping("/health")
+
+📁 Controller: ImageAnalysisController
+   27:@RequestMapping("/api/v1/images")
+   38:  @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+   102:  @GetMapping("/analysis/{analysisId}")
+   135:  @PostMapping(value = "/quick-analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+📁 Controller: GeofenceController
+   31:@RequestMapping("/api/v1/geofences")
+   60:  @PutMapping("/{geofenceId}")
+   78:  @DeleteMapping("/{geofenceId}")
+   94:  @GetMapping("/{geofenceId}")
+   133:  @GetMapping("/paged")
+   151:  @GetMapping("/type/{type}")
+   169:  @PatchMapping("/{geofenceId}/toggle")
+   187:  @PutMapping("/priorities")
+   203:  @GetMapping("/stats")
+
+📁 Controller: MobileBaseController
+
+📁 Controller: MobileAuthController
+   29:@RequestMapping("/api/v1/mobile/auth")
+   42:  @PostMapping("/login")
+   93:  @PostMapping("/refresh")
+   141:  @PostMapping("/logout")
+   180:  @GetMapping("/check")
+
+📁 Controller: UserBehaviorController
+   29:@RequestMapping("/api/v1/behavior")
+   41:  @PostMapping("/log")
+   83:  @PostMapping("/batch")
+   117:  @PostMapping("/pageview")
+   145:  @PostMapping("/click")
+   176:  @PostMapping("/error")
+
+📁 Controller: EmergencyContactController
+   30:@RequestMapping("/api/v1/emergency-contacts")
+   67:  @PutMapping("/{contactId}")
+   91:  @DeleteMapping("/{contactId}")
+   114:  @GetMapping("/{contactId}")
+   157:  @GetMapping("/active")
+   177:  @GetMapping("/available")
+   198:  @GetMapping("/medical")
+   218:  @PostMapping("/{contactId}/verify")
+   242:  @PatchMapping("/{contactId}/toggle-active")
+   265:  @PutMapping("/priorities")
+   286:  @PostMapping("/{contactId}/contact-record")
+
+📁 Controller: TestController
+   11:@RequestMapping("/api/v1/test")
+   14:  @GetMapping("/health")
+
+📁 Controller: ExperimentController
+   27:@RequestMapping("/api/v1/experiments")
+   80:  @GetMapping("/{experimentKey}")
+   92:  @PutMapping("/{experimentKey}")
+   109:  @PostMapping("/{experimentKey}/start")
+   123:  @PostMapping("/{experimentKey}/pause")
+   137:  @PostMapping("/{experimentKey}/resume")
+   151:  @PostMapping("/{experimentKey}/complete")
+   168:  @PostMapping("/{experimentKey}/assign")
+   189:  @PostMapping("/{experimentKey}/convert")
+   206:  @GetMapping("/{experimentKey}/analysis")
+   221:  @GetMapping("/my-experiments")
+   234:  @GetMapping("/feature-flags/{flagKey}")
+   248:  @PostMapping("/{experimentKey}/opt-out")
+   264:  @PostMapping("/{experimentKey}/groups")
+   281:  @PostMapping("/{experimentKey}/variants")
+
+📁 Controller: GuardianController
+   24:@RequestMapping("/api/v1/guardians")
+   34:    @GetMapping("/my")
+   55:    @GetMapping("/protected-users")
+   101:    @PutMapping("/{guardianId}/approve")
+   123:    @PutMapping("/{guardianId}/reject")
+   146:    @PutMapping("/{guardianId}/permissions")
+   169:    @DeleteMapping("/{guardianId}")
+   191:    @DeleteMapping("/relationships/{guardianId}")
+
+📁 Controller: AccessibilityController
+   25:@RequestMapping("/api/v1/accessibility")
+   37:  @PostMapping("/voice-guidance")
+   63:  @PostMapping("/aria-label")
+   85:  @GetMapping("/screen-reader-hint")
+   99:  @GetMapping("/settings")
+   114:  @PutMapping("/settings")
+   130:  @PostMapping("/settings/apply-profile")
+   146:  @GetMapping("/color-schemes")
+   158:  @GetMapping("/color-schemes/current")
+   171:  @GetMapping("/simplified-navigation")
+   184:  @GetMapping("/touch-targets")
+   198:  @PostMapping("/simplify-text")
+   218:  @PostMapping("/settings/sync")
+   233:  @GetMapping("/statistics")
+
+📁 Controller: UserController
+   24:@RequestMapping("/api/v1/users")
+   34:    @GetMapping("/me")
+   55:    @PutMapping("/me")
+   77:    @GetMapping("/{userId}")
+   119:    @PutMapping("/{userId}/deactivate")
+   140:    @PutMapping("/{userId}/activate")
+   161:    @PutMapping("/{userId}/roles")
+
+📁 Controller: BaseController
+

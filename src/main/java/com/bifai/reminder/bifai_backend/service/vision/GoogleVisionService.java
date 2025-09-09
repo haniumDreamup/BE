@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @org.springframework.context.annotation.Profile("!test")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnBean(com.google.cloud.vision.v1.ImageAnnotatorClient.class)
 public class GoogleVisionService {
   
   private final ImageAnnotatorClient visionClient;
@@ -36,8 +37,18 @@ public class GoogleVisionService {
    */
   public VisionAnalysisResult analyzeImage(MultipartFile imageFile) throws IOException {
     if (visionClient == null) {
-      log.warn("Google Vision API 클라이언트가 초기화되지 않았습니다");
-      return VisionAnalysisResult.empty();
+      log.error("Google Vision API 클라이언트가 초기화되지 않았습니다");
+      throw new IllegalStateException("이미지 분석 서비스를 사용할 수 없습니다");
+    }
+    
+    if (imageFile == null || imageFile.isEmpty()) {
+      log.warn("Empty or null image file provided");
+      throw new IllegalArgumentException("이미지 파일이 필요합니다");
+    }
+    
+    if (imageFile.getSize() > 20 * 1024 * 1024) { // 20MB 제한
+      log.warn("Image file too large: {} bytes", imageFile.getSize());
+      throw new IllegalArgumentException("이미지 파일이 너무 큽니다 (최대 20MB)");
     }
     
     try {
@@ -243,15 +254,33 @@ public class GoogleVisionService {
    * 안전성 체크
    */
   private boolean isUnsafe(SafetyInfo safety) {
-    return !safety.getAdult().equals("VERY_UNLIKELY") && !safety.getAdult().equals("UNLIKELY") ||
-           !safety.getViolence().equals("VERY_UNLIKELY") && !safety.getViolence().equals("UNLIKELY");
+    if (safety == null) {
+      log.debug("Safety info is null, assuming safe");
+      return false;
+    }
+    
+    boolean adultUnsafe = isLikelihoodUnsafe(safety.getAdult());
+    boolean violenceUnsafe = isLikelihoodUnsafe(safety.getViolence());
+    
+    log.debug("Safety check - Adult: {}, Violence: {}", safety.getAdult(), safety.getViolence());
+    return adultUnsafe || violenceUnsafe;
   }
   
   /**
-   * 영어를 한국어로 번역 (간단한 매핑)
+   * 위험도 수준 확인
    */
-  private String translateToKorean(String english) {
-    // 실제로는 번역 API나 사전을 사용해야 하지만, 여기서는 주요 단어만 매핑
+  private boolean isLikelihoodUnsafe(String likelihood) {
+    if (likelihood == null) {
+      return false;
+    }
+    
+    return !likelihood.equals("VERY_UNLIKELY") && !likelihood.equals("UNLIKELY");
+  }
+  
+  // 단어 사전을 클래스 레벨 상수로 이동하여 성능 개선
+  private static final Map<String, String> KOREAN_DICTIONARY;
+  
+  static {
     Map<String, String> dictionary = new HashMap<>();
     dictionary.put("person", "사람");
     dictionary.put("car", "자동차");
@@ -267,8 +296,27 @@ public class GoogleVisionService {
     dictionary.put("chair", "의자");
     dictionary.put("door", "문");
     dictionary.put("window", "창문");
+    KOREAN_DICTIONARY = Collections.unmodifiableMap(dictionary);
+  }
+  
+  /**
+   * 영어를 한국어로 번역 (간단한 매핑)
+   */
+  private String translateToKorean(String english) {
+    if (english == null || english.trim().isEmpty()) {
+      log.debug("Empty or null English text provided for translation");
+      return "알 수 없음";
+    }
     
-    return dictionary.getOrDefault(english.toLowerCase(), english);
+    String normalized = english.toLowerCase().trim();
+    String korean = KOREAN_DICTIONARY.get(normalized);
+    
+    if (korean == null) {
+      log.debug("No Korean translation found for: {}", english);
+      return english; // 번역이 없으면 원본 반환
+    }
+    
+    return korean;
   }
   
   /**
@@ -335,15 +383,36 @@ public class GoogleVisionService {
     private float x1, y1, x2, y2;
     
     public static BoundingBox from(BoundingPoly poly) {
-      if (poly.getNormalizedVerticesCount() >= 2) {
+      if (poly == null) {
+        log.warn("BoundingPoly is null");
+        return null;
+      }
+      
+      if (poly.getNormalizedVerticesCount() < 2) {
+        log.warn("BoundingPoly has insufficient vertices: {}", poly.getNormalizedVerticesCount());
+        return createDefaultBoundingBox();
+      }
+      
+      try {
         return BoundingBox.builder()
             .x1(poly.getNormalizedVertices(0).getX())
             .y1(poly.getNormalizedVertices(0).getY())
             .x2(poly.getNormalizedVertices(1).getX())
             .y2(poly.getNormalizedVertices(1).getY())
             .build();
+      } catch (Exception e) {
+        log.error("Failed to create BoundingBox from BoundingPoly", e);
+        return createDefaultBoundingBox();
       }
-      return null;
+    }
+    
+    private static BoundingBox createDefaultBoundingBox() {
+      return BoundingBox.builder()
+          .x1(0.0f)
+          .y1(0.0f)
+          .x2(1.0f)
+          .y2(1.0f)
+          .build();
     }
   }
 }

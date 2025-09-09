@@ -16,7 +16,7 @@ import lombok.*;
 public class UserPreference extends BaseEntity {
     
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long prefId;
     
     @OneToOne(fetch = FetchType.LAZY)

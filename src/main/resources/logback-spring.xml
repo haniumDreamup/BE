@@ -2,7 +2,7 @@
 <configuration>
     <!-- Property for log pattern -->
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
-    <property name="LOG_PATH" value="./logs"/>
+    <property name="LOG_PATH" value="/app/logs"/>
 
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -53,7 +53,6 @@
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
         </root>
         <logger name="com.bifai.reminder" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
@@ -80,8 +79,7 @@
 
     <springProfile name="prod">
         <root level="ERROR">
-            <appender-ref ref="FILE"/>
-            <appender-ref ref="ERROR_FILE"/>
+            <appender-ref ref="CONSOLE"/>
         </root>
         <logger name="com.bifai.reminder" level="WARN"/>
     </springProfile>

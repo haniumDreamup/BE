@@ -99,4 +99,14 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Long> {
          "WHERE m.isDeleted = true " +
          "AND m.deletedAt < :threshold")
   List<MediaFile> findFilesToPermanentlyDelete(@Param("threshold") LocalDateTime threshold);
+  
+  /**
+   * 사용자와 업로드 타입으로 미디어 파일 조회 (최신순)
+   */
+  List<MediaFile> findByUserUserIdAndUploadTypeOrderByCreatedAtDesc(Long userId, UploadType uploadType);
+  
+  /**
+   * 사용자의 모든 미디어 파일 조회 (최신순)
+   */
+  List<MediaFile> findByUserUserIdOrderByCreatedAtDesc(Long userId);
 }

@@ -161,4 +161,10 @@ public interface LocationHistoryRepository extends JpaRepository<LocationHistory
      * 특정 시간 이후 위치 이력 조회 (최신순)
      */
     List<LocationHistory> findByUserAndCapturedAtAfterOrderByCapturedAtDesc(User user, LocalDateTime after);
+    
+    /**
+     * 사용자 ID와 기록 시간 범위로 위치 이력 조회 (최신순)
+     */
+    List<LocationHistory> findByUserUserIdAndCapturedAtBetweenOrderByCapturedAtDesc(
+            Long userId, LocalDateTime start, LocalDateTime end);
 }

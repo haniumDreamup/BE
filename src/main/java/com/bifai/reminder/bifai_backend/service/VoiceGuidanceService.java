@@ -24,6 +24,7 @@ public class VoiceGuidanceService {
   
   private final UserRepository userRepository;
   private final AccessibilitySettingsRepository accessibilitySettingsRepository;
+  private final GoogleTtsService googleTtsService;
   
   // 한국어 템플릿
   private static final Map<String, String> KOREAN_TEMPLATES = new HashMap<>();
@@ -263,7 +264,27 @@ public class VoiceGuidanceService {
    */
   public void speak(String text, String language) {
     log.info("음성 안내: [{}] {}", language, text);
-    // TODO: AWS Polly 또는 Google TTS API 연동 구현
+    
+    try {
+      // BIF 사용자를 위한 텍스트 전처리
+      String processedText = googleTtsService.preprocessTextForBIF(text);
+      
+      // Google TTS로 음성 합성
+      byte[] audioData = googleTtsService.synthesizeText(processedText, language);
+      
+      // 실제 환경에서는 오디오 재생 로직 필요
+      // 현재는 로깅으로 대체
+      log.info("TTS 음성 생성 완료 - 크기: {} bytes", audioData.length);
+      
+      // TODO: 실제 오디오 재생을 위한 플레이어 구현 또는 클라이언트로 전송
+      // audioPlayer.play(audioData);
+      // 또는 WebSocket으로 클라이언트에 전송
+      
+    } catch (Exception e) {
+      log.error("TTS 음성 생성 실패: {}", e.getMessage());
+      // 폴백: 로그만 출력
+      log.info("폴백 음성 안내: [{}] {}", language, text);
+    }
   }
 
   /**
@@ -271,7 +292,23 @@ public class VoiceGuidanceService {
    */
   public void speakEmergency(String text, String language) {
     log.warn("긴급 음성 안내: [{}] {}", language, text);
-    // TODO: 더 크고 명확한 음성으로 재생
+    
+    try {
+      // BIF 사용자를 위한 텍스트 전처리
+      String processedText = googleTtsService.preprocessTextForBIF(text);
+      
+      // 긴급 상황용 더 크고 명확한 음성으로 합성
+      byte[] audioData = googleTtsService.synthesizeEmergencyText(processedText, language);
+      
+      log.warn("긴급 TTS 음성 생성 완료 - 크기: {} bytes", audioData.length);
+      
+      // TODO: 긴급 상황용 오디오 재생 (더 크고 반복적으로)
+      
+    } catch (Exception e) {
+      log.error("긴급 TTS 음성 생성 실패: {}", e.getMessage());
+      // 폴백: 로그만 출력
+      log.warn("폴백 긴급 음성 안내: [{}] {}", language, text);
+    }
   }
 
   /**

@@ -11,9 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -36,11 +39,37 @@ public class UserService {
      * 현재 로그인한 사용자 정보 조회
      */
     public User getCurrentUser() {
-        BifUserDetails userDetails = (BifUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
-        return userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
+        if (authentication == null) {
+            log.error("No authentication found in security context");
+            throw new SecurityException("인증 정보가 없습니다");
+        }
+        
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            log.error("Authentication principal is null");
+            throw new SecurityException("인증 정보가 올바르지 않습니다");
+        }
+        
+        if (!(principal instanceof BifUserDetails)) {
+            log.error("Expected BifUserDetails but got: {}", principal.getClass().getSimpleName());
+            throw new SecurityException("올바르지 않은 인증 타입입니다");
+        }
+        
+        BifUserDetails userDetails = (BifUserDetails) principal;
+        Long userId = userDetails.getUserId();
+        
+        if (userId == null) {
+            log.error("User ID is null in BifUserDetails");
+            throw new SecurityException("사용자 ID를 찾을 수 없습니다");
+        }
+        
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다");
+                });
     }
 
     /**
@@ -100,15 +129,25 @@ public class UserService {
      * 이메일로 사용자 찾기
      */
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        if (email == null || email.trim().isEmpty()) {
+            log.warn("Email is null or empty when finding user");
+            return Optional.empty();
+        }
+        
+        return userRepository.findByEmail(email.trim().toLowerCase());
     }
     
     /**
      * 사용자 ID로 조회
      */
     public User getUserById(Long userId) {
+        Objects.requireNonNull(userId, "User ID cannot be null");
+        
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> {
+                    log.error("User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다");
+                });
     }
 
     /**
@@ -147,19 +186,34 @@ public class UserService {
      */
     @Transactional
     public User updateUserRoles(Long userId, Set<Long> roleIds) {
+        Objects.requireNonNull(userId, "User ID cannot be null");
+        Objects.requireNonNull(roleIds, "Role IDs cannot be null");
+        
+        if (roleIds.isEmpty()) {
+            throw new IllegalArgumentException("최소 하나 이상의 역할이 필요합니다");
+        }
+        
         User user = getUserById(userId);
         
         // 새로운 역할 세트 생성
         Set<Role> newRoles = new HashSet<>();
         for (Long roleId : roleIds) {
+            if (roleId == null) {
+                log.warn("Skipping null role ID for user: {}", userId);
+                continue;
+            }
+            
             Role role = roleRepository.findById(roleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("역할을 찾을 수 없습니다: " + roleId));
+                    .orElseThrow(() -> {
+                        log.error("Role not found with ID: {} for user: {}", roleId, userId);
+                        return new ResourceNotFoundException("역할을 찾을 수 없습니다: " + roleId);
+                    });
             newRoles.add(role);
         }
         
-        // 최소 하나의 역할은 필수
+        // 유효한 역할이 없는 경우 확인
         if (newRoles.isEmpty()) {
-            throw new IllegalArgumentException("최소 하나 이상의 역할이 필요합니다");
+            throw new IllegalArgumentException("유효한 역할이 없습니다");
         }
         
         user.setRoles(newRoles);

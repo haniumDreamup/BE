@@ -1,5 +1,5 @@
 # Build stage
-FROM gradle:8.14.3-jdk17 AS build
+FROM gradle:8.14-jdk17 AS build
 WORKDIR /app
 
 # Copy gradle files
@@ -13,33 +13,36 @@ RUN gradle dependencies --no-daemon
 COPY src ./src
 
 # Build application
-RUN gradle bootJar --no-daemon
+RUN gradle build -x test --no-daemon
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# Install curl for health check
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Create user for running application
+RUN groupadd -r bifai && useradd -r -g bifai bifai
 
-# Create non-root user
-RUN groupadd -r spring && useradd -r -g spring spring
+# Create directories
+RUN mkdir -p /var/log/bifai /var/bifai/files /app/logs && \
+    chown -R bifai:bifai /var/log/bifai /var/bifai/files /app/logs
 
-# Copy jar file from build stage
+# Copy JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Create logs directory
-RUN mkdir -p /app/logs && chown -R spring:spring /app
-
 # Switch to non-root user
-USER spring
+USER bifai
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
-
 # Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", \
+  "app.jar"]

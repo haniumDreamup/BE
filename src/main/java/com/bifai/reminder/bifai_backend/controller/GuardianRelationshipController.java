@@ -2,6 +2,7 @@ package com.bifai.reminder.bifai_backend.controller;
 
 import com.bifai.reminder.bifai_backend.dto.guardian.*;
 import com.bifai.reminder.bifai_backend.dto.response.ApiResponse;
+import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthUtils;
 import com.bifai.reminder.bifai_backend.service.GuardianRelationshipService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,13 +22,14 @@ import java.util.List;
  * 보호자 관계 관리 컨트롤러
  */
 @RestController
-@RequestMapping("/api/guardian-relationships")
+@RequestMapping("/api/v1/guardian-relationships")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Guardian Relationship", description = "보호자 관계 관리 API")
 public class GuardianRelationshipController {
   
   private final GuardianRelationshipService relationshipService;
+  private final JwtAuthUtils jwtAuthUtils;
   
   /**
    * 보호자 초대
@@ -111,8 +113,14 @@ public class GuardianRelationshipController {
     log.info("권한 수정 요청 - 관계 ID: {}", relationshipId);
     
     try {
-      // TODO: userDetails에서 실제 요청자 ID 추출
-      Long requesterId = 1L; // 임시
+      Long requesterId = jwtAuthUtils.getCurrentUserId();
+      if (requesterId == null) {
+        log.error("권한 수정에서 인증된 사용자 ID를 찾을 수 없습니다");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ApiResponse.error("UNAUTHORIZED", "인증이 필요합니다"));
+      }
+      
+      log.info("권한 수정 요청 - 사용자 ID: {}, 관계 ID: {}", requesterId, relationshipId);
       
       GuardianRelationshipDto relationship = 
         relationshipService.updatePermissions(relationshipId, request, requesterId);

@@ -56,12 +56,11 @@ public class GoogleCloudConfig {
    * Vision API 클라이언트
    */
   @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+      value = "google.cloud.vision.enabled", 
+      havingValue = "true"
+  )
   public ImageAnnotatorClient imageAnnotatorClient(CredentialsProvider credentialsProvider) {
-    if (!visionEnabled) {
-      log.info("Google Cloud Vision API가 비활성화되어 있습니다");
-      return null;
-    }
-    
     try {
       ImageAnnotatorSettings settings = ImageAnnotatorSettings.newBuilder()
           .setCredentialsProvider(credentialsProvider)
@@ -72,7 +71,7 @@ public class GoogleCloudConfig {
       return client;
     } catch (Exception e) {
       log.error("Google Cloud Vision API 클라이언트 초기화 실패", e);
-      return null;
+      throw new RuntimeException("Vision API 클라이언트 초기화 실패", e);
     }
   }
 }

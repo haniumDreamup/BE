@@ -323,4 +323,143 @@ class EmergencyServiceTest {
     // then
     assertThat(isGuardian).isTrue();
   }
+
+  @Test
+  @DisplayName("낙상 감지 처리 - 중간 신뢰도")
+  void handleFallDetection_MediumConfidence() {
+    // given
+    FallDetectionRequest request = FallDetectionRequest.builder()
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .confidence(65.0) // 중간 신뢰도
+        .build();
+
+    Emergency fallEmergency = Emergency.builder()
+        .id(3L)
+        .user(testUser)
+        .type(EmergencyType.FALL_DETECTION)
+        .status(EmergencyStatus.ACTIVE)
+        .severity(EmergencySeverity.MEDIUM)
+        .fallConfidence(65.0)
+        .build();
+
+    given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+    given(emergencyRepository.save(any(Emergency.class))).willReturn(fallEmergency);
+    given(guardianRepository.findActiveGuardiansByUserId(1L))
+        .willReturn(Arrays.asList(testGuardian));
+
+    // when
+    EmergencyResponse response = emergencyService.handleFallDetection(request);
+
+    // then
+    assertThat(response.getSeverity()).isEqualTo(EmergencySeverity.MEDIUM);
+  }
+
+  @Test
+  @DisplayName("낙상 감지 처리 - 낮은 신뢰도")
+  void handleFallDetection_LowConfidence() {
+    // given
+    FallDetectionRequest request = FallDetectionRequest.builder()
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .confidence(30.0) // 낮은 신뢰도
+        .build();
+
+    Emergency fallEmergency = Emergency.builder()
+        .id(4L)
+        .user(testUser)
+        .type(EmergencyType.FALL_DETECTION)
+        .status(EmergencyStatus.ACTIVE)
+        .severity(EmergencySeverity.LOW)
+        .fallConfidence(30.0)
+        .build();
+
+    given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+    given(emergencyRepository.save(any(Emergency.class))).willReturn(fallEmergency);
+    given(guardianRepository.findActiveGuardiansByUserId(1L))
+        .willReturn(Arrays.asList(testGuardian));
+
+    // when
+    EmergencyResponse response = emergencyService.handleFallDetection(request);
+
+    // then
+    assertThat(response.getSeverity()).isEqualTo(EmergencySeverity.LOW);
+  }
+
+  @Test
+  @DisplayName("긴급 상황 해결 (DTO) - 성공")
+  void resolveEmergency_WithDTO_Success() {
+    // given
+    ResolveEmergencyRequest request = ResolveEmergencyRequest.builder()
+        .resolvedBy("보호자")
+        .resolutionNotes("안전하게 해결됨")
+        .build();
+    
+    given(emergencyRepository.findById(1L)).willReturn(Optional.of(testEmergency));
+    given(emergencyRepository.save(any(Emergency.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+    // when
+    EmergencyResponse response = emergencyService.resolveEmergency(1L, request);
+
+    // then
+    assertThat(response.getStatus()).isEqualTo(EmergencyStatus.RESOLVED);
+    verify(emergencyRepository).save(argThat(e -> 
+        e.getStatus() == EmergencyStatus.RESOLVED &&
+        e.getResolvedBy().equals("보호자") &&
+        e.getResolutionNotes().equals("안전하게 해결됨")
+    ));
+  }
+
+  @Test
+  @DisplayName("본인 긴급 상황 확인 - 실패")
+  void isOwnEmergency_False() {
+    // given
+    User anotherUser = User.builder()
+        .userId(2L)
+        .username("anotheruser")
+        .email("another@example.com")
+        .build();
+    
+    Emergency anotherEmergency = Emergency.builder()
+        .id(2L)
+        .user(anotherUser)
+        .type(EmergencyType.MANUAL_ALERT)
+        .status(EmergencyStatus.ACTIVE)
+        .build();
+    
+    given(emergencyRepository.findById(2L)).willReturn(Optional.of(anotherEmergency));
+
+    // when
+    boolean isOwn = emergencyService.isOwnEmergency(2L);
+
+    // then
+    assertThat(isOwn).isFalse();
+  }
+
+  @Test
+  @DisplayName("보호자의 긴급 상황 확인 - 실패")
+  void isGuardianOfEmergency_False() {
+    // given
+    given(emergencyRepository.findById(1L)).willReturn(Optional.of(testEmergency));
+    given(guardianRepository.existsByUserIdAndGuardianUserId(1L, 1L))
+        .willReturn(false);
+
+    // when
+    boolean isGuardian = emergencyService.isGuardianOfEmergency(1L);
+
+    // then
+    assertThat(isGuardian).isFalse();
+  }
+
+  @Test
+  @DisplayName("긴급 상황 해결 - 존재하지 않는 긴급상황")
+  void resolveEmergency_NotFound() {
+    // given
+    given(emergencyRepository.findById(999L)).willReturn(Optional.empty());
+
+    // when & then
+    assertThatThrownBy(() -> emergencyService.resolveEmergency(999L, "보호자", "메모"))
+        .isInstanceOf(ResourceNotFoundException.class)
+        .hasMessage("긴급 상황을 찾을 수 없습니다");
+  }
 }
