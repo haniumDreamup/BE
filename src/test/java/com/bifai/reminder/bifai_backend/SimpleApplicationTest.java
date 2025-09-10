@@ -1,10 +1,7 @@
 package com.bifai.reminder.bifai_backend;
 
-import com.bifai.reminder.bifai_backend.config.IntegrationTestConfig;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
@@ -16,7 +13,6 @@ import org.springframework.test.context.TestPropertySource;
   "spring.http.client.factory=simple"
 })
 @ActiveProfiles("test")
-@Import(IntegrationTestConfig.class)
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver",
@@ -28,7 +24,11 @@ import org.springframework.test.context.TestPropertySource;
     "app.jwt.access-token-expiration-ms=900000",
     "app.jwt.refresh-token-expiration-ms=604800000",
     "fcm.enabled=false",
-    "spring.ai.openai.api-key=test-key"
+    "spring.ai.openai.api-key=test-key",
+    "spring.ai.openai.chat.enabled=false",
+    "spring.cache.type=none",
+    "google.cloud.vision.enabled=false",
+    "firebase.enabled=false"
 })
 class SimpleApplicationTest {
   
