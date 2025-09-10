@@ -8,7 +8,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: bifai-backend
+  ECR_REPOSITORY: hanium/bifai
 
 jobs:
   test:
