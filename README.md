@@ -94,3 +94,8 @@ npx task-master set-status --id=<id> --status=in-progress
 
 ## 문의
 프로젝트 관련 문의사항은 이슈 트래커를 이용해 주세요.
+
+## CI/CD 상태
+- ✅ GitHub Actions 파이프라인 설정 완료
+- ✅ EC2 자동 배포 설정 완료 
+- ✅ ECR Docker 이미지 레지스트리 연동
