@@ -178,7 +178,7 @@ jobs:
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
         script: |
           # AWS CLI 설정 확인
