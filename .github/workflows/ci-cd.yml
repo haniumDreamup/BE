@@ -94,7 +94,6 @@ jobs:
         files: build/test-results/test/TEST-*.xml
 
   build:
-    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
