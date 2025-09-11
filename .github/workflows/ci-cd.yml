@@ -185,9 +185,9 @@ jobs:
         docker rm bifai-backend || true &&
         docker pull ${{ needs.build.outputs.primary-tag }} &&
         docker run -d --name bifai-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com -e DB_PORT=3306 -e DB_NAME=bifai_db -e DB_USER=${{ secrets.DB_USER }} -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e AWS_REGION=${{ env.AWS_REGION }} -e S3_BUCKET_NAME=bifai-images-prod -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" ${{ needs.build.outputs.primary-tag }} &&
-        sleep 10 &&
+        sleep 30 &&
         docker ps | grep bifai-backend &&
-        curl -f http://localhost:8080/api/health
+        timeout 60 bash -c "until curl -f http://localhost:8080/api/health; do sleep 5; done"
         '
         
     - name: Clean up SSH Key
