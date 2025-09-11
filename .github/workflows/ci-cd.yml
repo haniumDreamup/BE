@@ -171,54 +171,56 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
         
+    - name: Setup SSH Key
+      run: |
+        echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ssh_key
+        chmod 600 /tmp/ssh_key
+        
     - name: Deploy to EC2
-      uses: appleboy/ssh-action@v1.1.0
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        port: 22
-        timeout: 60s
-        command_timeout: 30m
-        debug: true
-        script: |
-          # AWS CLI 설정 확인
-          aws --version
-          
-          # ECR 로그인
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
-            docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-          
-          # 기존 컨테이너 중지 및 제거
-          docker stop bifai-backend || true
-          docker rm bifai-backend || true
-          
-          # 새 이미지 Pull
-          docker pull ${{ needs.build.outputs.primary-tag }}
-          
-          # 새 컨테이너 실행
-          docker run -d \
-            --name bifai-backend \
-            --restart unless-stopped \
-            -p 8080:8080 \
-            -e SPRING_PROFILES_ACTIVE=prod \
-            -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
-            -e DB_PORT=3306 \
-            -e DB_NAME=bifai_db \
-            -e DB_USER=${{ secrets.DB_USER }} \
-            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            -e AWS_REGION=${{ env.AWS_REGION }} \
-            -e S3_BUCKET_NAME=bifai-images-prod \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-            ${{ needs.build.outputs.primary-tag }}
-          
-          # 컨테이너 상태 확인
-          sleep 10
-          docker ps | grep bifai-backend
-          
-          # 헬스체크
-          curl -f http://localhost:8080/api/health || exit 1
+      run: |
+        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+        # AWS CLI 설정 확인
+        aws --version
+        
+        # ECR 로그인
+        aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+        
+        # 기존 컨테이너 중지 및 제거
+        docker stop bifai-backend || true
+        docker rm bifai-backend || true
+        
+        # 새 이미지 Pull
+        docker pull ${{ needs.build.outputs.primary-tag }}
+        
+        # 새 컨테이너 실행
+        docker run -d \
+          --name bifai-backend \
+          --restart unless-stopped \
+          -p 8080:8080 \
+          -e SPRING_PROFILES_ACTIVE=prod \
+          -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
+          -e DB_PORT=3306 \
+          -e DB_NAME=bifai_db \
+          -e DB_USER=${{ secrets.DB_USER }} \
+          -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+          -e AWS_REGION=${{ env.AWS_REGION }} \
+          -e S3_BUCKET_NAME=bifai-images-prod \
+          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          ${{ needs.build.outputs.primary-tag }}
+        
+        # 컨테이너 상태 확인
+        sleep 10
+        docker ps | grep bifai-backend
+        
+        # 헬스체크
+        curl -f http://localhost:8080/api/health || exit 1
+        EOF
+        
+    - name: Clean up SSH Key
+      if: always()
+      run: rm -f /tmp/ssh_key
           
     - name: Verify deployment
       run: |
@@ -250,7 +252,7 @@ jobs:
         output: 'trivy-results.sarif'
         
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
