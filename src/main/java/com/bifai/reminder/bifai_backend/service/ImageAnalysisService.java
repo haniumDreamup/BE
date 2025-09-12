@@ -14,6 +14,7 @@ import com.bifai.reminder.bifai_backend.service.mobile.MediaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +43,9 @@ public class ImageAnalysisService {
   private final MediaService mediaService;
   private final VoiceGuidanceService voiceGuidanceService;
   private final ObjectMapper objectMapper;
-  private final OpenAIService openAIService;
+  
+  @Autowired(required = false)
+  private OpenAIService openAIService;
 
   /**
    * 이미지 업로드 및 분석 시작
@@ -133,12 +136,18 @@ public class ImageAnalysisService {
       analysis.setExtractedText(extractedText);
       
       // 3. 상황 해석 (OpenAI)
-      Map<String, String> interpretation = openAIService.interpretSituation(
-          objects, 
-          extractedText, 
-          request.getUserQuestion(),
-          request.getContext()
-      );
+      Map<String, String> interpretation;
+      if (openAIService != null) {
+        interpretation = openAIService.interpretSituation(
+            objects, 
+            extractedText, 
+            request.getUserQuestion(),
+            request.getContext()
+        );
+      } else {
+        log.warn("OpenAI 서비스를 사용할 수 없습니다. 기본 해석을 제공합니다.");
+        interpretation = createDefaultInterpretation(objects, extractedText, request.getUserQuestion());
+      }
       
       analysis.setSituationDescription(interpretation.get("description"));
       analysis.setActionSuggestion(interpretation.get("action"));
@@ -334,5 +343,32 @@ public class ImageAnalysisService {
     }
     
     return result;
+  }
+  
+  /**
+   * OpenAI 서비스가 없을 때 기본 해석 제공
+   */
+  private Map<String, String> createDefaultInterpretation(List<Map<String, Object>> objects, String extractedText, String userQuestion) {
+    Map<String, String> interpretation = new HashMap<>();
+    
+    StringBuilder description = new StringBuilder("이미지 분석 결과: ");
+    if (!objects.isEmpty()) {
+      description.append(objects.size()).append("개의 객체를 발견했습니다.");
+    } else {
+      description.append("특별한 객체를 발견하지 못했습니다.");
+    }
+    
+    if (extractedText != null && !extractedText.trim().isEmpty()) {
+      description.append(" 텍스트도 발견되었습니다: ").append(extractedText.substring(0, Math.min(50, extractedText.length())));
+      if (extractedText.length() > 50) {
+        description.append("...");
+      }
+    }
+    
+    interpretation.put("description", description.toString());
+    interpretation.put("action", "상세한 분석을 위해서는 AI 서비스 설정이 필요합니다.");
+    interpretation.put("safety", "MEDIUM");
+    
+    return interpretation;
   }
 }
