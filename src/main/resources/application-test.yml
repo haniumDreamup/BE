@@ -24,6 +24,11 @@ spring:
   h2:
     console:
       enabled: true
+      
+  # Disable Batch jobs for tests
+  batch:
+    job:
+      enabled: false
 
 # Test Server Configuration
 server:
@@ -44,6 +49,7 @@ flyway:
 # Disable FCM for tests
 fcm:
   enabled: false
+
 
 # Test Security
 app:

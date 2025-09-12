@@ -1,10 +1,10 @@
 package com.bifai.reminder.bifai_backend.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +17,13 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OpenAIService {
   
   private final ChatClient chatClient;
+  
+  public OpenAIService(@Autowired(required = false) ChatClient chatClient) {
+    this.chatClient = chatClient;
+  }
   
   @Value("${spring.ai.openai.chat.options.model:gpt-3.5-turbo}")
   private String model;
@@ -39,6 +42,11 @@ public class OpenAIService {
     
     log.info("OpenAI 상황 해석 시작 - 객체: {}개, 텍스트: {}, 질문: {}", 
         objects.size(), extractedText != null ? "있음" : "없음", userQuestion);
+    
+    if (chatClient == null) {
+      log.warn("ChatClient가 사용할 수 없습니다. 폴백 응답을 반환합니다.");
+      return createFallbackResponse();
+    }
     
     try {
       String systemPrompt = buildSystemPrompt();
@@ -194,6 +202,11 @@ public class OpenAIService {
         medicationName, time, dosage
     );
     
+    if (chatClient == null) {
+      log.warn("ChatClient가 사용할 수 없습니다. 기본 메시지를 반환합니다.");
+      return String.format("💊 %s 먹을 시간이에요!", medicationName);
+    }
+    
     try {
       return chatClient.prompt()
           .system("BIF 사용자를 위한 친근한 알림 메시지를 만드는 어시스턴트입니다. 쉬운 말로 짧게 작성하세요.")
@@ -216,6 +229,11 @@ public class OpenAIService {
         "위험을 명확히 알리고 즉시 행동할 수 있는 지침을 50자 이내로 작성해주세요.",
         situation, location
     );
+    
+    if (chatClient == null) {
+      log.warn("ChatClient가 사용할 수 없습니다. 기본 긴급 메시지를 반환합니다.");
+      return "🚨 위험해요! 즉시 안전한 곳으로 피하고 도움을 요청하세요!";
+    }
     
     try {
       return chatClient.prompt()

@@ -178,11 +178,11 @@ public class ImageAnalysisService {
   }
 
   /**
-   * 객체 인식 (YOLOv8)
+   * 객체 인식 (Google Vision API)
    */
   private List<Map<String, Object>> detectObjects(String imageUrl) {
-    // TODO: 실제 YOLOv8 API 호출
-    // return yoloService.detect(imageUrl);
+    // TODO: 실제 Google Vision API 호출
+    // return googleVisionService.detectObjects(imageUrl);
     
     // 임시 데이터
     List<Map<String, Object>> objects = new ArrayList<>();
@@ -199,8 +199,8 @@ public class ImageAnalysisService {
    * 텍스트 추출 (OCR)
    */
   private String extractText(String imageUrl) {
-    // TODO: 실제 OCR API 호출
-    // return ocrService.extractText(imageUrl);
+    // TODO: 실제 Google Vision API OCR 호출
+    // return googleVisionService.extractText(imageUrl);
     
     // 임시 데이터
     return "출구";

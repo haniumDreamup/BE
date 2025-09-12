@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
  * 테스트 인프라 설정
  * Spring Boot 테스트 베스트 프랙티스에 따라 인프라 관련 Mock 제공
  */
-@TestConfiguration
+@Configuration
 @Profile("test")
 @EnableCaching
 public class TestInfrastructureConfig {

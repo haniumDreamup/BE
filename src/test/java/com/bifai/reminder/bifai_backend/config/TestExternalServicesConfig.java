@@ -6,9 +6,8 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.bifai.reminder.bifai_backend.service.GoogleTtsService;
 import com.bifai.reminder.bifai_backend.service.OpenAIService;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -24,33 +23,57 @@ import static org.mockito.Mockito.when;
  * 외부 서비스 Mock 설정
  * Spring Boot 테스트 베스트 프랙티스에 따라 외부 서비스를 Mock으로 대체
  */
-@TestConfiguration
+@Configuration
 @Profile("test")
 public class TestExternalServicesConfig {
   
-  @MockBean
-  private ImageAnnotatorClient imageAnnotatorClient;
+  @Bean
+  @Primary
+  public ImageAnnotatorClient imageAnnotatorClient() {
+    return Mockito.mock(ImageAnnotatorClient.class);
+  }
   
-  @MockBean
-  private TextToSpeechClient textToSpeechClient;
+  @Bean
+  @Primary
+  public TextToSpeechClient textToSpeechClient() {
+    return Mockito.mock(TextToSpeechClient.class);
+  }
   
-  @MockBean 
-  private GoogleTtsService googleTtsService;
+  @Bean 
+  @Primary
+  public GoogleTtsService googleTtsService() {
+    return Mockito.mock(GoogleTtsService.class);
+  }
   
-  @MockBean
-  private ChatClient chatClient;
+  @Bean
+  @Primary
+  public ChatClient chatClient() {
+    return Mockito.mock(ChatClient.class);
+  }
   
-  @MockBean
-  private OpenAIService openAIService;
+  @Bean
+  @Primary
+  public OpenAIService openAIService() {
+    return Mockito.mock(OpenAIService.class);
+  }
   
-  @MockBean
-  private FirebaseMessaging firebaseMessaging;
+  @Bean
+  @Primary
+  public FirebaseMessaging firebaseMessaging() {
+    return Mockito.mock(FirebaseMessaging.class);
+  }
   
-  @MockBean
-  private JavaMailSender javaMailSender;
+  @Bean
+  @Primary
+  public JavaMailSender javaMailSender() {
+    return Mockito.mock(JavaMailSender.class);
+  }
   
-  @MockBean
-  private CircuitBreakerRegistry circuitBreakerRegistry;
+  @Bean
+  @Primary
+  public CircuitBreakerRegistry circuitBreakerRegistry() {
+    return Mockito.mock(CircuitBreakerRegistry.class);
+  }
   
   @Bean
   @Primary
