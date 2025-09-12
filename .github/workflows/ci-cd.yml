@@ -187,7 +187,11 @@ jobs:
         docker run -d --name bifai-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com -e DB_PORT=3306 -e DB_NAME=bifai_db -e DB_USER=${{ secrets.DB_USER }} -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e AWS_REGION=${{ env.AWS_REGION }} -e S3_BUCKET_NAME=bifai-images-prod -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" ${{ needs.build.outputs.primary-tag }} &&
         sleep 30 &&
         docker ps | grep bifai-backend &&
-        timeout 60 bash -c "until curl -f http://localhost:8080/api/health; do sleep 5; done"
+        echo "=== Container logs (last 30 lines) ===" &&
+        docker logs bifai-backend --tail 30 &&
+        echo "=== Testing health check ===" &&
+        timeout 90 bash -c "until curl -f http://localhost:8080/api/health; do echo \"Health check failed, retrying...\"; docker logs bifai-backend --tail 5; sleep 10; done" &&
+        echo "=== Health check successful! ==="
         '
         
     - name: Clean up SSH Key
