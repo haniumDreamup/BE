@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 @Tag(name = "Notification", description = "알림 관리 API")
 public class NotificationController {

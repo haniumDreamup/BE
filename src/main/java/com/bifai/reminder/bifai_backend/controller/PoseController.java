@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/pose")
+@RequestMapping("/api/pose")
 @RequiredArgsConstructor
 @Tag(name = "Pose API", description = "MediaPipe Pose 데이터 처리 및 낙상 감지")
 public class PoseController {

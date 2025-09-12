@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 TIMESTAMP=$(date +%s)
 
 echo "🔍 JWT 디버깅 테스트..."

@@ -28,7 +28,7 @@ import java.util.List;
  * BIF 사용자의 안전 구역 설정 및 모니터링
  */
 @RestController
-@RequestMapping("/api/v1/geofences")
+@RequestMapping("/api/geofences")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Geofence", description = "안전 구역 관리 API")

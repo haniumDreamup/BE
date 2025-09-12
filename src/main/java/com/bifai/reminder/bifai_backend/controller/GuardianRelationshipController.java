@@ -22,7 +22,7 @@ import java.util.List;
  * 보호자 관계 관리 컨트롤러
  */
 @RestController
-@RequestMapping("/api/v1/guardian-relationships")
+@RequestMapping("/api/guardian-relationships")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Guardian Relationship", description = "보호자 관계 관리 API")

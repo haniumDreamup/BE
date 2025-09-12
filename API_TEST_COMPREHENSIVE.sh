@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 기본 설정
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RESULTS_DIR="test_results_$TIMESTAMP"
 SUMMARY_FILE="$RESULTS_DIR/test_summary.md"

@@ -24,7 +24,7 @@ import java.util.Map;
  * A/B 테스트 실험 관리 API
  */
 @RestController
-@RequestMapping("/api/v1/experiments")
+@RequestMapping("/api/experiments")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Experiment", description = "A/B 테스트 실험 관리 API")

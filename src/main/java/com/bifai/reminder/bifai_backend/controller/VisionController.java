@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/vision")
+@RequestMapping("/api/vision")
 @RequiredArgsConstructor
 @Tag(name = "Vision API", description = "이미지 분석 관련 API")
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(

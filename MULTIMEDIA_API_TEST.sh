@@ -50,7 +50,7 @@ log_message "Vision Controller 테스트 시작"
 log_message "Vision analyze - 인증 없이 테스트"
 vision_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/test_image.png" \
-  "$BASE_URL/api/v1/vision/analyze" \
+  "$BASE_URL/api/vision/analyze" \
   -o "$RESULTS_DIR/vision_response.json")
 
 echo "Vision Analyze - HTTP $vision_response"
@@ -68,7 +68,7 @@ log_message "Image Analysis Controller 테스트 시작"
 
 image_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/test_image.png" \
-  "$BASE_URL/api/v1/images/analyze" \
+  "$BASE_URL/api/images/analyze" \
   -o "$RESULTS_DIR/image_response.json")
 
 echo "Image Analyze - HTTP $image_response"
@@ -86,7 +86,7 @@ log_message "Vision detect danger 테스트 시작"
 
 danger_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/test_image.png" \
-  "$BASE_URL/api/v1/vision/detect-danger" \
+  "$BASE_URL/api/vision/detect-danger" \
   -o "$RESULTS_DIR/danger_response.json")
 
 echo "Detect Danger - HTTP $danger_response"
@@ -104,7 +104,7 @@ log_message "Image quick analyze 테스트 시작"
 
 quick_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/test_image.png" \
-  "$BASE_URL/api/v1/images/quick-analyze" \
+  "$BASE_URL/api/images/quick-analyze" \
   -o "$RESULTS_DIR/quick_response.json")
 
 echo "Quick Analyze - HTTP $quick_response"
@@ -123,7 +123,7 @@ log_message "Accessibility voice guidance 테스트 시작"
 voice_response=$(curl -s -w "%{http_code}" -X POST \
   -H "Content-Type: application/json" \
   -d '{"text": "안녕하세요 테스트입니다", "language": "ko", "speed": 1.0}' \
-  "$BASE_URL/api/v1/accessibility/voice-guidance" \
+  "$BASE_URL/api/accessibility/voice-guidance" \
   -o "$RESULTS_DIR/voice_response.json")
 
 echo "Voice Guidance - HTTP $voice_response"
@@ -142,7 +142,7 @@ log_message "잘못된 파일 형식 테스트 시작"
 # 텍스트 파일을 이미지로 보내기
 wrong_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/test_text.txt" \
-  "$BASE_URL/api/v1/vision/analyze" \
+  "$BASE_URL/api/vision/analyze" \
   -o "$RESULTS_DIR/wrong_response.json")
 
 echo "Wrong File Type - HTTP $wrong_response"
@@ -157,7 +157,7 @@ dd if=/dev/zero of="$RESULTS_DIR/large_file.bin" bs=1024 count=1024 2>/dev/null
 
 large_response=$(curl -s -w "%{http_code}" -X POST \
   -F "image=@$RESULTS_DIR/large_file.bin" \
-  "$BASE_URL/api/v1/vision/analyze" \
+  "$BASE_URL/api/vision/analyze" \
   -o "$RESULTS_DIR/large_response.json" \
   --max-time 30)
 

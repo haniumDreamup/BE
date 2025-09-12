@@ -4,7 +4,7 @@
 # RegisterRequest DTO에 맞는 올바른 필드 포함
 
 BASE_URL="http://localhost:8080"
-API_BASE="${BASE_URL}/api/v1"
+API_BASE="${BASE_URL}/api"
 
 echo "🔍 BIF-AI Backend 수정된 실제 기능 테스트 시작"
 echo "📍 Base URL: $BASE_URL"

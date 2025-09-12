@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 TIMESTAMP=$(date +%s)
 
 echo "🚀 새로운 사용자로 성공적인 API 테스트..."

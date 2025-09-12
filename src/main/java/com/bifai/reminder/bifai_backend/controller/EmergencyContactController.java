@@ -27,7 +27,7 @@ import java.util.List;
  * 보호자 및 의료진 연락처 CRUD API
  */
 @RestController
-@RequestMapping("/api/v1/emergency-contacts")
+@RequestMapping("/api/emergency-contacts")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Emergency Contacts", description = "긴급 연락처 관리 API")

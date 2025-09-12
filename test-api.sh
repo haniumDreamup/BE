@@ -22,7 +22,7 @@ fi
 
 # 2. 회원가입
 echo -n "2. 회원가입 테스트... "
-REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/register" \
+REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/register" \
     -H "Content-Type: application/json" \
     -d '{
         "username": "testuser'$(date +%s)'",
@@ -41,7 +41,7 @@ fi
 
 # 3. 로그인
 echo -n "3. 로그인 테스트... "
-LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
+LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
     -H "Content-Type: application/json" \
     -d '{
         "username": "'$USERNAME'",
@@ -58,7 +58,7 @@ fi
 
 # 4. 프로필 조회 (인증 필요)
 echo -n "4. 프로필 조회 테스트... "
-PROFILE_RESPONSE=$(curl -s -X GET "$BASE_URL/api/v1/users/profile" \
+PROFILE_RESPONSE=$(curl -s -X GET "$BASE_URL/api/users/profile" \
     -H "Authorization: Bearer $TOKEN")
 
 if echo "$PROFILE_RESPONSE" | grep -q "$USERNAME"; then
@@ -69,7 +69,7 @@ fi
 
 # 5. 일정 생성
 echo -n "5. 일정 생성 테스트... "
-SCHEDULE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/schedules" \
+SCHEDULE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/schedules" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{
@@ -87,7 +87,7 @@ fi
 
 # 6. OAuth2 URL 조회 (인증 불필요)
 echo -n "6. OAuth2 URL 조회 테스트... "
-OAUTH_RESPONSE=$(curl -s -X GET "$BASE_URL/api/v1/auth/oauth2/login-urls")
+OAUTH_RESPONSE=$(curl -s -X GET "$BASE_URL/api/auth/oauth2/login-urls")
 
 if echo "$OAUTH_RESPONSE" | grep -q "kakao"; then
     echo -e "${GREEN}✓ 성공${NC}"

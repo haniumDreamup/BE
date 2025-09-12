@@ -4,7 +4,7 @@
 # 모든 엔드포인트 성공/실패/엣지 케이스 테스트
 
 BASE_URL="http://localhost:8080"
-API_BASE="${BASE_URL}/api/v1"
+API_BASE="${BASE_URL}/api"
 RESULTS_DIR="comprehensive_test_results_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$RESULTS_DIR"
 

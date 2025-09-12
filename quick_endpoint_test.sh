@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 모든 130개 엔드포인트를 빠르게 테스트하는 스크립트
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 
 # 토큰 획득
 ACCESS_TOKEN=$(curl -X POST $BASE_URL/auth/login -H "Content-Type: application/json" -d '{"usernameOrEmail": "testuser123", "password": "password123"}' -s | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)

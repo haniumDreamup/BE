@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 @org.springframework.context.annotation.Profile("!simple")
@@ -26,7 +26,7 @@ public class AdminController {
 
     /**
      * 시스템 통계 조회
-     * GET /api/v1/admin/statistics
+     * GET /api/admin/statistics
      */
     @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSystemStatistics() {
@@ -46,7 +46,7 @@ public class AdminController {
 
     /**
      * 활성 사용자 세션 조회
-     * GET /api/v1/admin/sessions
+     * GET /api/admin/sessions
      */
     @GetMapping("/sessions")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getActiveSessions() {

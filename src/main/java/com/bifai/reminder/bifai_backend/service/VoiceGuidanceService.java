@@ -6,6 +6,7 @@ import com.bifai.reminder.bifai_backend.repository.AccessibilitySettingsReposito
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,9 @@ public class VoiceGuidanceService {
   
   private final UserRepository userRepository;
   private final AccessibilitySettingsRepository accessibilitySettingsRepository;
-  private final GoogleTtsService googleTtsService;
+  
+  @Autowired(required = false)
+  private GoogleTtsService googleTtsService;
   
   // 한국어 템플릿
   private static final Map<String, String> KOREAN_TEMPLATES = new HashMap<>();
@@ -265,6 +268,12 @@ public class VoiceGuidanceService {
   public void speak(String text, String language) {
     log.info("음성 안내: [{}] {}", language, text);
     
+    if (googleTtsService == null) {
+      log.warn("GoogleTtsService가 사용 불가능합니다. 폴백 모드로 실행합니다.");
+      log.info("폴백 음성 안내: [{}] {}", language, text);
+      return;
+    }
+    
     try {
       // BIF 사용자를 위한 텍스트 전처리
       String processedText = googleTtsService.preprocessTextForBIF(text);
@@ -292,6 +301,12 @@ public class VoiceGuidanceService {
    */
   public void speakEmergency(String text, String language) {
     log.warn("긴급 음성 안내: [{}] {}", language, text);
+    
+    if (googleTtsService == null) {
+      log.warn("GoogleTtsService가 사용 불가능합니다. 폴백 모드로 실행합니다.");
+      log.warn("폴백 긴급 음성 안내: [{}] {}", language, text);
+      return;
+    }
     
     try {
       // BIF 사용자를 위한 텍스트 전처리

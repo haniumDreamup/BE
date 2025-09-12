@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  * 클라이언트에서 발생한 이벤트를 수집
  */
 @RestController
-@RequestMapping("/api/v1/behavior")
+@RequestMapping("/api/behavior")
 @RequiredArgsConstructor
 @Tag(name = "User Behavior", description = "사용자 행동 로깅 API")
 @Slf4j

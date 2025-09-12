@@ -3,7 +3,7 @@
 # 새로 구현된 기능 테스트: OpenAI, Google TTS, FCM 통합 기능 검증
 # BIF-AI Backend - Authenticated Multimedia and AI Integration Test
 
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RESULTS_DIR="integrated_test_results_${TIMESTAMP}"
 

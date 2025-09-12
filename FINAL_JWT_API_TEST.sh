@@ -4,7 +4,7 @@
 # 베스트 프랙티스에 따른 실제 기능 테스트
 
 BASE_URL="http://localhost:8080"
-API_BASE="${BASE_URL}/api/v1"
+API_BASE="${BASE_URL}/api"
 RESULTS_DIR="jwt_api_test_results_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$RESULTS_DIR"
 

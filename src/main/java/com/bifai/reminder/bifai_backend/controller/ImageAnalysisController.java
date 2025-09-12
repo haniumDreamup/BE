@@ -25,7 +25,7 @@ import java.io.IOException;
  * 웨어러블 카메라 이미지 분석 API
  */
 @RestController
-@RequestMapping("/api/v1/images")
+@RequestMapping("/api/images")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Image Analysis", description = "이미지 분석 API")

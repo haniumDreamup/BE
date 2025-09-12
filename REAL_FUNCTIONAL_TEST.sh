@@ -2,7 +2,7 @@
 
 # BIF-AI Backend 실제 기능 테스트 - 최종 버전
 BASE_URL="http://localhost:8080"
-API_BASE="${BASE_URL}/api/v1"
+API_BASE="${BASE_URL}/api"
 
 echo "🔥 BIF-AI Backend 실제 기능 테스트 시작..."
 echo "📍 Base URL: $BASE_URL"
@@ -22,10 +22,10 @@ echo ""
 # 2. 보안 확인 - 인증 없이 보호된 엔드포인트 접근
 echo "=== 2. 보안 테스트 ==="
 protected_endpoints=(
-    "/api/v1/users/me"
-    "/api/v1/reminders" 
-    "/api/v1/emergency-contacts"
-    "/api/v1/admin/statistics"
+    "/api/users/me"
+    "/api/reminders" 
+    "/api/emergency-contacts"
+    "/api/admin/statistics"
 )
 
 for endpoint in "${protected_endpoints[@]}"; do

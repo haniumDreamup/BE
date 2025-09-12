@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # BIF-AI Backend 실제 기능 테스트 스크립트
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 RESULTS_DIR="actual_test_results_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$RESULTS_DIR"
 

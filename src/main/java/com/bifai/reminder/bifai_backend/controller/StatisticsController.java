@@ -22,7 +22,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/statistics")
+@RequestMapping("/api/statistics")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('USER')")
 public class StatisticsController {

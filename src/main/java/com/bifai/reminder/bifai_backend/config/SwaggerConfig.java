@@ -75,8 +75,8 @@ public class SwaggerConfig {
                 .info(apiInfo())
                 .servers(List.of(
                         new Server()
-                            .url("/api/v1")
-                            .description("기본 API 서버 (context-path: /api/v1)")
+                            .url("/api")
+                            .description("기본 API 서버")
                 ))
                 .addSecurityItem(securityRequirement)
                 .components(new Components()

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:8080/api/v1"
+BASE_URL="http://localhost:8080/api"
 
 echo "🎯 완전히 올바른 필드명으로 최종 테스트..."
 

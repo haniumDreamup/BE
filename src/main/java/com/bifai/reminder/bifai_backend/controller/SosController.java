@@ -24,7 +24,7 @@ import java.util.List;
  * 원터치 긴급 도움 요청 API
  */
 @RestController
-@RequestMapping("/api/v1/sos")
+@RequestMapping("/api/sos")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "SOS", description = "긴급 도움 요청 API")
