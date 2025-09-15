@@ -188,13 +188,32 @@ jobs:
         docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine &&
         docker pull ${{ needs.build.outputs.primary-tag }} &&
         docker run -d --name bifai-backend --restart unless-stopped -p 8080:8080 -v /home/ubuntu:/home/ubuntu -e SPRING_PROFILES_ACTIVE=prod -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com -e DB_PORT=3306 -e DB_NAME=bifai_db -e DB_USER=${{ secrets.DB_USER }} -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e REDIS_HOST=localhost -e REDIS_PORT=6379 -e AWS_REGION=${{ env.AWS_REGION }} -e S3_BUCKET_NAME=bifai-images-prod -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" ${{ needs.build.outputs.primary-tag }} &&
-        sleep 30 &&
+        echo "=== Waiting for container to start ===" &&
+        sleep 60 &&
+        echo "=== Container status ===" &&
         docker ps | grep bifai-backend &&
-        echo "=== Container logs (last 30 lines) ===" &&
-        docker logs bifai-backend --tail 30 &&
-        echo "=== Testing health check ===" &&
-        timeout 420 bash -c "until curl -f http://localhost:8080/api/health; do echo \"Health check failed, retrying...\"; docker logs bifai-backend --tail 5; sleep 10; done" &&
-        echo "=== Health check successful! ==="
+        echo "=== Container logs (last 50 lines) ===" &&
+        docker logs bifai-backend --tail 50 &&
+        echo "=== Testing health check with extended timeout ===" &&
+        timeout 600 bash -c "
+          retry_count=0
+          max_retries=60
+          while [ \$retry_count -lt \$max_retries ]; do
+            echo \"Attempt \$((retry_count + 1))/\$max_retries - Testing health endpoint...\"
+            if curl -f -m 10 http://localhost:8080/api/health; then
+              echo \"=== Health check successful! ===\"
+              exit 0
+            fi
+            echo \"Health check failed, waiting 10 seconds before retry...\"
+            docker logs bifai-backend --tail 3
+            sleep 10
+            retry_count=\$((retry_count + 1))
+          done
+          echo \"=== Health check failed after \$max_retries attempts ===\"
+          docker logs bifai-backend --tail 20
+          exit 1
+        " &&
+        echo "=== Deployment successful! ==="
         '
         
     - name: Clean up SSH Key
