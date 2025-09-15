@@ -100,3 +100,4 @@ npx task-master set-status --id=<id> --status=in-progress
 - ✅ EC2 자동 배포 설정 완료 
 - ✅ ECR Docker 이미지 레지스트리 연동
 - ✅ AWS 자격증명 설정 완료# Test commit for AWS key validation
+# AWS keys synchronized
