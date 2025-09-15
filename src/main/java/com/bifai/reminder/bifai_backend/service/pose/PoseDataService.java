@@ -10,6 +10,7 @@ import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,28 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PoseDataService {
   
   private final PoseDataRepository poseDataRepository;
   private final PoseSessionRepository poseSessionRepository;
   private final UserRepository userRepository;
   private final FallDetectionService fallDetectionService;
-  private final RedisTemplate<String, Object> redisTemplate;
   private final ObjectMapper objectMapper;
+  
+  @Autowired(required = false)
+  private RedisTemplate<String, Object> redisTemplate;
+  
+  public PoseDataService(PoseDataRepository poseDataRepository,
+                        PoseSessionRepository poseSessionRepository,
+                        UserRepository userRepository,
+                        FallDetectionService fallDetectionService,
+                        ObjectMapper objectMapper) {
+    this.poseDataRepository = poseDataRepository;
+    this.poseSessionRepository = poseSessionRepository;
+    this.userRepository = userRepository;
+    this.fallDetectionService = fallDetectionService;
+    this.objectMapper = objectMapper;
+  }
   
   private static final String POSE_BUFFER_KEY = "pose:buffer:";
   private static final int BUFFER_SIZE = 150; // 5초 @ 30fps
@@ -148,7 +162,10 @@ public class PoseDataService {
     try {
       // Redis에서 실시간 상태 확인
       String bufferKey = POSE_BUFFER_KEY + userId;
-      List<Object> recentData = redisTemplate.opsForList().range(bufferKey, -10, -1);
+      List<Object> recentData = null;
+      if (redisTemplate != null) {
+        recentData = redisTemplate.opsForList().range(bufferKey, -10, -1);
+      }
       
       status.put("userId", userId);
       status.put("monitoring", recentData != null && !recentData.isEmpty());
@@ -243,6 +260,11 @@ public class PoseDataService {
    * Redis 버퍼에 데이터 추가
    */
   private void addToBuffer(PoseDataDto poseDataDto) {
+    if (redisTemplate == null) {
+      log.debug("Redis가 사용 불가능합니다. 버퍼링을 건너뜁니다.");
+      return;
+    }
+    
     String bufferKey = POSE_BUFFER_KEY + poseDataDto.getUserId();
     
     try {

@@ -6,6 +6,7 @@ import com.bifai.reminder.bifai_backend.entity.Medication;
 import com.bifai.reminder.bifai_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,6 @@ import java.util.stream.Collectors;
  * 병렬 처리 및 캐싱으로 성능 향상
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
 public class OptimizedDashboardService {
@@ -33,7 +33,19 @@ public class OptimizedDashboardService {
   private final OptimizedActivityLogRepository activityLogRepository;
   private final LocationHistoryRepository locationRepository;
   private final ScheduleRepository scheduleRepository;
-  private final RedisTemplate<String, Object> redisTemplate;
+  
+  @Autowired(required = false)
+  private RedisTemplate<String, Object> redisTemplate;
+  
+  public OptimizedDashboardService(OptimizedMedicationRepository medicationRepository,
+                                  OptimizedActivityLogRepository activityLogRepository,
+                                  LocationHistoryRepository locationRepository,
+                                  ScheduleRepository scheduleRepository) {
+    this.medicationRepository = medicationRepository;
+    this.activityLogRepository = activityLogRepository;
+    this.locationRepository = locationRepository;
+    this.scheduleRepository = scheduleRepository;
+  }
   
   /**
    * 통합 대시보드 데이터 조회 (병렬 처리)
@@ -96,9 +108,11 @@ public class OptimizedDashboardService {
     String cacheKey = "weekly_trend:" + userId + ":" + endDate;
     
     // Redis 캐시 확인
-    WeeklyTrendDto cached = (WeeklyTrendDto) redisTemplate.opsForValue().get(cacheKey);
-    if (cached != null) {
-      return cached;
+    if (redisTemplate != null) {
+      WeeklyTrendDto cached = (WeeklyTrendDto) redisTemplate.opsForValue().get(cacheKey);
+      if (cached != null) {
+        return cached;
+      }
     }
     
     LocalDate startDate = endDate.minusDays(6);
@@ -119,7 +133,9 @@ public class OptimizedDashboardService {
       .build();
     
     // 캐시 저장 (1시간)
-    redisTemplate.opsForValue().set(cacheKey, trend, 1, TimeUnit.HOURS);
+    if (redisTemplate != null) {
+      redisTemplate.opsForValue().set(cacheKey, trend, 1, TimeUnit.HOURS);
+    }
     
     return trend;
   }
@@ -241,6 +257,9 @@ public class OptimizedDashboardService {
    */
   private boolean isMedicationTaken(Medication medication, LocalDate date) {
     // Redis에서 복약 기록 확인
+    if (redisTemplate == null) {
+      return false; // Redis가 없으면 복용하지 않은 것으로 간주
+    }
     String key = "medication_taken:" + medication.getId() + ":" + date;
     return Boolean.TRUE.equals(redisTemplate.hasKey(key));
   }

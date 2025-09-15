@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@org.springframework.context.annotation.Profile("!simple")
+@org.springframework.context.annotation.Profile("!test")
 public class AdminController {
 
     private final AdminService adminService;

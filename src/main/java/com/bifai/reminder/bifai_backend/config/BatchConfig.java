@@ -33,6 +33,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ConditionalOnProperty(name = "spring.batch.job.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.context.annotation.Profile("!test")
 public class BatchConfig {
   
   private final JobRepository jobRepository;

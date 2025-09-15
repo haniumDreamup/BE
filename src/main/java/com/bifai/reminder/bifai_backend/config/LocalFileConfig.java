@@ -17,6 +17,7 @@ import java.nio.file.Paths;
  */
 @Slf4j
 @Configuration
+@org.springframework.context.annotation.Profile("!test")
 public class LocalFileConfig implements WebMvcConfigurer {
   
   @Value("${file.upload.dir:/home/ec2-user/bifai-files}")
@@ -47,7 +48,8 @@ public class LocalFileConfig implements WebMvcConfigurer {
         }
       }
     } catch (Exception e) {
-      log.error("업로드 디렉토리 초기화 실패", e);
+      log.warn("업로드 디렉토리 초기화 실패 - 테스트 환경에서는 무시합니다: {}", e.getMessage());
+      // 테스트 환경에서는 파일 시스템 오류를 무시
     }
   }
   

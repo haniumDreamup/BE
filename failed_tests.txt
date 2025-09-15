@@ -1,1 +1,0 @@
-TEST-com.bifai.reminder.bifai_backend.service.pose.FallDetectionServiceTest

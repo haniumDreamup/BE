@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.context.annotation.Profile("!test")
 public class CacheWarmingService {
   
   private final UserRepository userRepository;

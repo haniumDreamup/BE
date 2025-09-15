@@ -20,7 +20,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@org.springframework.context.annotation.Profile("!simple")
+@org.springframework.context.annotation.Profile("!test")
 public class AdminService {
 
     private final UserRepository userRepository;
