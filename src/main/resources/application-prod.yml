@@ -16,7 +16,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: validate  # Production에서는 validate 사용
+      ddl-auto: create  # 임시로 테이블 생성 - 스키마 생성 후 validate로 변경 필요
     show-sql: false
     properties:
       hibernate:
