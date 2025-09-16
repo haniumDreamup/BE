@@ -41,7 +41,9 @@ EXPOSE 8080
 
 # Run application
 ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
+  "-XX:-UseContainerSupport", \
+  "-Dmanagement.metrics.enabled=false", \
+  "-Dspring.jmx.enabled=false", \
   "-XX:MaxRAMPercentage=75.0", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", \
