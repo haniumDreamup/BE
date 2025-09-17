@@ -144,7 +144,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/actuator") ||
                requestURI.startsWith("/api/auth") ||
                requestURI.startsWith("/api/oauth") ||
-               requestURI.startsWith("/error") ||
+               requestURI.equals("/error") ||
                requestURI.startsWith("/favicon.ico");
     }
 

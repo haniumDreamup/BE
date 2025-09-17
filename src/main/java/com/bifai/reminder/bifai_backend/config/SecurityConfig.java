@@ -2,6 +2,8 @@ package com.bifai.reminder.bifai_backend.config;
 
 import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthenticationFilter;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetailsService;
+import com.bifai.reminder.bifai_backend.security.BifAuthenticationEntryPoint;
+import com.bifai.reminder.bifai_backend.security.BifAccessDeniedHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +41,8 @@ public class SecurityConfig {
 
     private final BifUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final BifAuthenticationEntryPoint bifAuthenticationEntryPoint;
+    private final BifAccessDeniedHandler bifAccessDeniedHandler;
 
     /**
      * Spring Security 필터 체인 설정
@@ -78,10 +82,17 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                
+                // 에러 처리 엔드포인트
+                .requestMatchers("/error").permitAll()
+
                 // === 보호 엔드포인트 ===
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
+            )
+            // 커스텀 예외 처리 핸들러 설정
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(bifAuthenticationEntryPoint)
+                .accessDeniedHandler(bifAccessDeniedHandler)
             )
             // H2 콘솔을 위한 iframe 허용
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

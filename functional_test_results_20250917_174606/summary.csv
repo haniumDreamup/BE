@@ -1,0 +1,48 @@
+Result,TestName,Method,Endpoint,Expected,Actual,Description
+PASS,Register_Empty_JSON,POST,/auth/register,400,400,빈 JSON으로 회원가입
+PASS,Register_Missing_Username,POST,/auth/register,400,400,사용자명 누락
+PASS,Register_Invalid_Email,POST,/auth/register,400,400,잘못된 이메일 형식
+PASS,Register_Short_Username,POST,/auth/register,400,400,너무 짧은 사용자명
+PASS,Register_Password_Mismatch,POST,/auth/register,400,400,비밀번호 불일치
+PASS,Register_No_Terms_Agree,POST,/auth/register,400,400,약관 미동의
+PASS,Login_Empty_JSON,POST,/auth/login,400,400,빈 JSON으로 로그인
+PASS,Login_Missing_Password,POST,/auth/login,400,400,비밀번호 누락
+PASS,Login_Missing_Username,POST,/auth/login,400,400,사용자명/이메일 누락
+PASS,Refresh_Empty_Token,POST,/auth/refresh,400,400,빈 리프레시 토큰
+PASS,Refresh_Invalid_Token,POST,/auth/refresh,401,401,잘못된 리프레시 토큰
+PASS,ScreenReader_Missing_Action,GET,/api/accessibility/screen-reader-hint,403,403,action 파라미터 누락
+PASS,ScreenReader_Empty_Action,GET,/api/accessibility/screen-reader-hint?action=,403,403,빈 action 파라미터
+PASS,ScreenReader_Invalid_Action,GET,/api/accessibility/screen-reader-hint?action=invalid&target=button,403,403,잘못된 action 값
+PASS,VoiceGuidance_Empty_JSON,POST,/api/accessibility/voice-guidance,403,403,빈 JSON
+FAIL,VoiceGuidance_Invalid_JSON,POST,/api/accessibility/voice-guidance,400,403,잘못된 JSON 형식
+PASS,VoiceGuidance_Missing_ContentType,POST,/api/accessibility/voice-guidance,403,403,Content-Type 헤더 누락
+PASS,DailyActivity_Date_Format,GET,/api/statistics/daily-activity?date=invalid-date,403,403,잘못된 날짜 형식
+PASS,DailyActivity_Future_Date,GET,/api/statistics/daily-activity?date=2030-12-31,403,403,미래 날짜
+PASS,DailyActivity_Missing_Date,GET,/api/statistics/daily-activity/single,403,403,날짜 파라미터 누락
+PASS,Geofence_Create_Empty,POST,/api/geofences,403,403,빈 지오펜스 데이터
+PASS,Geofence_Create_Invalid_Coords,POST,/api/geofences,403,403,잘못된 좌표
+PASS,Geofence_Create_Missing_Name,POST,/api/geofences,403,403,이름 누락
+PASS,Geofence_Type_Invalid,GET,/api/geofences/type/invalid-type,403,403,잘못된 지오펜스 타입
+FAIL,Geofence_Type_Empty,GET,/api/geofences/type/,404,403,빈 타입 파라미터
+PASS,Emergency_Alert_Empty,POST,/api/emergency/alert,403,403,빈 응급 알림
+PASS,Emergency_Alert_Invalid_Location,POST,/api/emergency/alert,403,403,잘못된 위치 정보
+PASS,Fall_Detection_Empty,POST,/api/emergency/fall-detection,403,403,빈 낙상 감지 데이터
+PASS,Fall_Detection_Invalid_Data,POST,/api/emergency/fall-detection,403,403,잘못된 센서 데이터
+PASS,Behavior_Log_Empty,POST,/api/behavior/log,403,403,빈 행동 로그
+PASS,Behavior_Log_Invalid_Event,POST,/api/behavior/log,403,403,잘못된 이벤트 타입
+PASS,Pageview_Log_Missing_URL,POST,/api/behavior/pageview,403,403,URL 누락
+PASS,Pageview_Log_Invalid_URL,POST,/api/behavior/pageview,403,403,잘못된 URL 형식
+PASS,FCM_Token_Empty,POST,/api/notifications/fcm-token,403,403,빈 FCM 토큰
+PASS,FCM_Token_Invalid_Format,POST,/api/notifications/fcm-token,403,403,잘못된 토큰 형식
+PASS,Notification_Settings_Invalid,PUT,/api/notifications/settings,403,403,잘못된 알림 설정
+PASS,Experiment_Create_Empty,POST,/api/experiments,403,403,빈 실험 데이터
+PASS,Experiment_Create_Invalid_Config,POST,/api/experiments,403,403,잘못된 실험 설정
+PASS,FeatureFlag_Invalid_Key,GET,/api/experiments/feature-flags/invalid-key-format-!!!,403,403,잘못된 플래그 키
+FAIL,FeatureFlag_Empty_Key,GET,/api/experiments/feature-flags/,404,403,빈 플래그 키
+FAIL,Wrong_ContentType_XML,POST,/auth/register,400,500,XML Content-Type
+PASS,Wrong_ContentType_Text,POST,/api/accessibility/voice-guidance,403,403,Text Content-Type
+PASS,Large_Payload_Test,POST,/auth/register,400,400,큰 JSON 페이로드 (5KB)
+PASS,Special_Chars_Email,POST,/auth/register,400,400,특수문자 이메일
+PASS,SQL_Injection_Username,POST,/auth/login,401,401,SQL 인젝션 시도
+PASS,Korean_Username,POST,/auth/register,400,400,한글 사용자명
+FAIL,Emoji_Name,POST,/auth/register,400,500,이모지 포함 이름

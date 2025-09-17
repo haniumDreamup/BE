@@ -1,6 +1,6 @@
 package com.bifai.reminder.bifai_backend.security;
 
-import com.bifai.reminder.bifai_backend.dto.ApiResponse;
+import com.bifai.reminder.bifai_backend.dto.ProblemDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,12 +43,17 @@ public class BifAccessDeniedHandler implements AccessDeniedHandler {
             errorMessage = "보호자만 사용할 수 있는 기능입니다.";
         }
         
-        // API 응답 형식에 맞춰 에러 반환
-        ApiResponse<Void> errorResponse = ApiResponse.error(errorMessage);
+        // ProblemDetail 형식으로 에러 반환
+        ProblemDetail problemDetail = ProblemDetail.forBifUser(
+            "권한 없음",
+            errorMessage,
+            "보호자에게 문의하거나 다른 기능을 이용해 주세요",
+            403
+        );
         
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(problemDetail));
     }
 }

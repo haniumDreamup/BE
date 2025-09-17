@@ -1,6 +1,6 @@
 package com.bifai.reminder.bifai_backend.security;
 
-import com.bifai.reminder.bifai_backend.dto.ApiResponse;
+import com.bifai.reminder.bifai_backend.dto.ProblemDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,19 +34,19 @@ public class BifAuthenticationEntryPoint implements AuthenticationEntryPoint {
         
         // BIF 사용자를 위한 단순한 에러 메시지
         String errorMessage = "로그인이 필요합니다. 다시 로그인해주세요.";
-        
+
         // 요청 경로에 따른 추가 안내
         String requestPath = request.getRequestURI();
         if (requestPath.contains("/guardian")) {
             errorMessage = "보호자 로그인이 필요합니다.";
         }
-        
-        // API 응답 형식에 맞춰 에러 반환
-        ApiResponse<Void> errorResponse = ApiResponse.error(errorMessage);
+
+        // ProblemDetail 형식으로 에러 반환
+        ProblemDetail problemDetail = ProblemDetail.forAuthentication(errorMessage);
         
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(problemDetail));
     }
 }

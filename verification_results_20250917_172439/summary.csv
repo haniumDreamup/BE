@@ -1,0 +1,159 @@
+Result,Method,Endpoint,Expected,Actual,Description
+PASS,GET,/api/health,200,200,애플리케이션 헬스 체크
+PASS,GET,/health,200,200,대체 헬스 체크 경로
+PASS,GET,/api/auth/oauth2/login-urls,200,200,OAuth2 로그인 URL 조회
+PASS,POST,/auth/register,400,400,회원가입 (빈 데이터)
+PASS,POST,/auth/login,400,400,로그인 (빈 데이터)
+PASS,GET,/auth/health,200,200,인증 헬스 체크
+FAIL,GET,/api/test/health,200,403,테스트 헬스 체크
+PASS,POST,/api/accessibility/voice-guidance,403,403,음성 안내 생성
+PASS,POST,/api/accessibility/aria-label,403,403,ARIA 라벨 생성
+PASS,GET,/api/accessibility/screen-reader-hint,403,403,스크린 리더 힌트
+PASS,GET,/api/accessibility/settings,403,403,접근성 설정 조회
+PASS,PUT,/api/accessibility/settings,403,403,접근성 설정 업데이트
+PASS,POST,/api/accessibility/settings/apply-profile,403,403,접근성 프로파일 적용
+PASS,GET,/api/accessibility/color-schemes,403,403,색상 스키마 목록
+PASS,GET,/api/accessibility/color-schemes/current,403,403,현재 색상 스키마
+PASS,GET,/api/accessibility/simplified-navigation,403,403,간소화 네비게이션
+PASS,GET,/api/accessibility/touch-targets,403,403,터치 타겟 정보
+PASS,POST,/api/accessibility/simplify-text,403,403,텍스트 간소화
+PASS,POST,/api/accessibility/settings/sync,403,403,설정 동기화
+PASS,GET,/api/accessibility/statistics,403,403,접근성 통계
+PASS,GET,/api/statistics/geofence,403,403,지오펜스 통계
+PASS,GET,/api/statistics/daily-activity,403,403,일일 활동 통계
+PASS,GET,/api/statistics/daily-activity/single,403,403,특정 날짜 활동 통계
+PASS,GET,/api/statistics/safety,403,403,안전 통계
+PASS,GET,/api/statistics/summary,403,403,전체 통계 요약
+PASS,POST,/api/experiments,403,403,실험 생성
+PASS,GET,/api/experiments,403,403,실험 목록 조회
+PASS,GET,/api/experiments/test-exp,403,403,실험 상세 조회
+PASS,PUT,/api/experiments/test-exp,403,403,실험 수정
+PASS,POST,/api/experiments/test-exp/start,403,403,실험 시작
+PASS,POST,/api/experiments/test-exp/pause,403,403,실험 일시 중지
+PASS,POST,/api/experiments/test-exp/resume,403,403,실험 재개
+PASS,POST,/api/experiments/test-exp/complete,403,403,실험 종료
+PASS,POST,/api/experiments/test-exp/assign,403,403,사용자 실험 할당
+PASS,POST,/api/experiments/test-exp/convert,403,403,전환 기록
+PASS,GET,/api/experiments/test-exp/analysis,403,403,실험 분석
+PASS,GET,/api/experiments/my-experiments,403,403,내 실험 목록
+PASS,GET,/api/experiments/feature-flags/test-flag,403,403,Feature Flag 조회
+PASS,POST,/api/experiments/test-exp/opt-out,403,403,실험 제외
+PASS,POST,/api/experiments/test-exp/groups,403,403,테스트 그룹 설정
+PASS,POST,/api/experiments/test-exp/variants,403,403,변형 설정
+PASS,GET,/api/users/me,403,403,내 정보 조회
+PASS,PUT,/api/users/me,403,403,내 정보 수정
+PASS,GET,/api/users/123,403,403,사용자 정보 조회
+PASS,GET,/api/users,403,403,사용자 목록 조회
+PASS,PUT,/api/users/123/deactivate,403,403,사용자 비활성화
+PASS,PUT,/api/users/123/activate,403,403,사용자 활성화
+PASS,PUT,/api/users/123/roles,403,403,사용자 권한 수정
+PASS,GET,/api/guardians/my,403,403,내 보호자 조회
+PASS,GET,/api/guardians/protected-users,403,403,보호 대상자 조회
+PASS,POST,/api/guardians,403,403,보호자 등록
+PASS,PUT,/api/guardians/123/approve,403,403,보호자 승인
+PASS,PUT,/api/guardians/123/reject,403,403,보호자 거부
+PASS,PUT,/api/guardians/123/permissions,403,403,보호자 권한 수정
+PASS,DELETE,/api/guardians/123,403,403,보호자 삭제
+PASS,DELETE,/api/guardians/relationships/123,403,403,보호자 관계 삭제
+PASS,POST,/api/guardian-relationships/invite,403,403,보호자 초대
+PASS,POST,/api/guardian-relationships/accept-invitation,403,403,초대 수락
+PASS,POST,/api/guardian-relationships/reject-invitation,403,403,초대 거부
+PASS,PUT,/api/guardian-relationships/123/permissions,403,403,관계 권한 수정
+PASS,POST,/api/guardian-relationships/123/suspend,403,403,관계 일시 중단
+PASS,POST,/api/guardian-relationships/123/reactivate,403,403,관계 재활성화
+PASS,DELETE,/api/guardian-relationships/123,403,403,관계 삭제
+PASS,GET,/api/guardian-relationships/user/123,403,403,사용자별 관계 조회
+PASS,GET,/api/guardian-relationships/guardian/123,403,403,보호자별 관계 조회
+PASS,GET,/api/guardian-relationships/user/123/emergency-contacts,403,403,응급 연락처 조회
+PASS,GET,/api/guardian-relationships/check-permission,403,403,권한 확인
+PASS,POST,/api/guardian-relationships/update-activity,403,403,활동 업데이트
+PASS,GET,/api/guardian/dashboard/daily-summary/123,403,403,일일 요약
+PASS,GET,/api/guardian/dashboard/weekly-summary/123,403,403,주간 요약
+PASS,GET,/api/guardian/dashboard/integrated/123,403,403,통합 대시보드
+PASS,POST,/api/emergency/alert,403,403,응급 알림
+PASS,POST,/api/emergency/fall-detection,403,403,낙상 감지
+PASS,GET,/api/emergency/status/123,403,403,응급 상황 상태
+PASS,GET,/api/emergency/history/123,403,403,응급 상황 이력
+PASS,GET,/api/emergency/active,403,403,활성 응급 상황
+PASS,PUT,/api/emergency/123/resolve,403,403,응급 상황 해결
+PASS,POST,/api/emergency-contacts,403,403,응급 연락처 생성
+PASS,PUT,/api/emergency-contacts/123,403,403,응급 연락처 수정
+PASS,DELETE,/api/emergency-contacts/123,403,403,응급 연락처 삭제
+PASS,GET,/api/emergency-contacts/123,403,403,응급 연락처 조회
+PASS,GET,/api/emergency-contacts,403,403,응급 연락처 목록
+PASS,GET,/api/emergency-contacts/active,403,403,활성 응급 연락처
+PASS,GET,/api/emergency-contacts/available,403,403,사용 가능 연락처
+PASS,GET,/api/emergency-contacts/medical,403,403,의료진 연락처
+PASS,POST,/api/emergency-contacts/123/verify,403,403,연락처 검증
+PASS,PATCH,/api/emergency-contacts/123/toggle-active,403,403,활성 상태 토글
+PASS,PUT,/api/emergency-contacts/priorities,403,403,우선순위 설정
+PASS,POST,/api/emergency-contacts/123/contact-record,403,403,연락 기록
+PASS,POST,/api/sos/trigger,403,403,SOS 발생
+PASS,PUT,/api/sos/123/cancel,403,403,SOS 취소
+PASS,GET,/api/sos/history,403,403,SOS 이력
+PASS,POST,/api/sos/quick,403,403,빠른 SOS
+PASS,POST,/api/vision/analyze,403,403,이미지 분석
+PASS,POST,/api/vision/detect-danger,403,403,위험 감지
+PASS,POST,/api/images/analyze,403,403,이미지 분석
+PASS,GET,/api/images/analysis/123,403,403,분석 결과 조회
+PASS,POST,/api/images/quick-analyze,403,403,빠른 분석
+PASS,POST,/api/geofences,403,403,지오펜스 생성
+PASS,PUT,/api/geofences/123,403,403,지오펜스 수정
+PASS,DELETE,/api/geofences/123,403,403,지오펜스 삭제
+PASS,GET,/api/geofences/123,403,403,지오펜스 조회
+PASS,GET,/api/geofences,403,403,지오펜스 목록
+PASS,GET,/api/geofences/paged,403,403,페이징 지오펜스 목록
+PASS,GET,/api/geofences/type/safe,403,403,타입별 지오펜스
+PASS,PATCH,/api/geofences/123/toggle,403,403,지오펜스 토글
+PASS,PUT,/api/geofences/priorities,403,403,지오펜스 우선순위
+PASS,GET,/api/geofences/stats,403,403,지오펜스 통계
+PASS,POST,/api/notifications/fcm-token,403,403,FCM 토큰 등록
+PASS,DELETE,/api/notifications/fcm-token/device123,403,403,FCM 토큰 삭제
+PASS,GET,/api/notifications/settings,403,403,알림 설정 조회
+PASS,PUT,/api/notifications/settings,403,403,알림 설정 수정
+PASS,POST,/api/notifications/test,403,403,테스트 알림
+PASS,POST,/api/notifications/emergency,403,403,응급 알림
+PASS,POST,/api/notifications/validate-token,403,403,토큰 검증
+PASS,POST,/api/pose/data,403,403,포즈 데이터 저장
+PASS,POST,/api/pose/data/batch,403,403,포즈 데이터 일괄 저장
+PASS,GET,/api/pose/fall-status/123,403,403,낙상 상태 조회
+PASS,POST,/api/pose/fall-event/123/feedback,403,403,낙상 이벤트 피드백
+PASS,POST,/api/behavior/log,403,403,행동 로그
+PASS,POST,/api/behavior/batch,403,403,행동 일괄 로그
+PASS,POST,/api/behavior/pageview,403,403,페이지뷰 로그
+PASS,POST,/api/behavior/click,403,403,클릭 로그
+PASS,POST,/api/behavior/error,403,403,에러 로그
+PASS,GET,/api/admin/statistics,403,403,관리자 통계
+PASS,GET,/api/admin/sessions,403,403,세션 목록
+PASS,DELETE,/api/admin/sessions/123,403,403,세션 삭제
+PASS,GET,/api/admin/auth-logs,403,403,인증 로그
+PASS,GET,/api/admin/settings,403,403,관리자 설정
+PASS,PUT,/api/admin/settings,403,403,관리자 설정 수정
+PASS,POST,/api/admin/backup,403,403,백업 생성
+PASS,DELETE,/api/admin/cache,403,403,캐시 삭제
+PASS,GET,/api/users/me,403,403,잘못된 토큰으로 내 정보 조회
+PASS,GET,/api/guardians/my,403,403,잘못된 토큰으로 보호자 조회
+PASS,GET,/api/accessibility/settings,403,403,잘못된 토큰으로 접근성 설정
+FAIL,GET,/api/nonexistent,404,403,존재하지 않는 API 경로
+FAIL,GET,/api/health/invalid,404,500,잘못된 헬스 체크 경로
+FAIL,GET,/api/auth/invalid,404,500,잘못된 인증 경로
+FAIL,DELETE,/api/health,405,500,헬스 체크에 DELETE 메서드
+FAIL,PUT,/api/auth/oauth2/login-urls,405,500,OAuth2 URL에 PUT 메서드
+FAIL,PATCH,/api/test/health,405,403,테스트 헬스체크에 PATCH 메서드
+FAIL,GET,/api/accessibility/screen-reader-hint,400,403,필수 파라미터 누락
+FAIL,GET,/api/accessibility/screen-reader-hint?action=,400,403,빈 파라미터 값
+PASS,POST,/api/accessibility/voice-guidance,403,403,JSON 엔드포인트에 Content-Type 없음
+FAIL,GET,/API/HEALTH,404,403,대문자 경로
+FAIL,GET,/api/HEALTH,404,403,부분 대문자 경로
+FAIL,GET,/api/health/../admin,404,403,경로 트래버설 시도
+FAIL,GET,/api/health%2F,404,400,URL 인코딩된 경로
+PASS,GET,/ws,403,403,WebSocket 엔드포인트에 HTTP GET
+FAIL,POST,/auth/register,400,500,회원가입에 잘못된 JSON
+FAIL,POST,/auth/login,400,500,로그인에 XML 데이터
+PASS,POST,/auth/register,400,400,큰 JSON 데이터
+PASS,GET,/api/users/abc,403,403,문자열 사용자 ID
+PASS,GET,/api/geofences/xyz,403,403,문자열 지오펜스 ID
+PASS,GET,/api/emergency/status/invalid,403,403,잘못된 응급상황 ID
+PASS,GET,/api/users/-1,403,403,음수 사용자 ID
+PASS,GET,/api/geofences/-123,403,403,음수 지오펜스 ID
+PASS,GET,/api/users/999999999999,403,403,매우 큰 사용자 ID
