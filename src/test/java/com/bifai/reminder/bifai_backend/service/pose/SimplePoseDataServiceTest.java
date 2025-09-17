@@ -54,7 +54,6 @@ class SimplePoseDataServiceTest {
         poseSessionRepository,
         userRepository,
         fallDetectionService,
-        null, // RedisTemplate null로 설정
         objectMapper
     );
 
