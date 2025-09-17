@@ -74,8 +74,8 @@ public class SecurityConfig {
                 // === 공개 엔드포인트 ===
                 // 헬스체크
                 .requestMatchers("/health/**", "/api/health/**", "/api/v1/health/**").permitAll()
-                // 테스트 엔드포인트
-                .requestMatchers("/test/**", "/api/v1/test/**").permitAll()
+                // 테스트 엔드포인트 (모든 변형 포함)
+                .requestMatchers("/test/**", "/api/test/**", "/api/v1/test/**").permitAll()
                 // 인증 API
                 .requestMatchers("/auth/**", "/api/auth/**", "/api/v1/auth/**").permitAll()
                 // H2 콘솔 (개발 환경)
