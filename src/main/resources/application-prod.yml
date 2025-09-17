@@ -16,7 +16,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create  # 스키마 자동 생성
+      ddl-auto: create-drop  # 시작 시 테이블 삭제 후 재생성
     show-sql: false
     properties:
       hibernate:
