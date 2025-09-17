@@ -73,7 +73,7 @@ public class SecurityConfig {
                 // 테스트 엔드포인트
                 .requestMatchers("/test/**", "/api/v1/test/**").permitAll()
                 // 인증 API
-                .requestMatchers("/auth/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers("/auth/**", "/api/auth/**", "/api/v1/auth/**").permitAll()
                 // H2 콘솔 (개발 환경)
                 .requestMatchers("/h2-console/**").permitAll()
                 // Swagger UI
