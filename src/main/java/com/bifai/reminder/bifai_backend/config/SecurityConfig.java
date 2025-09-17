@@ -69,7 +69,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // === 공개 엔드포인트 ===
                 // 헬스체크
-                .requestMatchers("/health/**", "/api/v1/health/**").permitAll()
+                .requestMatchers("/health/**", "/api/health/**", "/api/v1/health/**").permitAll()
                 // 테스트 엔드포인트
                 .requestMatchers("/test/**", "/api/v1/test/**").permitAll()
                 // 인증 API
