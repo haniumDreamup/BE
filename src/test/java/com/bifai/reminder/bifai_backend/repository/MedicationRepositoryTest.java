@@ -7,11 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,6 +28,7 @@ import static org.assertj.core.api.Assertions.*;
  * BIF 사용자의 약물 정보 관리 테스트
  */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @DisplayName("MedicationRepository 테스트")
 class MedicationRepositoryTest {
@@ -188,6 +192,7 @@ class MedicationRepositoryTest {
     
     @Test
     @DisplayName("처방의별 약물 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findByPrescribedBy_Success() {
         // given
         medicationRepository.save(testMedication);
@@ -248,6 +253,7 @@ class MedicationRepositoryTest {
     
     @Test
     @DisplayName("부작용 있는 약물 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findBySideEffectsNotNull_Success() {
         // given
         medicationRepository.save(testMedication);
@@ -286,6 +292,7 @@ class MedicationRepositoryTest {
     
     @Test
     @DisplayName("약물 정보 업데이트")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void updateMedication_Success() {
         // given
         Medication savedMedication = medicationRepository.save(testMedication);

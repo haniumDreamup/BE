@@ -1,7 +1,10 @@
 package com.bifai.reminder.bifai_backend.config;
 
 import com.bifai.reminder.bifai_backend.service.cache.RedisCacheService;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -20,11 +23,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * 테스트 프로파일 전용 최소 설정
  * Spring Boot Auto Configuration을 방해하지 않으면서 필수 Bean만 제공
+ * Redis 자동 설정 비활성화로 테스트 환경 안정성 확보
  */
 @Configuration
 @Profile("test")
 @EnableCaching
+@EnableAutoConfiguration(exclude = {
+    RedisAutoConfiguration.class,
+    RedisRepositoriesAutoConfiguration.class
+})
 public class TestOnlyConfig {
+
 
   /**
    * 테스트용 PasswordEncoder - Spring Security 자동 설정 지원
@@ -45,12 +54,18 @@ public class TestOnlyConfig {
   }
 
   /**
-   * 테스트용 AuthenticationManager
+   * 테스트용 AuthenticationManager - Mock 구현체
    */
   @Bean
   @Primary
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-    return config.getAuthenticationManager();
+  public AuthenticationManager authenticationManager() throws Exception {
+    return new org.springframework.security.authentication.ProviderManager(
+        new org.springframework.security.authentication.dao.DaoAuthenticationProvider() {
+          {
+            setPasswordEncoder(passwordEncoder());
+          }
+        }
+    );
   }
 
   /**

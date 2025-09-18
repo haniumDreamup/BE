@@ -37,7 +37,7 @@ import java.util.Map;
  */
 @Tag(name = "OAuth2", description = "OAuth2 소셜 로그인 API")
 @RestController
-@RequestMapping("/api/auth/oauth2")
+@RequestMapping("/api/v1/auth/oauth2")
 @RequiredArgsConstructor
 public class OAuth2Controller {
 

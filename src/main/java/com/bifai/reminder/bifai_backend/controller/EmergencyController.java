@@ -29,7 +29,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/emergency")
+@RequestMapping("/api/v1/emergency")
 @RequiredArgsConstructor
 public class EmergencyController extends BaseController {
 

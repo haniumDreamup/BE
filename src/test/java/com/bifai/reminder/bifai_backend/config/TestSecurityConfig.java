@@ -85,7 +85,7 @@ public class TestSecurityConfig {
   
   /**
    * SecurityFilterChain 빈 제공
-   * 테스트 환경용 기본 보안 설정
+   * 테스트 환경용 기본 보안 설정 - SecurityConfigTest를 위한 보안 헤더 포함
    */
   @Bean
   @Primary
@@ -93,10 +93,41 @@ public class TestSecurityConfig {
     http
         .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .headers(headers -> headers
+            .frameOptions(frame -> frame.sameOrigin())
+            .contentTypeOptions(contentType -> {})
+            .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                .maxAgeInSeconds(31536000)
+                .includeSubDomains(true))
+            .addHeaderWriter((request, response) -> {
+              response.setHeader("X-XSS-Protection", "1; mode=block");
+              response.setHeader("X-Content-Type-Options", "nosniff");
+              response.setHeader("X-Frame-Options", "DENY");
+              response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+              response.setHeader("Content-Security-Policy",
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+            }))
         .authorizeHttpRequests(auth -> auth
             .anyRequest().permitAll()
         );
-    
+
     return http.build();
+  }
+
+  /**
+   * CORS 설정 - SecurityConfigTest의 CORS 테스트를 위함
+   */
+  @Bean
+  public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+    org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
+    configuration.setAllowedOriginPatterns(java.util.Arrays.asList("http://localhost:3000", "http://localhost:8080"));
+    configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
+
+    org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }

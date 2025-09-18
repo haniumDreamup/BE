@@ -15,7 +15,7 @@ import java.util.Map;
 @Profile("test")
 public class MockTestController {
   
-  @GetMapping("/test/health")
+  @GetMapping("/mock/health")
   public ResponseEntity<Map<String, String>> testHealth() {
     Map<String, String> response = new HashMap<>();
     response.put("status", "UP");

@@ -79,10 +79,81 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10000
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+      openai-api:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+      google-vision:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+      weather-api:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+      map-api:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+      health-check:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        halfOpenMaxCalls: 3
+
   ratelimiter:
     instances:
       default:
-        limitForPeriod: 100
+        limitForPeriod: 10
         limitRefreshPeriod: 1s
         timeoutDuration: 1s
+      openai-api:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+        timeoutDuration: 1s
+      map-api:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 1s
+
+  retry:
+    instances:
+      default:
+        maxAttempts: 3
+        waitDuration: 100ms
+      openai-api:
+        maxAttempts: 3
+        waitDuration: 100ms
+      weather-api:
+        maxAttempts: 3
+        waitDuration: 100ms
+      push-notification:
+        maxAttempts: 2
+        waitDuration: 50ms
+
+  bulkhead:
+    instances:
+      default:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 1s
+      google-vision:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 1s
+      push-notification:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 1s
+        type: threadpool
+        coreThreadPoolSize: 5
+        maxThreadPoolSize: 10
+        queueCapacity: 20

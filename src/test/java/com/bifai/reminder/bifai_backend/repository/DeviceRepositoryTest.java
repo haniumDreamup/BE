@@ -8,12 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +31,7 @@ import static org.assertj.core.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @DisplayName("DeviceRepository 테스트")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class DeviceRepositoryTest {
     
     @Autowired
@@ -61,6 +65,7 @@ class DeviceRepositoryTest {
     
     @Test
     @DisplayName("디바이스 저장 - 성공")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void saveDevice_Success() {
         // when
         Device savedDevice = deviceRepository.save(testDevice);
@@ -76,6 +81,7 @@ class DeviceRepositoryTest {
     
     @Test
     @DisplayName("디바이스 조회 - ID로 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findById_Success() {
         // given
         Device savedDevice = entityManager.persistAndFlush(testDevice);

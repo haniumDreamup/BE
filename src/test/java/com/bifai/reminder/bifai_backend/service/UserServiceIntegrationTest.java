@@ -6,13 +6,17 @@ import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.repository.RoleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -23,8 +27,9 @@ import static org.assertj.core.api.Assertions.*;
  * 실제 Repository와 함께 동작하는 테스트
  */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
-@Import(UserService.class)
+@Import({UserService.class, com.bifai.reminder.bifai_backend.config.RepositoryTestConfig.class})
 @DisplayName("UserService 통합 테스트")
 class UserServiceIntegrationTest {
 
@@ -84,6 +89,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @DisplayName("이메일로 조회 - 성공")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findByEmail_Success() {
         // When
         Optional<User> result = userService.findByEmail("test1@example.com");
@@ -95,6 +101,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @DisplayName("전체 사용자 페이지 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void getAllUsers() {
         // When
         Page<User> result = userService.getAllUsers(PageRequest.of(0, 10));

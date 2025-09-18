@@ -8,11 +8,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @DisplayName("GuardianRepository 테스트")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class GuardianRepositoryTest {
     
     @Autowired
@@ -163,6 +167,7 @@ class GuardianRepositoryTest {
     
     @Test
     @DisplayName("주 보호자 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findByUserAndIsPrimaryTrue_Success() {
         // given
         guardianRepository.save(testGuardian);
@@ -211,13 +216,15 @@ class GuardianRepositoryTest {
     
     @Test
     @DisplayName("중복 보호자 관계 - 실패")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void saveDuplicateRelation_Fail() {
         // given
         guardianRepository.save(testGuardian);
-        
+        guardianRepository.flush(); // 첫 번째 저장을 강제 커밋
+
         // 같은 사용자-보호자 쌍으로 다시 생성
         Guardian duplicateRelation = TestDataBuilder.createGuardian(bifUser, guardianUser);
-        
+
         // when & then
         assertThatThrownBy(() -> {
             guardianRepository.save(duplicateRelation);
@@ -253,6 +260,7 @@ class GuardianRepositoryTest {
     
     @Test
     @DisplayName("권한별 보호자 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findByPermissions_Success() {
         // given
         guardianRepository.save(testGuardian); // 모든 권한 있음

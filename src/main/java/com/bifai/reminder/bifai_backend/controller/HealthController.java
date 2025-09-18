@@ -29,4 +29,12 @@ public class HealthController {
     response.put("message", "Application is running");
     return ResponseEntity.ok(response);
   }
+
+  @GetMapping("/api/v1/health")
+  public ResponseEntity<Map<String, String>> healthV1() {
+    Map<String, String> response = new HashMap<>();
+    response.put("status", "UP");
+    response.put("message", "Application is running");
+    return ResponseEntity.ok(response);
+  }
 }

@@ -53,17 +53,18 @@ class JwtAuthUtilsTest {
   void getCurrentUserId_WithValidToken_ReturnsUserId() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn(TEST_TOKEN);
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(RAW_TOKEN);
     when(jwtTokenProvider.getUserId(RAW_TOKEN)).thenReturn(TEST_USER_ID);
-    
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     Long userId = jwtAuthUtils.getCurrentUserId();
-    
+
     // Then
     assertNotNull(userId);
     assertEquals(TEST_USER_ID, userId);
+    verify(jwtTokenProvider).resolveToken(request);
     verify(jwtTokenProvider).getUserId(RAW_TOKEN);
   }
   
@@ -71,15 +72,16 @@ class JwtAuthUtilsTest {
   void getCurrentUserId_WithNoToken_ReturnsNull() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn(null);
-    
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(null);
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     Long userId = jwtAuthUtils.getCurrentUserId();
-    
+
     // Then
     assertNull(userId);
+    verify(jwtTokenProvider).resolveToken(request);
     verify(jwtTokenProvider, never()).getUserId(anyString());
   }
   
@@ -87,76 +89,87 @@ class JwtAuthUtilsTest {
   void getCurrentUserId_WithInvalidToken_ReturnsNull() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn("InvalidToken");
-    
+    when(jwtTokenProvider.resolveToken(request)).thenReturn("InvalidToken");
+    when(jwtTokenProvider.getUserId("InvalidToken")).thenThrow(new RuntimeException("Invalid token"));
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     Long userId = jwtAuthUtils.getCurrentUserId();
-    
+
     // Then
     assertNull(userId);
+    verify(jwtTokenProvider).resolveToken(request);
+    verify(jwtTokenProvider).getUserId("InvalidToken");
   }
   
   @Test
-  void getCurrentUsername_WithValidAuthentication_ReturnsUsername() {
+  void getCurrentUsername_WithValidToken_ReturnsUsername() {
     // Given
-    when(securityContext.getAuthentication()).thenReturn(authentication);
-    when(authentication.isAuthenticated()).thenReturn(true);
-    when(authentication.getName()).thenReturn(TEST_USERNAME);
-    
-    SecurityContextHolder.setContext(securityContext);
-    
+    when(requestAttributes.getRequest()).thenReturn(request);
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(RAW_TOKEN);
+    when(jwtTokenProvider.getUsernameFromToken(RAW_TOKEN)).thenReturn(TEST_USERNAME);
+
+    RequestContextHolder.setRequestAttributes(requestAttributes);
+
     // When
     String username = jwtAuthUtils.getCurrentUsername();
-    
+
     // Then
     assertNotNull(username);
     assertEquals(TEST_USERNAME, username);
+    verify(jwtTokenProvider).resolveToken(request);
+    verify(jwtTokenProvider).getUsernameFromToken(RAW_TOKEN);
   }
   
   @Test
-  void getCurrentUsername_WithNoAuthentication_ReturnsNull() {
+  void getCurrentUsername_WithNoToken_ReturnsNull() {
     // Given
-    when(securityContext.getAuthentication()).thenReturn(null);
-    SecurityContextHolder.setContext(securityContext);
-    
+    when(requestAttributes.getRequest()).thenReturn(request);
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(null);
+
+    RequestContextHolder.setRequestAttributes(requestAttributes);
+
     // When
     String username = jwtAuthUtils.getCurrentUsername();
-    
+
     // Then
     assertNull(username);
+    verify(jwtTokenProvider).resolveToken(request);
+    verify(jwtTokenProvider, never()).getUsernameFromToken(anyString());
   }
   
   @Test
   void getCurrentToken_WithBearerToken_ReturnsRawToken() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn(TEST_TOKEN);
-    
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(RAW_TOKEN);
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     String token = jwtAuthUtils.getCurrentToken();
-    
+
     // Then
     assertNotNull(token);
     assertEquals(RAW_TOKEN, token);
+    verify(jwtTokenProvider).resolveToken(request);
   }
   
   @Test
   void getCurrentToken_WithoutBearerPrefix_ReturnsNull() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn(RAW_TOKEN);
-    
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(null);
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     String token = jwtAuthUtils.getCurrentToken();
-    
+
     // Then
     assertNull(token);
+    verify(jwtTokenProvider).resolveToken(request);
   }
   
   @Test
@@ -175,15 +188,17 @@ class JwtAuthUtilsTest {
   void getCurrentUserId_WithExceptionThrown_ReturnsNull() {
     // Given
     when(requestAttributes.getRequest()).thenReturn(request);
-    when(request.getHeader("Authorization")).thenReturn(TEST_TOKEN);
+    when(jwtTokenProvider.resolveToken(request)).thenReturn(RAW_TOKEN);
     when(jwtTokenProvider.getUserId(RAW_TOKEN)).thenThrow(new RuntimeException("Token parsing error"));
-    
+
     RequestContextHolder.setRequestAttributes(requestAttributes);
-    
+
     // When
     Long userId = jwtAuthUtils.getCurrentUserId();
-    
+
     // Then
     assertNull(userId);
+    verify(jwtTokenProvider).resolveToken(request);
+    verify(jwtTokenProvider).getUserId(RAW_TOKEN);
   }
 }

@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -171,6 +173,7 @@ class LocationHistoryRepositoryTest extends BaseRepositoryTest {
     
     @Test
     @DisplayName("디바이스별 위치 이력 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findByDevice_Success() {
         // given
         locationHistoryRepository.save(testLocation);

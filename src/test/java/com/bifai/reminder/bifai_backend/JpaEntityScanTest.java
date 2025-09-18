@@ -6,9 +6,12 @@ import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.repository.GuardianRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class JpaEntityScanTest {
 
     @Autowired
@@ -37,6 +41,7 @@ public class JpaEntityScanTest {
     }
 
     @Test
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void testUserEntityIsManagedType() {
         // User 엔티티가 JPA에 의해 관리되는지 확인
         User user = User.builder()
@@ -52,6 +57,7 @@ public class JpaEntityScanTest {
     }
 
     @Test
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void testGuardianEntityIsManagedType() {
         // Guardian 엔티티가 JPA에 의해 관리되는지 확인
         User user = User.builder()

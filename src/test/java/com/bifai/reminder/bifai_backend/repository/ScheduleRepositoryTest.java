@@ -7,11 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -25,6 +28,7 @@ import static org.assertj.core.api.Assertions.*;
  * BIF 사용자의 일정 관리 테스트
  */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @DisplayName("ScheduleRepository 테스트")
 class ScheduleRepositoryTest {
@@ -64,6 +68,7 @@ class ScheduleRepositoryTest {
     
     @Test
     @DisplayName("일정 조회 - ID로 조회")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     void findById_Success() {
         // given
         Schedule savedSchedule = scheduleRepository.save(testSchedule);

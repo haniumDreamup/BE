@@ -22,7 +22,7 @@ import java.util.Map;
  * WCAG 2.1 AA 준수 및 BIF 사용자 지원
  */
 @RestController
-@RequestMapping("/api/accessibility")
+@RequestMapping("/api/v1/accessibility")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Accessibility", description = "접근성 기능 API")

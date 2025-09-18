@@ -12,10 +12,20 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.bulkhead.BulkheadRegistry;
+import io.github.resilience4j.bulkhead.BulkheadConfig;
+import io.github.resilience4j.retry.RetryRegistry;
+import io.github.resilience4j.retry.RetryConfig;
 import org.mockito.Mockito;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -71,21 +81,87 @@ public class TestExternalServicesConfig {
   
   @Bean
   @Primary
-  public CircuitBreakerRegistry circuitBreakerRegistry() {
-    return Mockito.mock(CircuitBreakerRegistry.class);
+  public RestTemplate restTemplate() {
+    return Mockito.mock(RestTemplate.class);
   }
-  
+
+  @Bean
+  @Primary
+  public WebClient webClient() {
+    return Mockito.mock(WebClient.class);
+  }
+
+  // Resilience4j 테스트 설정 추가
+  @Bean
+  @Primary
+  public CircuitBreakerRegistry circuitBreakerRegistry() {
+    CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+      .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
+      .slidingWindowSize(5) // 테스트용으로 작은 크기
+      .minimumNumberOfCalls(3) // 최소 3번 호출 후 판단
+      .failureRateThreshold(50) // 50% 실패율
+      .waitDurationInOpenState(Duration.ofMillis(500)) // 테스트용으로 짧은 시간
+      .slowCallDurationThreshold(Duration.ofMillis(500))
+      .permittedNumberOfCallsInHalfOpenState(2)
+      .automaticTransitionFromOpenToHalfOpenEnabled(true)
+      .build();
+
+    CircuitBreakerRegistry registry = CircuitBreakerRegistry.of(config);
+
+    // 테스트용 circuit breaker들 추가
+    registry.circuitBreaker("openai-api", config);
+    registry.circuitBreaker("google-vision", config);
+    registry.circuitBreaker("weather-api", config);
+    registry.circuitBreaker("map-api", config);
+    registry.circuitBreaker("health-check", config);
+
+    return registry;
+  }
+
   @Bean
   @Primary
   public RateLimiterRegistry rateLimiterRegistry() {
-    RateLimiterRegistry registry = Mockito.mock(RateLimiterRegistry.class);
-    RateLimiter rateLimiter = Mockito.mock(RateLimiter.class);
-    
-    // 모든 요청을 허용하도록 설정
-    when(rateLimiter.acquirePermission()).thenReturn(true);
-    when(registry.rateLimiter(anyString(), anyString())).thenReturn(rateLimiter);
-    when(registry.rateLimiter(anyString())).thenReturn(rateLimiter);
-    
+    RateLimiterConfig config = RateLimiterConfig.custom()
+      .limitForPeriod(5) // 테스트용으로 작은 수
+      .limitRefreshPeriod(Duration.ofSeconds(1))
+      .timeoutDuration(Duration.ofMillis(100))
+      .build();
+
+    RateLimiterRegistry registry = RateLimiterRegistry.of(config);
+    registry.rateLimiter("openai-api", config);
+    registry.rateLimiter("map-api", config);
+
+    return registry;
+  }
+
+  @Bean
+  @Primary
+  public BulkheadRegistry bulkheadRegistry() {
+    BulkheadConfig config = BulkheadConfig.custom()
+      .maxConcurrentCalls(3) // 테스트용으로 작은 수
+      .maxWaitDuration(Duration.ofMillis(100))
+      .build();
+
+    BulkheadRegistry registry = BulkheadRegistry.of(config);
+    registry.bulkhead("google-vision", config);
+    registry.bulkhead("push-notification", config);
+
+    return registry;
+  }
+
+  @Bean
+  @Primary
+  public RetryRegistry retryRegistry() {
+    RetryConfig config = RetryConfig.custom()
+      .maxAttempts(3)
+      .waitDuration(Duration.ofMillis(100))
+      .build();
+
+    RetryRegistry registry = RetryRegistry.of(config);
+    registry.retry("openai-api", config);
+    registry.retry("weather-api", config);
+    registry.retry("push-notification", config);
+
     return registry;
   }
 }
