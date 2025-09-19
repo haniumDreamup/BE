@@ -86,10 +86,12 @@ app:
     access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
     refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
   cors:
-    allowed-origins: 
-      - http://localhost:3000
-      - http://localhost:8080
-      - http://localhost:3001
+    allowed-origins:
+      - http://localhost:3000      # 기존 프론트엔드 개발 서버
+      - http://localhost:8000      # Flutter 웹 개발 서버
+      - http://localhost:8001      # Flutter 웹 개발 서버 (포트 변경)
+      - http://localhost:8080      # 백엔드 개발 서버
+      - http://localhost:3001      # 기존 설정
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS
     allowed-headers: "*"
     allow-credentials: true

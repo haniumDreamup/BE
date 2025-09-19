@@ -169,6 +169,8 @@ public class SecurityConfig {
         // BIF 사용자를 위한 모바일 앱 지원 - 보안을 위해 특정 도메인만 허용
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",      // 프론트엔드 개발 서버
+            "http://localhost:8000",      // Flutter 웹 개발 서버
+            "http://localhost:8001",      // Flutter 웹 개발 서버 (포트 변경)
             "http://localhost:8080",      // 백엔드 개발 서버
             "https://*.bifai.com",        // 프로덕션 도메인
             "capacitor://localhost",      // iOS 앱 (Capacitor)
@@ -178,11 +180,15 @@ public class SecurityConfig {
         // 허용할 HTTP 메소드
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         
-        // 허용할 헤더
+        // 허용할 헤더 (Flutter 앱 호환성을 위해 확장)
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization",      // JWT 토큰
             "Content-Type",       // 콘텐츠 타입
-            "X-Requested-With"    // AJAX 요청 식별
+            "X-Requested-With",   // AJAX 요청 식별
+            "Accept",             // 응답 타입 지정
+            "Origin",             // 요청 출처
+            "X-Auth-Token",       // 추가 인증 토큰 헤더
+            "X-HTTP-Method-Override" // HTTP 메소드 오버라이드
         ));
         
         // 클라이언트에 노출할 헤더

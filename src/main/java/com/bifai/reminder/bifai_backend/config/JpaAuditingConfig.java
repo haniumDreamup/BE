@@ -34,24 +34,28 @@ public class JpaAuditingConfig {
 
   /**
    * Spring Security 기반 감사자 제공자
+   * Long 타입으로 사용자 ID를 반환하여 BaseEntity의 createdBy, updatedBy 필드와 호환
    */
   private class SpringSecurityAuditorAware implements AuditorAware<Long> {
 
     @Override
     public Optional<Long> getCurrentAuditor() {
       try {
+        // JwtAuthUtils에서 현재 사용자 ID 추출
         Long userId = jwtAuthUtils.getCurrentUserId();
-        if (userId != null) {
-          log.debug("JPA Auditing - 현재 사용자 ID: {}", userId);
+        if (userId != null && userId > 0) {
+          log.debug("JPA Auditing - 현재 인증된 사용자 ID: {}", userId);
           return Optional.of(userId);
         }
-        
-        log.debug("JPA Auditing - 인증되지 않은 사용자, 시스템 사용자로 설정");
-        return Optional.of(-1L); // 시스템 사용자 ID
-        
+
+        // 인증되지 않은 요청의 경우 시스템 사용자 ID로 설정
+        log.debug("JPA Auditing - 인증되지 않은 사용자, 시스템 사용자(-1L)로 설정");
+        return Optional.of(-1L);
+
       } catch (Exception e) {
-        log.warn("JPA Auditing - 사용자 정보 추출 실패, 시스템 사용자로 설정: {}", e.getMessage());
-        return Optional.of(-1L); // 시스템 사용자 ID
+        // 예외 발생 시 시스템 사용자 ID로 fallback
+        log.warn("JPA Auditing - 사용자 정보 추출 실패, 시스템 사용자로 fallback: {}", e.getMessage());
+        return Optional.of(-1L);
       }
     }
   }
