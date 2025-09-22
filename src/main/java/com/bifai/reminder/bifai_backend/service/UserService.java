@@ -102,9 +102,6 @@ public class UserService {
             currentUser.setGender(request.getGender());
         }
         
-        if (request.getAddress() != null) {
-            currentUser.setAddress(request.getAddress());
-        }
         
         if (request.getEmergencyContactName() != null) {
             currentUser.setEmergencyContactName(request.getEmergencyContactName());

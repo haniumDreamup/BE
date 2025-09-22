@@ -85,9 +85,6 @@ public class User extends BaseEntity {
     @Column(name = "gender", length = 10)
     private String gender;
     
-    @Column(name = "address", length = 500)
-    private String address;
-    
     /**
      * 사용자의 인지 수준
      * 
