@@ -53,6 +53,7 @@ mysql -u bifai_user -p bifai_db                  # Connect to DB
 - Expose internal exceptions to API responses
 - Use complex language in user-facing messages
 - Create endpoints without authentication
+- Create test endpoints in production controllers - NEVER add /test endpoints to production REST controllers for security reasons
 
 
 

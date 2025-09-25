@@ -21,6 +21,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 
 /**
  * 인증 컨트롤러
@@ -35,7 +38,7 @@ import java.util.stream.Collectors;
 @Tag(name = "인증 API", description = "BIF 사용자 인증 및 토큰 관리")
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -329,12 +332,51 @@ public class AuthController {
     }
 
     /**
-     * 헬스 체크 - 인증 서버 상태 확인
-     * GET /api/v1/auth/health
+     * OAuth2 로그인 URL 조회
+     * GET /api/v1/auth/oauth2/login-urls
      */
-    @GetMapping("/health")
-    public ResponseEntity<ApiResponse<String>> health() {
+    @Operation(
+        summary = "OAuth2 로그인 URL 조회",
+        description = "소셜 로그인을 위한 OAuth2 제공자별 로그인 URL을 반환합니다. " +
+                     "현재 지원하는 제공자: 카카오, 네이버, 구글"
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "OAuth2 로그인 URL 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "OAuth2 로그인 URL 응답",
+                    value = """
+                    {
+                        "success": true,
+                        "data": {
+                            "kakao": "/oauth2/authorization/kakao",
+                            "naver": "/oauth2/authorization/naver",
+                            "google": "/oauth2/authorization/google"
+                        },
+                        "message": "소셜 로그인 주소를 가져왔습니다",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """
+                )
+            )
+        )
+    })
+    @SecurityRequirements
+    @GetMapping("/oauth2/login-urls")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getOAuth2LoginUrls() {
+        log.info("OAuth2 로그인 URL 요청");
+
+        Map<String, String> loginUrls = new HashMap<>();
+        loginUrls.put("kakao", "/oauth2/authorization/kakao");
+        loginUrls.put("naver", "/oauth2/authorization/naver");
+        loginUrls.put("google", "/oauth2/authorization/google");
+
         return ResponseEntity.ok()
-                .body(ApiResponse.success("인증 서비스가 정상 작동 중입니다", "Auth Service Health Check"));
+                .body(ApiResponse.success(loginUrls, "소셜 로그인 주소를 가져왔습니다"));
     }
+
 } 

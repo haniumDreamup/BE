@@ -43,8 +43,8 @@ public class UserController {
             );
         } catch (Exception e) {
             log.error("사용자 정보 조회 실패", e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 정보를 가져오는 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -65,8 +65,8 @@ public class UserController {
             );
         } catch (Exception e) {
             log.error("사용자 정보 수정 실패", e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("정보 수정 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -164,7 +164,7 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody RoleUpdateRequest request) {
         log.info("사용자 역할 수정 요청: userId={}", userId);
-        
+
         try {
             User updatedUser = userService.updateUserRoles(userId, request.getRoleIds());
             return ResponseEntity.ok(
@@ -176,4 +176,5 @@ public class UserController {
                 .body(ApiResponse.error("사용자 역할 수정 중 오류가 발생했습니다"));
         }
     }
+
 }

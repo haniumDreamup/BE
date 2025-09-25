@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "com.bifai.reminder.bifai_backend.repository")
 public class JpaConfig {
+    // JPA Repository는 BifaiBackendApplication에서 @EnableJpaRepositories로 활성화
     // JPA Auditing은 JpaAuditingConfig에서 처리
 }

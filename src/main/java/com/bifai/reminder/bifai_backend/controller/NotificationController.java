@@ -7,7 +7,7 @@ import com.bifai.reminder.bifai_backend.dto.notification.UpdateFcmTokenRequest;
 import com.bifai.reminder.bifai_backend.service.notification.FcmService;
 import com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler;
 import com.bifai.reminder.bifai_backend.service.notification.NotificationSettingsService;
-import com.bifai.reminder.bifai_backend.security.auth.CustomUserDetails;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,14 +32,14 @@ public class NotificationController {
   @Operation(summary = "FCM 토큰 업데이트", 
       description = "디바이스의 FCM 토큰을 업데이트합니다")
   public ResponseEntity<ApiResponse<Void>> updateFcmToken(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody UpdateFcmTokenRequest request) {
     
     log.info("FCM 토큰 업데이트 - user: {}, deviceId: {}", 
-        userDetails.getId(), request.getDeviceId());
+        userDetails.getUserId(), request.getDeviceId());
     
     settingsService.updateFcmToken(
-        userDetails.getId(), 
+        userDetails.getUserId(), 
         request.getDeviceId(), 
         request.getFcmToken()
     );
@@ -51,13 +51,13 @@ public class NotificationController {
   @Operation(summary = "FCM 토큰 삭제", 
       description = "디바이스의 FCM 토큰을 삭제합니다")
   public ResponseEntity<ApiResponse<Void>> removeFcmToken(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @PathVariable String deviceId) {
     
     log.info("FCM 토큰 삭제 - user: {}, deviceId: {}", 
-        userDetails.getId(), deviceId);
+        userDetails.getUserId(), deviceId);
     
-    settingsService.removeFcmToken(userDetails.getId(), deviceId);
+    settingsService.removeFcmToken(userDetails.getUserId(), deviceId);
     
     return ResponseEntity.ok(ApiResponse.success(null, "FCM 토큰이 삭제되었습니다"));
   }
@@ -66,9 +66,9 @@ public class NotificationController {
   @Operation(summary = "알림 설정 조회", 
       description = "사용자의 알림 설정을 조회합니다")
   public ResponseEntity<ApiResponse<NotificationSettingsDto>> getSettings(
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
+      @AuthenticationPrincipal BifUserDetails userDetails) {
     
-    NotificationSettingsDto settings = settingsService.getSettings(userDetails.getId());
+    NotificationSettingsDto settings = settingsService.getSettings(userDetails.getUserId());
     return ResponseEntity.ok(ApiResponse.success(settings));
   }
   
@@ -76,49 +76,32 @@ public class NotificationController {
   @Operation(summary = "알림 설정 업데이트", 
       description = "사용자의 알림 설정을 업데이트합니다")
   public ResponseEntity<ApiResponse<NotificationSettingsDto>> updateSettings(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody NotificationSettingsDto request) {
     
-    log.info("알림 설정 업데이트 - user: {}", userDetails.getId());
+    log.info("알림 설정 업데이트 - user: {}", userDetails.getUserId());
     
     NotificationSettingsDto updated = settingsService.updateSettings(
-        userDetails.getId(), request);
+        userDetails.getUserId(), request);
     
     return ResponseEntity.ok(ApiResponse.success(updated, "알림 설정이 업데이트되었습니다"));
   }
   
-  @PostMapping("/test")
-  @Operation(summary = "테스트 알림 전송", 
-      description = "테스트 알림을 전송합니다")
-  public ResponseEntity<ApiResponse<Void>> sendTestNotification(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
-      @Valid @RequestBody TestNotificationRequest request) {
-    
-    log.info("테스트 알림 전송 - user: {}", userDetails.getId());
-    
-    notificationScheduler.sendTestNotification(
-        userDetails.getId(),
-        request.getTitle(),
-        request.getBody()
-    );
-    
-    return ResponseEntity.ok(ApiResponse.success(null, "테스트 알림이 전송되었습니다"));
-  }
   
   @PostMapping("/emergency")
   @Operation(summary = "긴급 알림 전송", 
       description = "보호자들에게 긴급 알림을 전송합니다")
   public ResponseEntity<ApiResponse<Void>> sendEmergencyAlert(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @RequestParam String message,
       @RequestParam(required = false) Double latitude,
       @RequestParam(required = false) Double longitude) {
     
     log.warn("긴급 알림 요청 - user: {}, message: {}", 
-        userDetails.getId(), message);
+        userDetails.getUserId(), message);
     
     notificationScheduler.sendEmergencyToGuardians(
-        userDetails.getId(),
+        userDetails.getUserId(),
         message,
         latitude,
         longitude

@@ -21,6 +21,12 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SecurityException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -322,20 +328,137 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Missing Request Parameter 예외 처리
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        log.warn("필수 파라미터 누락: {}", ex.getMessage());
+        log.debug("MissingServletRequestParameterException details", ex);
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "필수 정보 누락",
+            String.format("필수 정보가 없습니다: %s", ex.getParameterName()),
+            "모든 필수 정보를 입력하고 다시 시도해 주세요",
+            400
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    /**
+     * HTTP Method Not Supported 예외 처리
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        log.warn("지원하지 않는 HTTP 메서드: {}", ex.getMessage());
+        log.debug("HttpRequestMethodNotSupportedException details", ex);
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "잘못된 요청 방법",
+            "지원하지 않는 요청 방법입니다",
+            "올바른 요청 방법을 사용해 주세요",
+            405
+        );
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(problem);
+    }
+
+    /**
+     * No Handler Found 예외 처리 (404)
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNoHandlerFound(NoHandlerFoundException ex) {
+        log.warn("경로를 찾을 수 없음: {}", ex.getMessage());
+        log.debug("NoHandlerFoundException details", ex);
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "페이지를 찾을 수 없음",
+            "요청하신 페이지를 찾을 수 없습니다",
+            "올바른 주소로 다시 시도해 주세요",
+            404
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    /**
+     * HTTP Message Not Readable 예외 처리 (잘못된 JSON 등)
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("읽을 수 없는 요청 내용: {}", ex.getMessage());
+        log.debug("HttpMessageNotReadableException details", ex);
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "잘못된 요청 내용",
+            "요청 내용을 읽을 수 없습니다",
+            "올바른 형식으로 다시 시도해 주세요",
+            400
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    /**
+     * 날짜 파싱 오류 예외 처리
+     */
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<ProblemDetail> handleDateTimeParseException(DateTimeParseException ex) {
+        log.warn("날짜 형식 오류: {}", ex.getMessage());
+        log.debug("DateTimeParseException details", ex);
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "잘못된 날짜 형식",
+            "날짜 형식이 올바르지 않습니다",
+            "YYYY-MM-DD 형식으로 입력해 주세요 (예: 2024-01-15)",
+            400
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    /**
+     * 메서드 인수 타입 불일치 예외 처리 (주로 날짜/숫자 파싱 오류)
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        log.warn("파라미터 타입 불일치: {}", ex.getMessage());
+        log.debug("MethodArgumentTypeMismatchException details", ex);
+
+        String errorMessage = "입력 값이 올바르지 않습니다";
+        String actionGuide = "올바른 형식으로 다시 입력해 주세요";
+
+        // 날짜 관련 오류인 경우 더 구체적인 메시지 제공
+        if (ex.getRequiredType() != null && ex.getRequiredType().getSimpleName().contains("LocalDate")) {
+            errorMessage = "날짜 형식이 올바르지 않습니다";
+            actionGuide = "YYYY-MM-DD 형식으로 입력해 주세요 (예: 2024-01-15)";
+        }
+
+        ProblemDetail problem = ProblemDetail.forBifUser(
+            "잘못된 입력 형식",
+            errorMessage,
+            actionGuide,
+            400
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    /**
      * IllegalArgumentException 예외 처리 (개발자 친화적 로깅 추가)
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("잘못된 요청 파라미터: {}", ex.getMessage());
         log.debug("IllegalArgumentException details", ex);
-        
+
         ProblemDetail problem = ProblemDetail.forBifUser(
             "잘못된 요청",
             ex.getMessage(), // 개발자가 작성한 메시지 그대로 사용
             "입력 정보를 확인하고 다시 시도해 주세요",
             400
         );
-        
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
 

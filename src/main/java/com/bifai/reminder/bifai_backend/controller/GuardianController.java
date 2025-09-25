@@ -43,8 +43,8 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호자 목록 조회 실패", e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("보호자 목록을 가져오는 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -64,8 +64,8 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호 중인 사용자 목록 조회 실패", e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 목록을 가져오는 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -111,8 +111,8 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호자 승인 실패: guardianId={}", guardianId, e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("보호자 승인 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -134,8 +134,8 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호자 거절 실패: guardianId={}", guardianId, e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("보호자 거절 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -179,8 +179,8 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호자 삭제 실패: guardianId={}", guardianId, e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("보호자 삭제 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
 
@@ -193,7 +193,7 @@ public class GuardianController {
     public ResponseEntity<ApiResponse<Void>> removeGuardianRelationship(
             @PathVariable Long guardianId) {
         log.info("보호 관계 해제 요청: guardianId={}", guardianId);
-        
+
         try {
             guardianService.removeRelationship(guardianId);
             return ResponseEntity.ok(
@@ -201,8 +201,10 @@ public class GuardianController {
             );
         } catch (Exception e) {
             log.error("보호 관계 해제 실패: guardianId={}", guardianId, e);
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("보호 관계 해제 중 오류가 발생했습니다"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증이 필요합니다"));
         }
     }
+
+
 }

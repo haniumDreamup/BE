@@ -36,7 +36,7 @@ import java.util.Arrays;
 @EnableMethodSecurity(prePostEnabled = true)
 @Order(1) // 높은 우선순위로 변경
 @RequiredArgsConstructor
-@org.springframework.context.annotation.Profile("!test")
+@org.springframework.context.annotation.Profile("disabled-old-security")
 public class SecurityConfig {
 
     private final BifUserDetailsService userDetailsService;
@@ -69,25 +69,38 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // 세션 사용하지 않음 (JWT 사용)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 엔드포인트별 접근 권한 설정
+            // 엔드포인트별 접근 권한 설정 - 단계별 테스트
             .authorizeHttpRequests(auth -> auth
-                // === 공개 엔드포인트 ===
-                // 헬스체크
-                .requestMatchers("/health/**", "/api/health/**", "/api/v1/health/**").permitAll()
-                // 테스트 엔드포인트 (모든 변형 포함)
-                .requestMatchers("/test/**", "/api/test/**", "/api/v1/test/**").permitAll()
-                // 인증 API
-                .requestMatchers("/auth/**", "/api/auth/**", "/api/v1/auth/**").permitAll()
-                // H2 콘솔 (개발 환경)
+                // 공개 엔드포인트 (인증 불필요)
+                .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                // Swagger UI
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                // 에러 처리 엔드포인트
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
 
-                // === 보호 엔드포인트 ===
-                // 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated()
+                // OAuth2 관련 공개 엔드포인트
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/**").permitAll()
+
+                // 인증 관련 공개 엔드포인트
+                .requestMatchers("/api/v1/auth/login").permitAll()
+                .requestMatchers("/api/v1/auth/register").permitAll()
+                .requestMatchers("/api/v1/auth/refresh").permitAll()
+                .requestMatchers("/api/v1/auth/oauth2/login-urls").permitAll()
+
+                // 초대 관련 공개 엔드포인트 (이메일 링크 접근)
+                .requestMatchers("/api/guardian-relationships/accept-invitation").permitAll()
+                .requestMatchers("/api/guardian-relationships/reject-invitation").permitAll()
+
+                // 접근성 기능은 인증 없이 허용 (장애인 접근성 고려)
+                .requestMatchers("/api/v1/accessibility/**").permitAll()
+
+                // 모든 API 엔드포인트는 인증 필요
+                .requestMatchers("/api/**").authenticated()
+
+                // 나머지는 허용 (정적 리소스 등)
+                .anyRequest().permitAll()
             )
             // 커스텀 예외 처리 핸들러 설정
             .exceptionHandling(ex -> ex

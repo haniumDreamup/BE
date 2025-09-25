@@ -32,7 +32,7 @@ spring:
 
 # Test Server Configuration
 server:
-  port: 0 # Random port for tests
+  port: 8080 # Fixed port for functional testing
 
 # Test Logging
 logging:

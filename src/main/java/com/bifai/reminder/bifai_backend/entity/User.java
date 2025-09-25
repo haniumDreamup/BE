@@ -160,34 +160,34 @@ public class User extends BaseEntity {
     @Column(name = "provider_id", length = 255)
     private String providerId;
     
-    // 관계 매핑
+    // 관계 매핑 - 김영한 방식: @JsonIgnore 제거, 엔티티 직접 반환 대신 DTO 사용
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Guardian> guardians; // 이 사용자의 보호자들
-    
+
     @OneToMany(mappedBy = "guardianUser", fetch = FetchType.LAZY)
     private List<Guardian> guardianFor; // 이 사용자가 보호자인 사용자들
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Device> devices;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Schedule> schedules;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications;
-    
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserPreference userPreference;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LocationHistory> locationHistories;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ActivityLog> activities;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Medication> medications;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<HealthMetric> healthMetrics;
     

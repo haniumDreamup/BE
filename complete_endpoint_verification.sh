@@ -197,10 +197,10 @@ test_endpoint "PUT" "/api/emergency-contacts/priorities" "403" "우선순위 설
 test_endpoint "POST" "/api/emergency-contacts/123/contact-record" "403" "연락 기록"
 
 # SosController
-test_endpoint "POST" "/api/sos/trigger" "403" "SOS 발생"
-test_endpoint "PUT" "/api/sos/123/cancel" "403" "SOS 취소"
-test_endpoint "GET" "/api/sos/history" "403" "SOS 이력"
-test_endpoint "POST" "/api/sos/quick" "403" "빠른 SOS"
+test_endpoint "POST" "/api/v1/emergency/sos/trigger" "403" "SOS 발생"
+test_endpoint "PUT" "/api/v1/emergency/sos/123/cancel" "403" "SOS 취소"
+test_endpoint "GET" "/api/v1/emergency/sos/history" "403" "SOS 이력"
+test_endpoint "POST" "/api/v1/emergency/sos/quick" "403" "빠른 SOS"
 
 # VisionController
 test_endpoint "POST" "/api/vision/analyze" "403" "이미지 분석"

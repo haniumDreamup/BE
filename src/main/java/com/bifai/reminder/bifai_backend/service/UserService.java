@@ -38,38 +38,65 @@ public class UserService {
     /**
      * 현재 로그인한 사용자 정보 조회
      */
+    @Transactional
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         if (authentication == null) {
             log.error("No authentication found in security context");
             throw new SecurityException("인증 정보가 없습니다");
         }
-        
+
         Object principal = authentication.getPrincipal();
         if (principal == null) {
             log.error("Authentication principal is null");
             throw new SecurityException("인증 정보가 올바르지 않습니다");
         }
-        
+
         if (!(principal instanceof BifUserDetails)) {
             log.error("Expected BifUserDetails but got: {}", principal.getClass().getSimpleName());
             throw new SecurityException("올바르지 않은 인증 타입입니다");
         }
-        
+
         BifUserDetails userDetails = (BifUserDetails) principal;
         Long userId = userDetails.getUserId();
-        
+
         if (userId == null) {
             log.error("User ID is null in BifUserDetails");
             throw new SecurityException("사용자 ID를 찾을 수 없습니다");
         }
-        
-        return userRepository.findById(userId)
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.error("User not found with ID: {}", userId);
                     return new ResourceNotFoundException("사용자를 찾을 수 없습니다");
                 });
+
+        // Initialize lazy collections to avoid LazyInitializationException
+        try {
+            if (user.getGuardians() != null) {
+                user.getGuardians().size(); // Force initialization
+            }
+            if (user.getGuardianFor() != null) {
+                user.getGuardianFor().size(); // Force initialization
+            }
+            if (user.getRoles() != null) {
+                user.getRoles().size(); // Force initialization
+            }
+            if (user.getDevices() != null) {
+                user.getDevices().size(); // Force initialization
+            }
+            if (user.getSchedules() != null) {
+                user.getSchedules().size(); // Force initialization
+            }
+            if (user.getNotifications() != null) {
+                user.getNotifications().size(); // Force initialization
+            }
+        } catch (Exception e) {
+            log.debug("Some lazy collections could not be initialized, which is normal: {}", e.getMessage());
+        }
+
+        return user;
     }
 
     /**

@@ -34,7 +34,6 @@ public class SosService {
   private final EmergencyContactRepository emergencyContactRepository;
   private final UserRepository userRepository;
   private final NotificationService notificationService;
-  private final EmergencyContactService emergencyContactService;
 
   /**
    * SOS 발동
@@ -159,7 +158,8 @@ public class SosService {
     StringBuilder message = new StringBuilder();
     
     message.append("긴급! ")
-           .append(emergency.getUser().getName())
+           .append(emergency.getUser().getFullName() != null ?
+                   emergency.getUser().getFullName() : emergency.getUser().getName())
            .append("님이 도움을 요청했습니다.\n\n");
     
     if (request.getMessage() != null) {

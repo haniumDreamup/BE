@@ -5,12 +5,13 @@ import com.bifai.reminder.bifai_backend.dto.statistics.DailyActivityStatsDto;
 import com.bifai.reminder.bifai_backend.dto.statistics.GeofenceStatsDto;
 import com.bifai.reminder.bifai_backend.dto.statistics.SafetyStatsDto;
 import com.bifai.reminder.bifai_backend.service.StatisticsService;
-import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthUtils;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,11 +25,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/statistics")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
 public class StatisticsController {
 
   private final StatisticsService statisticsService;
-  private final JwtAuthUtils jwtAuthUtils;
 
   /**
    * 지오펜스 통계 조회
@@ -38,17 +37,20 @@ public class StatisticsController {
    */
   @GetMapping("/geofence")
   public ResponseEntity<ApiResponse<GeofenceStatsDto>> getGeofenceStatistics(
-      @RequestParam(required = false) 
+      @AuthenticationPrincipal BifUserDetails userDetails,
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-      @RequestParam(required = false) 
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.error("인증된 사용자 정보를 찾을 수 없습니다");
-      return ResponseEntity.badRequest()
-          .body(ApiResponse.error("USER_NOT_FOUND", "인증된 사용자 정보를 찾을 수 없습니다", "다시 로그인해주세요"));
+
+    // 인증되지 않은 사용자 체크
+    if (userDetails == null) {
+      log.warn("인증되지 않은 사용자의 지오펜스 통계 접근 시도");
+      return ResponseEntity.status(401)
+          .body(ApiResponse.error("AUTHENTICATION_REQUIRED", "로그인이 필요합니다", "다시 로그인해주세요"));
     }
+
+    Long userId = userDetails.getUserId();
 
     try {
       GeofenceStatsDto stats = statisticsService.getGeofenceStatistics(userId, startDate, endDate);
@@ -71,17 +73,18 @@ public class StatisticsController {
    */
   @GetMapping("/daily-activity")
   public ResponseEntity<ApiResponse<List<DailyActivityStatsDto>>> getDailyActivityStatistics(
-      @RequestParam(required = false) 
+      @AuthenticationPrincipal BifUserDetails userDetails,
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-      @RequestParam(required = false) 
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.error("인증된 사용자 정보를 찾을 수 없습니다");
-      return ResponseEntity.badRequest()
-          .body(ApiResponse.error("USER_NOT_FOUND", "인증된 사용자 정보를 찾을 수 없습니다", "다시 로그인해주세요"));
+
+    if (userDetails == null) {
+      return ResponseEntity.status(401)
+          .body(ApiResponse.error("AUTHENTICATION_REQUIRED", "로그인이 필요합니다", "다시 로그인해주세요"));
     }
+
+    Long userId = userDetails.getUserId();
 
     try {
       List<DailyActivityStatsDto> stats = statisticsService.getDailyActivityStatistics(userId, startDate, endDate);
@@ -103,15 +106,16 @@ public class StatisticsController {
    */
   @GetMapping("/daily-activity/single")
   public ResponseEntity<ApiResponse<DailyActivityStatsDto>> getSingleDayActivityStatistics(
-      @RequestParam(required = false) 
+      @AuthenticationPrincipal BifUserDetails userDetails,
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.error("인증된 사용자 정보를 찾을 수 없습니다");
-      return ResponseEntity.badRequest()
-          .body(ApiResponse.error("USER_NOT_FOUND", "인증된 사용자 정보를 찾을 수 없습니다", "다시 로그인해주세요"));
+
+    if (userDetails == null) {
+      return ResponseEntity.status(401)
+          .body(ApiResponse.error("AUTHENTICATION_REQUIRED", "로그인이 필요합니다", "다시 로그인해주세요"));
     }
+
+    Long userId = userDetails.getUserId();
 
     try {
       if (date == null) {
@@ -139,17 +143,18 @@ public class StatisticsController {
    */
   @GetMapping("/safety")
   public ResponseEntity<ApiResponse<SafetyStatsDto>> getSafetyStatistics(
-      @RequestParam(required = false) 
+      @AuthenticationPrincipal BifUserDetails userDetails,
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-      @RequestParam(required = false) 
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.error("인증된 사용자 정보를 찾을 수 없습니다");
-      return ResponseEntity.badRequest()
-          .body(ApiResponse.error("USER_NOT_FOUND", "인증된 사용자 정보를 찾을 수 없습니다", "다시 로그인해주세요"));
+
+    if (userDetails == null) {
+      return ResponseEntity.status(401)
+          .body(ApiResponse.error("AUTHENTICATION_REQUIRED", "로그인이 필요합니다", "다시 로그인해주세요"));
     }
+
+    Long userId = userDetails.getUserId();
 
     try {
       SafetyStatsDto stats = statisticsService.getSafetyStatistics(userId, startDate, endDate);
@@ -172,17 +177,18 @@ public class StatisticsController {
    */
   @GetMapping("/summary")
   public ResponseEntity<ApiResponse<StatisticsSummaryDto>> getStatisticsSummary(
-      @RequestParam(required = false) 
+      @AuthenticationPrincipal BifUserDetails userDetails,
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-      @RequestParam(required = false) 
+      @RequestParam(required = false)
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.error("인증된 사용자 정보를 찾을 수 없습니다");
-      return ResponseEntity.badRequest()
-          .body(ApiResponse.error("USER_NOT_FOUND", "인증된 사용자 정보를 찾을 수 없습니다", "다시 로그인해주세요"));
+
+    if (userDetails == null) {
+      return ResponseEntity.status(401)
+          .body(ApiResponse.error("AUTHENTICATION_REQUIRED", "로그인이 필요합니다", "다시 로그인해주세요"));
     }
+
+    Long userId = userDetails.getUserId();
 
     try {
       // 기본값 설정
@@ -219,6 +225,8 @@ public class StatisticsController {
           .body(ApiResponse.error("STATS_ERROR", "통계 정보를 불러올 수 없습니다", "잠시 후 다시 시도해주세요"));
     }
   }
+
+
 
   /**
    * 통계 요약 DTO

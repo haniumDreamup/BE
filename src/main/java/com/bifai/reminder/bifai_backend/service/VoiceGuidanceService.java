@@ -182,30 +182,40 @@ public class VoiceGuidanceService {
    * 스크린 리더 힌트 생성
    */
   public String generateScreenReaderHint(String action, String target) {
-    StringBuilder hint = new StringBuilder();
-    
-    if (target != null && !target.isEmpty()) {
-      hint.append(target).append("를 ");
+    try {
+      StringBuilder hint = new StringBuilder();
+
+      if (target != null && !target.isEmpty()) {
+        hint.append(target).append("를 ");
+      }
+
+      switch (action) {
+        case "tap":
+        case "click":
+          hint.append("선택하려면 두 번 탭하세요");
+          break;
+        case "swipe_left":
+          hint.append("이전 항목으로 이동하려면 왼쪽으로 쓸어넘기세요");
+          break;
+        case "swipe_right":
+          hint.append("다음 항목으로 이동하려면 오른쪽으로 쓸어넘기세요");
+          break;
+        case "long_press":
+          hint.append("추가 옵션을 보려면 길게 누르세요");
+          break;
+        default:
+          // 알 수 없는 액션의 경우 기본 힌트 제공
+          hint.append("접근하려면 두 번 탭하세요");
+          log.debug("알 수 없는 액션: {}, 기본 힌트 제공", action);
+          break;
+      }
+
+      return hint.toString();
+
+    } catch (Exception e) {
+      log.error("스크린 리더 힌트 생성 실패: {}", e.getMessage());
+      return "기본 스크린 리더 힌트";
     }
-    
-    switch (action) {
-      case "tap":
-        hint.append("선택하려면 두 번 탭하세요");
-        break;
-      case "swipe_left":
-        hint.append("이전 항목으로 이동하려면 왼쪽으로 쓸어넘기세요");
-        break;
-      case "swipe_right":
-        hint.append("다음 항목으로 이동하려면 오른쪽으로 쓸어넘기세요");
-        break;
-      case "long_press":
-        hint.append("추가 옵션을 보려면 길게 누르세요");
-        break;
-      default:
-        return "";
-    }
-    
-    return hint.toString();
   }
   
   /**

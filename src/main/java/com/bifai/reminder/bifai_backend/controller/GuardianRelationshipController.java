@@ -40,10 +40,18 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<GuardianInvitationResponse>> inviteGuardian(
       @Valid @RequestBody GuardianInvitationRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
-    
-    log.info("보호자 초대 요청 - 사용자: {}, 보호자 이메일: {}", 
+
+    // 인증 확인
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      log.warn("인증되지 않은 사용자의 보호자 초대 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    log.info("보호자 초대 요청 - 사용자: {}, 보호자 이메일: {}",
       request.getUserId(), request.getGuardianEmail());
-    
+
     try {
       GuardianInvitationResponse response = relationshipService.inviteGuardian(request);
       return ResponseEntity.ok(ApiResponse.success(response, "보호자 초대가 발송되었습니다"));
@@ -53,6 +61,10 @@ public class GuardianRelationshipController {
     } catch (IllegalStateException e) {
       return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ApiResponse.error("CONFLICT", e.getMessage()));
+    } catch (Exception e) {
+      log.error("보호자 초대 중 예상치 못한 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("INVITE_ERROR", "보호자 초대 중 오류가 발생했습니다"));
     }
   }
   
@@ -140,16 +152,34 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<Void>> suspendRelationship(
       @PathVariable Long relationshipId,
       @AuthenticationPrincipal UserDetails userDetails) {
-    
+
+    // 인증 확인
+    Long requesterId = jwtAuthUtils.getCurrentUserId();
+    if (requesterId == null) {
+      log.warn("인증되지 않은 사용자의 관계 일시 중지 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // relationshipId 유효성 검증
+    if (relationshipId == null || relationshipId <= 0) {
+      log.warn("잘못된 관계 ID로 일시 중지 시도: {}", relationshipId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_RELATIONSHIP_ID", "올바른 관계 ID를 입력해주세요"));
+    }
+
     log.info("관계 일시 중지 요청 - 관계 ID: {}", relationshipId);
-    
+
     try {
-      Long requesterId = 1L; // 임시
       relationshipService.suspendRelationship(relationshipId, requesterId);
       return ResponseEntity.ok(ApiResponse.success(null, "관계가 일시 중지되었습니다"));
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest()
         .body(ApiResponse.error("BAD_REQUEST", e.getMessage()));
+    } catch (Exception e) {
+      log.error("관계 일시 중지 중 예상치 못한 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("SUSPEND_ERROR", "관계 일시 중지 중 오류가 발생했습니다"));
     }
   }
   
@@ -162,16 +192,34 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<Void>> reactivateRelationship(
       @PathVariable Long relationshipId,
       @AuthenticationPrincipal UserDetails userDetails) {
-    
+
+    // 인증 확인
+    Long requesterId = jwtAuthUtils.getCurrentUserId();
+    if (requesterId == null) {
+      log.warn("인증되지 않은 사용자의 관계 재활성화 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // relationshipId 유효성 검증
+    if (relationshipId == null || relationshipId <= 0) {
+      log.warn("잘못된 관계 ID로 재활성화 시도: {}", relationshipId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_RELATIONSHIP_ID", "올바른 관계 ID를 입력해주세요"));
+    }
+
     log.info("관계 재활성화 요청 - 관계 ID: {}", relationshipId);
-    
+
     try {
-      Long requesterId = 1L; // 임시
       relationshipService.reactivateRelationship(relationshipId, requesterId);
       return ResponseEntity.ok(ApiResponse.success(null, "관계가 재활성화되었습니다"));
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest()
         .body(ApiResponse.error("BAD_REQUEST", e.getMessage()));
+    } catch (Exception e) {
+      log.error("관계 재활성화 중 예상치 못한 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("REACTIVATE_ERROR", "관계 재활성화 중 오류가 발생했습니다"));
     }
   }
   
@@ -185,16 +233,34 @@ public class GuardianRelationshipController {
       @PathVariable Long relationshipId,
       @RequestParam(required = false) String reason,
       @AuthenticationPrincipal UserDetails userDetails) {
-    
+
+    // 인증 확인
+    Long requesterId = jwtAuthUtils.getCurrentUserId();
+    if (requesterId == null) {
+      log.warn("인증되지 않은 사용자의 관계 종료 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // relationshipId 유효성 검증
+    if (relationshipId == null || relationshipId <= 0) {
+      log.warn("잘못된 관계 ID로 종료 시도: {}", relationshipId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_RELATIONSHIP_ID", "올바른 관계 ID를 입력해주세요"));
+    }
+
     log.info("관계 종료 요청 - 관계 ID: {}, 사유: {}", relationshipId, reason);
-    
+
     try {
-      Long requesterId = 1L; // 임시
       relationshipService.terminateRelationship(relationshipId, reason, requesterId);
       return ResponseEntity.ok(ApiResponse.success(null, "관계가 종료되었습니다"));
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest()
         .body(ApiResponse.error("BAD_REQUEST", e.getMessage()));
+    } catch (Exception e) {
+      log.error("관계 종료 중 예상치 못한 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("TERMINATE_ERROR", "관계 종료 중 오류가 발생했습니다"));
     }
   }
   
@@ -207,12 +273,33 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<List<GuardianRelationshipDto>>> getUserGuardians(
       @PathVariable Long userId,
       @RequestParam(defaultValue = "true") boolean activeOnly) {
-    
+
+    // 인증 확인
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      log.warn("인증되지 않은 사용자의 보호자 목록 조회 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // userId 유효성 검증
+    if (userId == null || userId <= 0) {
+      log.warn("잘못된 사용자 ID로 보호자 목록 조회 시도: {}", userId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_USER_ID", "올바른 사용자 ID를 입력해주세요"));
+    }
+
     log.info("사용자 보호자 조회 - 사용자 ID: {}, 활성만: {}", userId, activeOnly);
-    
-    List<GuardianRelationshipDto> guardians = relationshipService.getUserGuardians(userId, activeOnly);
-    return ResponseEntity.ok(ApiResponse.success(guardians, 
-      String.format("%d명의 보호자를 조회했습니다", guardians.size())));
+
+    try {
+      List<GuardianRelationshipDto> guardians = relationshipService.getUserGuardians(userId, activeOnly);
+      return ResponseEntity.ok(ApiResponse.success(guardians,
+        String.format("%d명의 보호자를 조회했습니다", guardians.size())));
+    } catch (Exception e) {
+      log.error("사용자 보호자 목록 조회 중 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("GUARDIAN_LIST_ERROR", "보호자 목록 조회 중 오류가 발생했습니다"));
+    }
   }
   
   /**
@@ -223,12 +310,33 @@ public class GuardianRelationshipController {
   @Operation(summary = "보호자의 피보호자 목록", description = "특정 보호자의 피보호자 목록을 조회합니다")
   public ResponseEntity<ApiResponse<List<GuardianRelationshipDto>>> getGuardianUsers(
       @PathVariable Long guardianId) {
-    
+
+    // 인증 확인
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      log.warn("인증되지 않은 사용자의 피보호자 목록 조회 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // guardianId 유효성 검증
+    if (guardianId == null || guardianId <= 0) {
+      log.warn("잘못된 보호자 ID로 피보호자 목록 조회 시도: {}", guardianId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_GUARDIAN_ID", "올바른 보호자 ID를 입력해주세요"));
+    }
+
     log.info("보호자 피보호자 조회 - 보호자 ID: {}", guardianId);
-    
-    List<GuardianRelationshipDto> users = relationshipService.getGuardianUsers(guardianId);
-    return ResponseEntity.ok(ApiResponse.success(users, 
-      String.format("%d명의 피보호자를 조회했습니다", users.size())));
+
+    try {
+      List<GuardianRelationshipDto> users = relationshipService.getGuardianUsers(guardianId);
+      return ResponseEntity.ok(ApiResponse.success(users,
+        String.format("%d명의 피보호자를 조회했습니다", users.size())));
+    } catch (Exception e) {
+      log.error("보호자 피보호자 목록 조회 중 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("WARD_LIST_ERROR", "피보호자 목록 조회 중 오류가 발생했습니다"));
+    }
   }
   
   /**
@@ -239,12 +347,33 @@ public class GuardianRelationshipController {
   @Operation(summary = "긴급 연락 보호자", description = "긴급 상황 시 연락할 보호자 목록을 조회합니다")
   public ResponseEntity<ApiResponse<List<EmergencyContactDto>>> getEmergencyContacts(
       @PathVariable Long userId) {
-    
+
+    // 인증 확인
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      log.warn("인증되지 않은 사용자의 긴급 연락처 조회 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // userId 유효성 검증
+    if (userId == null || userId <= 0) {
+      log.warn("잘못된 사용자 ID로 긴급 연락처 조회 시도: {}", userId);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_USER_ID", "올바른 사용자 ID를 입력해주세요"));
+    }
+
     log.info("긴급 연락 보호자 조회 - 사용자 ID: {}", userId);
-    
-    List<EmergencyContactDto> contacts = relationshipService.getEmergencyContacts(userId);
-    return ResponseEntity.ok(ApiResponse.success(contacts, 
-      String.format("%d명의 긴급 연락처를 조회했습니다", contacts.size())));
+
+    try {
+      List<EmergencyContactDto> contacts = relationshipService.getEmergencyContacts(userId);
+      return ResponseEntity.ok(ApiResponse.success(contacts,
+        String.format("%d명의 긴급 연락처를 조회했습니다", contacts.size())));
+    } catch (Exception e) {
+      log.error("긴급 연락처 조회 중 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("EMERGENCY_CONTACTS_ERROR", "긴급 연락처 조회 중 오류가 발생했습니다"));
+    }
   }
   
   /**
@@ -274,10 +403,34 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<Void>> updateActivity(
       @RequestParam Long guardianId,
       @RequestParam Long userId) {
-    
+
+    // 인증 확인
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      log.warn("인증되지 않은 사용자의 활동 시간 업데이트 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    // 파라미터 유효성 검증
+    if (guardianId == null || guardianId <= 0) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_GUARDIAN_ID", "올바른 보호자 ID를 입력해주세요"));
+    }
+    if (userId == null || userId <= 0) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("INVALID_USER_ID", "올바른 사용자 ID를 입력해주세요"));
+    }
+
     log.info("활동 시간 업데이트 - 보호자: {}, 사용자: {}", guardianId, userId);
-    
-    relationshipService.updateLastActiveTime(guardianId, userId);
-    return ResponseEntity.ok(ApiResponse.success(null, "활동 시간이 업데이트되었습니다"));
+
+    try {
+      relationshipService.updateLastActiveTime(guardianId, userId);
+      return ResponseEntity.ok(ApiResponse.success(null, "활동 시간이 업데이트되었습니다"));
+    } catch (Exception e) {
+      log.error("활동 시간 업데이트 중 오류: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error("ACTIVITY_UPDATE_ERROR", "활동 시간 업데이트 중 오류가 발생했습니다"));
+    }
   }
 }
