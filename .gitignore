@@ -111,3 +111,6 @@ __pycache__/
 *.pem
 *.key
 *.crt
+
+# Flutter web build files (불필요)
+src/main/resources/static/

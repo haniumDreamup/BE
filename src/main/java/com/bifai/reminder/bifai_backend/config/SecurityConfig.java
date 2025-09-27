@@ -36,7 +36,7 @@ import java.util.Arrays;
 @EnableMethodSecurity(prePostEnabled = true)
 @Order(1) // 높은 우선순위로 변경
 @RequiredArgsConstructor
-@org.springframework.context.annotation.Profile("disabled-old-security")
+@org.springframework.context.annotation.Profile("!test")
 public class SecurityConfig {
 
     private final BifUserDetailsService userDetailsService;
@@ -182,6 +182,8 @@ public class SecurityConfig {
         // BIF 사용자를 위한 모바일 앱 지원 - 보안을 위해 특정 도메인만 허용
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",      // 프론트엔드 개발 서버
+            "http://localhost:3001",      // Flutter 웹 개발 서버
+            "http://localhost:3002",      // Flutter 웹 개발 서버 (현재 사용 중)
             "http://localhost:8000",      // Flutter 웹 개발 서버
             "http://localhost:8001",      // Flutter 웹 개발 서버 (포트 변경)
             "http://localhost:8080",      // 백엔드 개발 서버
