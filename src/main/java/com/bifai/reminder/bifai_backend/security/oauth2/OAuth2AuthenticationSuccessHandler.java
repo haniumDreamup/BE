@@ -44,15 +44,22 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
   private final JwtTokenProvider tokenProvider;
-  
+
   /**
    * OAuth2 인증 성공 후 프론트엔드로 리다이렉트할 URI
-   * 
-   * <p>기본값: http://localhost:3000/auth/callback</p>
+   *
+   * <p>기본값: http://localhost:3004/auth/callback</p>
    * <p>환경변수: app.oauth2.redirect-uri</p>
    */
-  @Value("${app.oauth2.redirect-uri:http://localhost:3000/auth/callback}")
+  @Value("${app.oauth2.redirect-uri:http://localhost:3004/auth/callback}")
   private String redirectUri;
+
+  /**
+   * 허용된 리다이렉트 URI 목록
+   * 보안을 위해 화이트리스트 방식으로 검증
+   */
+  @Value("${app.oauth2.allowed-redirect-uris}")
+  private java.util.List<String> allowedRedirectUris;
 
   /**
    * OAuth2 인증 성공 시 호출되는 메소드
@@ -83,25 +90,42 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   @Override
   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                       Authentication authentication) throws IOException, ServletException {
-    
+
     // OAuth2 인증된 사용자 정보 추출
     OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-    
+
     // JWT 토큰 생성
     String accessToken = tokenProvider.createAccessToken(principal.getUser());
     String refreshToken = tokenProvider.createRefreshToken(principal.getUser());
-    
+
+    // 요청에서 redirect_uri 파라미터 확인 (프론트엔드가 지정한 경우)
+    String requestedRedirectUri = request.getParameter("redirect_uri");
+    String finalRedirectUri = redirectUri; // 기본값
+
+    // 요청된 URI가 있고, 허용 목록에 포함되어 있으면 사용
+    if (requestedRedirectUri != null && !requestedRedirectUri.isEmpty()) {
+      boolean isAllowed = allowedRedirectUris.stream()
+        .anyMatch(allowed -> requestedRedirectUri.startsWith(allowed.replace("/auth/callback", "")));
+
+      if (isAllowed) {
+        finalRedirectUri = requestedRedirectUri;
+        log.info("Using requested redirect URI: {}", requestedRedirectUri);
+      } else {
+        log.warn("Requested redirect URI {} is not in allowed list, using default", requestedRedirectUri);
+      }
+    }
+
     // 프론트엔드로 리다이렉트할 URL 구성
     // 현재는 단순화를 위해 URL 파라미터로 토큰 전달
     // TODO: 프로덕션에서는 보다 안전한 방법 고려
-    String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+    String targetUrl = UriComponentsBuilder.fromUriString(finalRedirectUri)
       .queryParam("accessToken", accessToken)
       .queryParam("refreshToken", refreshToken)
       .build().toUriString();
-    
-    log.info("OAuth2 authentication successful for user: {}, redirecting to: {}", 
-             principal.getUser().getEmail(), redirectUri);
-    
+
+    log.info("OAuth2 authentication successful for user: {}, redirecting to: {}",
+             principal.getUser().getEmail(), finalRedirectUri);
+
     // 프론트엔드로 리다이렉트
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
   }
