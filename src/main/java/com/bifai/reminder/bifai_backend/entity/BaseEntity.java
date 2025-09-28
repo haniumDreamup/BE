@@ -21,9 +21,4 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 public abstract class BaseEntity extends BaseTimeEntity {
 
-    @Column(name = "created_by", updatable = false)
-    private Long createdBy = -1L;
-
-    @Column(name = "updated_by")
-    private Long updatedBy = -1L;
 } 
