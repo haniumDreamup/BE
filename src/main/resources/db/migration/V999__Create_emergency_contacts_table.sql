@@ -1,0 +1,37 @@
+-- 긴급 연락처 테이블 생성
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(50),
+    email VARCHAR(100),
+    relationship VARCHAR(50),
+    contact_type VARCHAR(50) DEFAULT 'FAMILY',
+    priority INTEGER DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_primary BOOLEAN DEFAULT FALSE,
+    is_medical_professional BOOLEAN DEFAULT FALSE,
+    can_receive_alerts BOOLEAN DEFAULT TRUE,
+    can_make_decisions BOOLEAN DEFAULT FALSE,
+    can_access_location BOOLEAN DEFAULT FALSE,
+    can_access_health_data BOOLEAN DEFAULT FALSE,
+    verified BOOLEAN DEFAULT FALSE,
+    verification_code VARCHAR(10),
+    response_rate DOUBLE DEFAULT 0.0,
+    average_response_time_minutes INTEGER,
+    last_contacted_at TIMESTAMP NULL,
+    available_start_time TIME,
+    available_end_time TIME,
+    available_days VARCHAR(20) DEFAULT 'EVERYDAY',
+    language_preference VARCHAR(10) DEFAULT 'ko',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+    INDEX idx_emergency_contact_user_id (user_id),
+    INDEX idx_emergency_contact_priority (priority),
+    INDEX idx_emergency_contact_type (contact_type),
+    INDEX idx_emergency_contact_is_active (is_active)
+);

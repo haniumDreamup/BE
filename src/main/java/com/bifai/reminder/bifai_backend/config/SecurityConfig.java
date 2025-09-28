@@ -183,11 +183,16 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",      // 프론트엔드 개발 서버
             "http://localhost:3001",      // Flutter 웹 개발 서버
-            "http://localhost:3002",      // Flutter 웹 개발 서버 (현재 사용 중)
+            "http://localhost:3002",      // Flutter 웹 개발 서버
+            "http://localhost:3003",      // Flutter 웹 개발 서버
+            "http://localhost:3004",      // Flutter 웹 개발 서버
+            "http://localhost:3005",      // Flutter 웹 개발 서버
+            "http://localhost:3006",      // Flutter 웹 개발 서버
             "http://localhost:8000",      // Flutter 웹 개발 서버
-            "http://localhost:8001",      // Flutter 웹 개발 서버 (포트 변경)
+            "http://localhost:8001",      // Flutter 웹 개발 서버
             "http://localhost:8080",      // 백엔드 개발 서버
             "https://*.bifai.com",        // 프로덕션 도메인
+            "http://43.200.49.171:*",     // EC2 프로덕션 서버
             "capacitor://localhost",      // iOS 앱 (Capacitor)
             "http://localhost"            // Android 앱 (Capacitor)
         ));
