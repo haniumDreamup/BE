@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import com.bifai.reminder.bifai_backend.util.LoggingUtil;
 
 /**
  * 인증 컨트롤러
@@ -110,33 +111,32 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request,
             BindingResult bindingResult) {
 
-        log.info("회원가입 요청: username={}, email={}", request.getUsername(), request.getEmail());
+        LoggingUtil.setOperation("user_register");
+        LoggingUtil.startTimer();
+
+        LoggingUtil.logUserAction("register_attempt",
+                                 "username", request.getUsername(),
+                                 "email", request.getEmail());
 
         // 입력 검증 오류 확인
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
                     .map(error -> error.getDefaultMessage())
                     .collect(Collectors.joining(", "));
-            
+
+            LoggingUtil.logSecurityEvent("registration_validation_failed", errorMessage);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(errorMessage));
         }
 
-        try {
-            AuthResponse authResponse = authService.register(request);
-            
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success(authResponse, "회원가입이 완료되었습니다"));
-                    
-        } catch (IllegalArgumentException e) {
-            log.warn("회원가입 실패: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("회원가입 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("회원가입 중 오류가 발생했습니다"));
-        }
+        AuthResponse authResponse = authService.register(request);
+        LoggingUtil.setUserId(authResponse.getUser().getUserId());
+
+        LoggingUtil.endTimer("user_register");
+        LoggingUtil.logSuccess("회원가입 완료: userId={}", authResponse.getUser().getUserId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(authResponse, "회원가입이 완료되었습니다"));
     }
 
     /**
@@ -211,17 +211,10 @@ public class AuthController {
                     .body(ApiResponse.error(errorMessage));
         }
 
-        try {
-            AuthResponse authResponse = authService.login(request);
-            
-            return ResponseEntity.ok()
-                    .body(ApiResponse.success(authResponse, "로그인이 완료되었습니다"));
-                    
-        } catch (Exception e) {
-            log.warn("로그인 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("아이디 또는 비밀번호가 올바르지 않습니다"));
-        }
+        AuthResponse authResponse = authService.login(request);
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(authResponse, "로그인이 완료되었습니다"));
     }
 
     /**
@@ -267,21 +260,10 @@ public class AuthController {
                     .body(ApiResponse.error(errorMessage));
         }
 
-        try {
-            AuthResponse authResponse = authService.refreshToken(request);
-            
-            return ResponseEntity.ok()
-                    .body(ApiResponse.success(authResponse, "토큰이 갱신되었습니다"));
-                    
-        } catch (IllegalArgumentException e) {
-            log.warn("토큰 갱신 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("토큰 갱신 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("토큰 갱신 중 오류가 발생했습니다"));
-        }
+        AuthResponse authResponse = authService.refreshToken(request);
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(authResponse, "토큰이 갱신되었습니다"));
     }
 
     /**
@@ -318,17 +300,10 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout() {
         log.info("로그아웃 요청");
 
-        try {
-            authService.logout();
-            
-            return ResponseEntity.ok()
-                    .body(ApiResponse.success(null, "로그아웃이 완료되었습니다"));
-                    
-        } catch (Exception e) {
-            log.error("로그아웃 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("로그아웃 중 오류가 발생했습니다"));
-        }
+        authService.logout();
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(null, "로그아웃이 완료되었습니다"));
     }
 
     /**
