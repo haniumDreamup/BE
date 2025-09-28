@@ -73,6 +73,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 공개 엔드포인트 (인증 불필요)
                 .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers("/api/v1/health/**").permitAll()
+                .requestMatchers("/health/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
