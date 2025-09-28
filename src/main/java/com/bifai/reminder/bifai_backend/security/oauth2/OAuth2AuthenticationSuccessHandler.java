@@ -58,7 +58,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
    * 허용된 리다이렉트 URI 목록
    * 보안을 위해 화이트리스트 방식으로 검증
    */
-  @Value("${app.oauth2.allowed-redirect-uris}")
+  @Value("${app.oauth2.allowed-redirect-uris:http://localhost:3004/auth/callback}")
   private java.util.List<String> allowedRedirectUris;
 
   /**

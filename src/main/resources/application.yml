@@ -169,17 +169,8 @@ app:
   # OAuth2 리다이렉트 설정
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3004/auth/callback}
-    allowed-redirect-uris:
-      - http://localhost:3000/auth/callback
-      - http://localhost:3001/auth/callback
-      - http://localhost:3002/auth/callback
-      - http://localhost:3003/auth/callback
-      - http://localhost:3004/auth/callback
-      - http://localhost:3005/auth/callback
-      - http://localhost:3006/auth/callback
-      - http://localhost:8000/auth/callback
-      - http://localhost:8001/auth/callback
-      - capacitor://localhost/auth/callback
+    # 콤마로 구분된 리스트 (Spring @Value가 자동으로 List로 변환)
+    allowed-redirect-uris: http://localhost:3000/auth/callback,http://localhost:3001/auth/callback,http://localhost:3002/auth/callback,http://localhost:3003/auth/callback,http://localhost:3004/auth/callback,http://localhost:3005/auth/callback,http://localhost:3006/auth/callback,http://localhost:8000/auth/callback,http://localhost:8001/auth/callback,capacitor://localhost/auth/callback
 
   # 보안 설정
   security:
