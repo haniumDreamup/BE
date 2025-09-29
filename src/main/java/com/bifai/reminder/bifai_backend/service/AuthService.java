@@ -193,9 +193,6 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .cognitiveLevel(User.CognitiveLevel.MODERATE) // 기본값
                 .isActive(true)
-                .emailVerified(false)
-                .phoneVerified(false)
-                .emergencyModeEnabled(false)
                 .build();
                 
         return user;
