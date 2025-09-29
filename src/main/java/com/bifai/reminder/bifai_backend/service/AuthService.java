@@ -191,7 +191,6 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getFullName())
                 .fullName(request.getFullName())
-                .dateOfBirth(request.getBirthDate())
                 .cognitiveLevel(User.CognitiveLevel.MODERATE) // 기본값
                 .isActive(true)
                 .emailVerified(false)

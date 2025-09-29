@@ -53,7 +53,6 @@ public class TestDataBuilder {
                 .fullName(user.getFullName())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
-                .dateOfBirth(user.getDateOfBirth())
                 .gender(user.getGender())
                 .cognitiveLevel(user.getCognitiveLevel())
                 .emergencyContactName(user.getEmergencyContactName())

@@ -121,10 +121,6 @@ public class UserService {
             currentUser.setPhoneVerified(false); // 전화번호 변경 시 재인증 필요
         }
         
-        if (request.getDateOfBirth() != null) {
-            currentUser.setDateOfBirth(request.getDateOfBirth());
-        }
-        
         if (request.getGender() != null) {
             currentUser.setGender(request.getGender());
         }
