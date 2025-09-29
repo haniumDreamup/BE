@@ -105,6 +105,30 @@ public class User extends BaseEntity {
     @Column(name = "language_preference", length = 10)
     @Builder.Default
     private String languagePreference = "ko";
+
+    @Column(name = "language_preference_secondary", length = 10)
+    private String languagePreferenceSecondary;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", length = 10)
+    private Gender gender;
+
+    @Column(name = "email_verified")
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(name = "phone_verified")
+    @Builder.Default
+    private Boolean phoneVerified = false;
+
+    @Column(name = "emergency_contact_name", length = 100)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
     
     @Column(name = "is_active")
     @Builder.Default
@@ -295,10 +319,10 @@ public class User extends BaseEntity {
     
     /**
      * 인지 수준 - 경계선 지능 장애인의 인지 능력 수준 분류
-     * 
+     *
      * <p>BIF 사용자의 인지 능력을 4단계로 분류하여 각 수준에 맞는
      * 인터페이스와 지원 기능을 제공합니다.</p>
-     * 
+     *
      * @since 1.0
      */
     public enum CognitiveLevel {
@@ -306,21 +330,40 @@ public class User extends BaseEntity {
         MODERATE("중등도", "최소한의 지원 필요"),
         SEVERE("심각", "지속적인 지원 필요"),
         UNKNOWN("미정", "평가 필요");
-        
+
         private final String displayName;
         private final String description;
-        
+
         CognitiveLevel(String displayName, String description) {
             this.displayName = displayName;
             this.description = description;
         }
-        
+
         public String getDisplayName() {
             return displayName;
         }
-        
+
         public String getDescription() {
             return description;
+        }
+    }
+
+    /**
+     * 성별 분류
+     */
+    public enum Gender {
+        MALE("남성"),
+        FEMALE("여성"),
+        OTHER("기타");
+
+        private final String displayName;
+
+        Gender(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
         }
     }
 } 
