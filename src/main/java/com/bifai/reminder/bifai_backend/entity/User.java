@@ -106,9 +106,6 @@ public class User extends BaseEntity {
     @Builder.Default
     private String languagePreference = "ko";
     
-    @Column(name = "language_preference_secondary", length = 10)
-    private String languagePreferenceSecondary;
-    
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
