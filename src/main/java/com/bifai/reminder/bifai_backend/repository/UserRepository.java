@@ -137,9 +137,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findRecentlyActiveUsers(@Param("fromDate") LocalDateTime fromDate);
     
     /**
-     * 이메일 인증된 사용자 조회
+     * 인증된 사용자 조회 (활성 사용자만)
      */
-    @Query("SELECT u FROM User u WHERE u.emailVerified = true AND u.isActive = true")
+    @Query("SELECT u FROM User u WHERE u.isActive = true")
     List<User> findVerifiedUsers();
     
     /**
@@ -183,11 +183,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByIsActiveTrue();
     
     /**
-     * 이메일 인증된 사용자 조회
-     */
-    List<User> findByEmailVerifiedTrue();
-    
-    /**
      * 전화번호로 존재 여부 확인
      */
     boolean existsByPhoneNumber(String phoneNumber);
@@ -202,11 +197,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 활성 사용자 수 카운트
      */
     long countByIsActiveTrue();
-    
-    /**
-     * 이메일 인증된 사용자 수 카운트
-     */
-    long countByEmailVerifiedTrue();
     
     /**
      * ID로 사용자 조회 (roles 포함)
