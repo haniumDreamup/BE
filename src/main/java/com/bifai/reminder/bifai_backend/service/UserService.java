@@ -120,9 +120,6 @@ public class UserService {
             currentUser.setPhoneNumber(request.getPhoneNumber());
         }
         
-        if (request.getGender() != null) {
-            currentUser.setGender(request.getGender());
-        }
         
         
         if (request.getLanguagePreference() != null) {

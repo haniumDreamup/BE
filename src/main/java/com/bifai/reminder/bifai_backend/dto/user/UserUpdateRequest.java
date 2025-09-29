@@ -26,8 +26,6 @@ public class UserUpdateRequest {
     @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다 (010-0000-0000)")
     private String phoneNumber;
     
-    @Pattern(regexp = "^(남성|여성|기타)$", message = "성별은 '남성', '여성', '기타' 중 하나로 입력해주세요")
-    private String gender;
     
     @Size(max = 500, message = "주소는 500자 이하로 입력해주세요")
     private String address;
