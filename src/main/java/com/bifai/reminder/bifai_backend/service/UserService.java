@@ -125,14 +125,6 @@ public class UserService {
         }
         
         
-        if (request.getEmergencyContactName() != null) {
-            currentUser.setEmergencyContactName(request.getEmergencyContactName());
-        }
-        
-        if (request.getEmergencyContactPhone() != null) {
-            currentUser.setEmergencyContactPhone(request.getEmergencyContactPhone());
-        }
-        
         if (request.getLanguagePreference() != null) {
             currentUser.setLanguagePreference(request.getLanguagePreference());
         }
