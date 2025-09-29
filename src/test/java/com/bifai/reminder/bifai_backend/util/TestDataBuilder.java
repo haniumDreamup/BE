@@ -35,8 +35,6 @@ public class TestDataBuilder {
                 .timezone("Asia/Seoul")
                 .languagePreference("ko")
                 .isActive(true)
-                .emailVerified(true)
-                .phoneVerified(true)
                 .build();
     }
     
@@ -60,8 +58,6 @@ public class TestDataBuilder {
                 .timezone(user.getTimezone())
                 .languagePreference(user.getLanguagePreference())
                 .isActive(user.getIsActive())
-                .emailVerified(user.getEmailVerified())
-                .phoneVerified(user.getPhoneVerified())
                 .build();
         return user;
     }

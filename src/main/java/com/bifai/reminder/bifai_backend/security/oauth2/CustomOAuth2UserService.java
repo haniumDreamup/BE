@@ -126,7 +126,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         .providerId(userInfo.getId())
         .profileImageUrl(userInfo.getImageUrl())
         .isActive(true)
-        .emailVerified(true) // OAuth2 로그인은 이미 이메일 인증됨
         .roles(Set.of(userRole))
         .build();
       

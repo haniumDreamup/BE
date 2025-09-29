@@ -118,7 +118,6 @@ public class UserService {
         
         if (request.getPhoneNumber() != null) {
             currentUser.setPhoneNumber(request.getPhoneNumber());
-            currentUser.setPhoneVerified(false); // 전화번호 변경 시 재인증 필요
         }
         
         if (request.getGender() != null) {

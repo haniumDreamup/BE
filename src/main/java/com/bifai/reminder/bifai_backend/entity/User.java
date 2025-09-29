@@ -142,13 +142,6 @@ public class User extends BaseEntity {
     @Column(name = "password_reset_expires_at")
     private LocalDateTime passwordResetExpiresAt;
     
-    @Column(name = "email_verified")
-    @Builder.Default
-    private Boolean emailVerified = false;
-    
-    @Column(name = "phone_verified")
-    @Builder.Default
-    private Boolean phoneVerified = false;
     
     // OAuth2 관련 필드
     @Column(name = "provider", length = 20)
@@ -271,19 +264,6 @@ public class User extends BaseEntity {
         this.passwordResetExpiresAt = null;
     }
     
-    /**
-     * 이메일 인증 완료
-     */
-    public void verifyEmail() {
-        this.emailVerified = true;
-    }
-    
-    /**
-     * 전화번호 인증 완료
-     */
-    public void verifyPhone() {
-        this.phoneVerified = true;
-    }
     
     /**
      * 베스트 프랙티스: ID 기반 equals 구현 (null 안전)
