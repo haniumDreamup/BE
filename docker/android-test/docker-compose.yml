@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  android-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bifai-android-test
+    privileged: true
+    volumes:
+      # Mount Flutter app source
+      - ../../..:/app:rw
+      # Cache directories for faster builds
+      - flutter-cache:/opt/flutter/.pub-cache
+      - android-cache:/opt/android-sdk/.android
+      # Log directories
+      - ./logs:/var/log
+    ports:
+      # VNC port for visual access
+      - "5901:5901"
+      # ADB port for debugging
+      - "5555:5555"
+      # Backend API access
+      - "8080:8080"
+      # Additional ports for Flutter dev
+      - "3000:3000"
+      - "3004:3004"
+      - "3005:3005"
+    environment:
+      - DISPLAY=:1
+      - ANDROID_HOME=/opt/android-sdk
+      - FLUTTER_HOME=/opt/flutter
+      - BACKEND_URL=http://43.200.49.171:8080
+      - FLUTTER_WEB_PORT=3005
+      - API_BASE_URL=http://43.200.49.171:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "adb", "devices"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  flutter-cache:
+    driver: local
+  android-cache:
+    driver: local

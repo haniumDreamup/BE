@@ -1,0 +1,39 @@
+# Simplified Android Testing Environment for Flutter
+FROM ubuntu:22.04
+
+# Set non-interactive mode
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Seoul
+
+# Install basic dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    git \
+    openjdk-11-jdk \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+# Install Flutter
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH=${PATH}:${FLUTTER_HOME}/bin
+
+RUN cd /opt && \
+    wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.16.0-stable.tar.xz && \
+    tar xf flutter_linux_3.16.0-stable.tar.xz && \
+    rm flutter_linux_3.16.0-stable.tar.xz
+
+# Create working directory
+WORKDIR /app
+
+# Copy a simple test script
+COPY test-api.sh /test-api.sh
+RUN chmod +x /test-api.sh
+
+# Default command
+CMD ["/test-api.sh"]
