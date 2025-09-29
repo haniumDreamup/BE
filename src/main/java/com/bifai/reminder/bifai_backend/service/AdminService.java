@@ -36,7 +36,7 @@ public class AdminService {
         // 사용자 통계
         stats.put("totalUsers", userRepository.count());
         stats.put("activeUsers", userRepository.countByIsActiveTrue());
-        stats.put("verifiedUsers", userRepository.countByEmailVerifiedTrue());
+        stats.put("verifiedUsers", userRepository.countByIsActiveTrue());
         
         // 인증 통계 (Redis 비활성화로 인해 임시로 0 반환)
         // Set<String> activeTokens = redisCacheService.getActiveTokens();

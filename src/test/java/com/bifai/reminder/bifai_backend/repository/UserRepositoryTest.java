@@ -171,21 +171,21 @@ class UserRepositoryTest extends BaseRepositoryTest {
     }
     
     @Test
-    @DisplayName("이메일 인증된 사용자 조회")
-    void findByEmailVerifiedTrue_Success() {
+    @DisplayName("활성 사용자 조회")
+    void findByIsActiveTrue_Success() {
         // given
-        userRepository.save(testUser); // emailVerified = true
-        
-        User unverifiedUser = TestDataBuilder.createUserWithEmail("unverified@example.com");
-        unverifiedUser.setEmailVerified(false);
-        userRepository.save(unverifiedUser);
-        
+        userRepository.save(testUser); // isActive = true
+
+        User inactiveUser = TestDataBuilder.createUserWithEmail("inactive@example.com");
+        inactiveUser.setIsActive(false);
+        userRepository.save(inactiveUser);
+
         // when
-        List<User> verifiedUsers = userRepository.findByEmailVerifiedTrue();
-        
+        List<User> activeUsers = userRepository.findByIsActiveTrue();
+
         // then
-        assertThat(verifiedUsers).hasSize(1);
-        assertThat(verifiedUsers.get(0).getEmail()).isEqualTo(testUser.getEmail());
+        assertThat(activeUsers).hasSize(1);
+        assertThat(activeUsers.get(0).getEmail()).isEqualTo(testUser.getEmail());
     }
     
     @Test
