@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     openjdk-11-jdk \
+    xz-utils \
     tzdata \
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && rm -rf /var/lib/apt/lists/*

@@ -16,7 +16,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update  # 임시: 누락된 컬럼 자동 추가 (향후 Flyway로 전환 예정)
+      ddl-auto: none  # Flyway가 스키마 관리
     show-sql: false
     properties:
       hibernate:
