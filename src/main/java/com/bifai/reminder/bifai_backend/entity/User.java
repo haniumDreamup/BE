@@ -98,12 +98,6 @@ public class User extends BaseEntity {
     @Builder.Default
     private CognitiveLevel cognitiveLevel = CognitiveLevel.MODERATE;
     
-    @Column(name = "emergency_contact_name", length = 100)
-    private String emergencyContactName;
-    
-    @Column(name = "emergency_contact_phone", length = 20)
-    private String emergencyContactPhone;
-    
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
     
