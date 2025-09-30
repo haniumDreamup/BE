@@ -142,48 +142,35 @@ jobs:
         echo "$PRIVATE_KEY" > /tmp/ssh_key
         chmod 600 /tmp/ssh_key
 
+        echo "=== docker-compose.prod.yml 전송 ===" &&
+        scp -o StrictHostKeyChecking=no -i /tmp/ssh_key docker-compose.prod.yml $USER_NAME@$HOSTNAME:~/docker-compose.prod.yml
+
         ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME '
         aws --version &&
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_URL }} &&
 
         echo "=== 기존 컨테이너 정리 ===" &&
-        docker stop bifai-backend || true &&
-        docker rm bifai-backend || true &&
-        docker stop redis || true &&
-        docker rm redis || true &&
+        docker-compose -f docker-compose.prod.yml down || true &&
 
-        echo "=== Redis 시작 ===" &&
-        docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine &&
+        echo "=== 환경 변수 설정 ===" &&
+        export ECR_REGISTRY_URL=${{ secrets.ECR_REGISTRY_URL }} &&
+        export DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com &&
+        export DB_PORT=3306 &&
+        export DB_NAME=bifai_db &&
+        export DB_USER=${{ secrets.DB_USER }} &&
+        export DB_PASSWORD="${{ secrets.DB_PASSWORD }}" &&
+        export AWS_REGION=ap-northeast-2 &&
+        export S3_BUCKET_NAME=bifai-images-prod &&
+        export JWT_SECRET="${{ secrets.JWT_SECRET }}" &&
+        export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" &&
+        export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" &&
+        export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" &&
 
         echo "=== 최신 이미지 다운로드 ===" &&
         docker pull ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
 
-        echo "=== 애플리케이션 시작 (개선된 설정) ===" &&
-        docker run -d --name bifai-backend \
-          --restart unless-stopped \
-          -p 8080:8080 \
-          -v /home/$USER_NAME:/home/$USER_NAME \
-          --health-cmd="curl -f http://localhost:8080/api/health || exit 1" \
-          --health-interval=30s \
-          --health-timeout=15s \
-          --health-retries=5 \
-          --health-start-period=120s \
-          -e SPRING_PROFILES_ACTIVE=prod \
-          -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
-          -e DB_PORT=3306 \
-          -e DB_NAME=bifai_db \
-          -e DB_USER=${{ secrets.DB_USER }} \
-          -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-          -e REDIS_HOST=localhost \
-          -e REDIS_PORT=6379 \
-          -e AWS_REGION=ap-northeast-2 \
-          -e S3_BUCKET_NAME=bifai-images-prod \
-          -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-          -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-          -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC" \
-          ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
+        echo "=== Docker Compose로 서비스 시작 ===" &&
+        docker-compose -f docker-compose.prod.yml up -d &&
 
         echo "=== 컨테이너 시작 대기 (2분) ===" &&
         sleep 120 &&

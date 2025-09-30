@@ -8,9 +8,12 @@ spring:
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+      connection-timeout: 60000       # 60초로 증가 (RDS 초기 연결 고려)
+      validation-timeout: 5000        # 연결 검증 타임아웃
+      idle-timeout: 600000            # 10분
+      max-lifetime: 1800000           # 30분
+      connection-test-query: SELECT 1 # 연결 유효성 검사
+      leak-detection-threshold: 60000 # 연결 누수 감지
       pool-name: BifHikariCP-Prod
 
   # JPA Configuration (프로덕션 최적화)
