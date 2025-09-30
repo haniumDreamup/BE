@@ -4,6 +4,7 @@ import com.bifai.reminder.bifai_backend.dto.ApiResponse;
 import com.bifai.reminder.bifai_backend.dto.pose.FallStatusDto;
 import com.bifai.reminder.bifai_backend.dto.pose.PoseDataDto;
 import com.bifai.reminder.bifai_backend.dto.pose.PoseResponseDto;
+import com.bifai.reminder.bifai_backend.security.jwt.JwtAuthUtils;
 import com.bifai.reminder.bifai_backend.service.pose.PoseDataService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +32,9 @@ class PoseControllerSimpleTest {
   @Mock
   private PoseDataService poseDataService;
 
+  @Mock
+  private JwtAuthUtils jwtAuthUtils;
+
   @InjectMocks
   private PoseController poseController;
 
@@ -39,6 +43,9 @@ class PoseControllerSimpleTest {
 
   @BeforeEach
   void setUp() {
+    // Mock JWT 인증
+    when(jwtAuthUtils.getCurrentUserId()).thenReturn(1L);
+
     // 33개의 유효한 랜드마크 생성
     landmarks = new ArrayList<>();
     for (int i = 0; i < 33; i++) {
