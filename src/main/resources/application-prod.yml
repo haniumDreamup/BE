@@ -1,4 +1,9 @@
 spring:
+  # Auto Configuration Exclusions
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration
+
   # Database Configuration (새 RDS: bifai-db-prod)
   datasource:
     url: jdbc:mysql://${DB_HOST:bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com}:${DB_PORT:3306}/${DB_NAME:bifai_db}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -19,7 +24,7 @@ spring:
   # JPA Configuration (프로덕션 최적화)
   jpa:
     hibernate:
-      ddl-auto: validate  # 스키마 유효성 검사만 수행
+      ddl-auto: update  # 스키마 자동 업데이트 (초기 배포시만, 이후 validate로 변경 권장)
     show-sql: false
     properties:
       hibernate:
@@ -176,6 +181,10 @@ management:
     health:
       show-details: when-authorized
   metrics:
+    enable:
+      process: false
+      system: false
+      jvm: true
     export:
       prometheus:
         enabled: true
