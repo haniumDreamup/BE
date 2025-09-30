@@ -147,10 +147,16 @@ jobs:
 
         ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME '
         aws --version &&
-        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_URL }} &&
 
         echo "=== 기존 컨테이너 정리 ===" &&
-        docker-compose -f docker-compose.prod.yml down || true &&
+        docker stop bifai-backend bifai-redis || true &&
+        docker rm bifai-backend bifai-redis || true &&
+
+        echo "=== ECR 로그인 ===" &&
+        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_URL }} &&
+
+        echo "=== 최신 이미지 다운로드 ===" &&
+        docker pull ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
 
         echo "=== 환경 변수 설정 ===" &&
         export ECR_REGISTRY_URL=${{ secrets.ECR_REGISTRY_URL }} &&
@@ -166,11 +172,8 @@ jobs:
         export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" &&
         export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" &&
 
-        echo "=== 최신 이미지 다운로드 ===" &&
-        docker pull ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
-
         echo "=== Docker Compose로 서비스 시작 ===" &&
-        docker-compose -f docker-compose.prod.yml up -d &&
+        docker-compose -f ~/docker-compose.prod.yml up -d &&
 
         echo "=== 컨테이너 시작 대기 (2분) ===" &&
         sleep 120 &&
