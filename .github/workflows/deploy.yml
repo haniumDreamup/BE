@@ -160,20 +160,15 @@ jobs:
 
         echo "=== 백엔드 컨테이너 시작 ===" &&
         docker run -d --name bifai-backend -p 8080:8080 \
+          --env-file /home/ubuntu/.env.prod \
           -e SPRING_PROFILES_ACTIVE=prod \
           -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
           -e DB_PORT=3306 \
           -e DB_NAME=bifai_db \
-          -e DB_USER='${{ secrets.DB_USER }}' \
-          -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
           -e REDIS_HOST=172.17.0.2 \
           -e REDIS_PORT=6379 \
           -e AWS_REGION=ap-northeast-2 \
           -e S3_BUCKET_NAME=bifai-images-prod \
-          -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-          -e OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
-          -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
-          -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
           -e "JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200" \
           070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
