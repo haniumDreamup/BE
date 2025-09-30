@@ -153,7 +153,7 @@ jobs:
         docker rm bifai-backend bifai-redis || true &&
 
         echo "=== ECR 로그인 ===" &&
-        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_URL }} &&
+        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com &&
 
         echo "=== 최신 이미지 다운로드 ===" &&
         docker pull ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
