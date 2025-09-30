@@ -133,11 +133,19 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Transfer docker-compose file
+      run: |
+        echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ssh_key
+        chmod 600 /tmp/ssh_key
+        scp -o StrictHostKeyChecking=no -i /tmp/ssh_key docker-compose.prod.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/
+
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         HOSTNAME: ${{ secrets.EC2_HOST }}
         USER_NAME: ${{ secrets.EC2_USER }}
+        ECR_REGISTRY_URL: 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com
+        DB_HOST: bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -148,72 +156,40 @@ jobs:
         echo "$PRIVATE_KEY" > /tmp/ssh_key
         chmod 600 /tmp/ssh_key
 
-        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME "export DB_USER='${DB_USER}' DB_PASSWORD='${DB_PASSWORD}' JWT_SECRET='${JWT_SECRET}' OPENAI_API_KEY='${OPENAI_API_KEY}' AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}' AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}' &&
-        aws --version &&
-
-        echo "=== 기존 컨테이너 정리 ===" &&
-        docker stop bifai-backend bifai-redis || true &&
-        docker rm bifai-backend bifai-redis || true &&
-
-        echo "=== ECR 로그인 ===" &&
+        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME "
+        cd /home/ubuntu &&
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com &&
-
-        echo "=== 최신 이미지 다운로드 ===" &&
         docker pull 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
-        echo "=== Redis 컨테이너 시작 ===" &&
-        docker run -d --name bifai-redis redis:7-alpine redis-server --appendonly yes &&
+        export ECR_REGISTRY_URL=$ECR_REGISTRY_URL &&
+        export DB_HOST=$DB_HOST &&
+        export DB_PORT=3306 &&
+        export DB_NAME=bifai_db &&
+        export DB_USER=$DB_USER &&
+        export DB_PASSWORD=$DB_PASSWORD &&
+        export AWS_REGION=ap-northeast-2 &&
+        export S3_BUCKET_NAME=bifai-images-prod &&
+        export JWT_SECRET='$JWT_SECRET' &&
+        export OPENAI_API_KEY='$OPENAI_API_KEY' &&
+        export AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID' &&
+        export AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY' &&
 
-        echo "=== 백엔드 컨테이너 시작 ===" &&
-        docker run -d --name bifai-backend -p 8080:8080 \
-          -e SPRING_PROFILES_ACTIVE=prod \
-          -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
-          -e DB_PORT=3306 \
-          -e DB_NAME=bifai_db \
-          -e DB_USER=\${DB_USER} \
-          -e DB_PASSWORD=\${DB_PASSWORD} \
-          -e REDIS_HOST=172.17.0.2 \
-          -e REDIS_PORT=6379 \
-          -e AWS_REGION=ap-northeast-2 \
-          -e S3_BUCKET_NAME=bifai-images-prod \
-          -e JWT_SECRET=\${JWT_SECRET} \
-          -e OPENAI_API_KEY=\${OPENAI_API_KEY} \
-          -e AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID} \
-          -e AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY} \
-          -e JAVA_OPTS='-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200' \
-          070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
+        docker-compose -f docker-compose.prod.yml down &&
+        docker-compose -f docker-compose.prod.yml up -d &&
 
-        echo "=== Health Check 시작 (최대 5분 대기) ===" &&
-        timeout 300 bash -c "
-          retry_count=0
-          max_retries=30
-          while [ \\\$retry_count -lt \\\$max_retries ]; do
-            echo \"시도 \\\$((retry_count + 1))/\\\$max_retries - Health Check 테스트 중...\"
+        echo '=== Health Check 시작 (최대 3분 대기) ===' &&
+        for i in {1..18}; do
+          echo \"시도 \$i/18 - Health Check 테스트 중...\"
+          if curl -f -m 10 http://localhost:8080/api/health 2>/dev/null; then
+            echo \"✅ Health Check 성공!\"
+            echo \"🚀 애플리케이션이 정상적으로 시작되었습니다!\"
+            exit 0
+          fi
+          echo \"Health Check 실패, 10초 후 재시도...\"
+          sleep 10
+        done
 
-            # 컨테이너 상태 확인
-            if ! docker ps | grep -q bifai-backend; then
-              echo \"❌ 컨테이너가 중지되었습니다!\"
-              docker logs bifai-backend --tail 30
-              exit 1
-            fi
-
-            # Health endpoint 테스트
-            if curl -f -m 10 http://localhost:8080/api/health 2>/dev/null; then
-              echo \"✅ Health Check 성공!\"
-              echo \"🚀 애플리케이션이 정상적으로 시작되었습니다!\"
-              exit 0
-            fi
-
-            echo \"Health Check 실패, 10초 후 재시도...\"
-            sleep 10
-            retry_count=\\\$((retry_count + 1))
-          done
-
-          echo \"❌ Health Check가 5분 후에도 실패했습니다\"
-          docker logs bifai-backend --tail 50
-          docker ps -a | grep bifai
-          exit 1
-        \" &&
-
-        echo \"🎉 배포 성공!\"
+        echo \"❌ Health Check가 3분 후에도 실패했습니다\"
+        docker logs bifai-backend --tail 50
+        exit 1
         "
