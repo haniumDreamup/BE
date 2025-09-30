@@ -142,9 +142,11 @@ app:
     access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
     refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
   cors:
-    allowed-origins: 
+    allowed-origins:
       - https://bifai.co.kr
       - https://www.bifai.co.kr
+      - http://localhost:8081
+      - http://127.0.0.1:8081
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS
     allowed-headers: "*"
     allow-credentials: true
