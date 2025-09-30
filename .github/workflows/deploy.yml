@@ -156,10 +156,10 @@ jobs:
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com &&
 
         echo "=== 최신 이미지 다운로드 ===" &&
-        docker pull ${{ secrets.ECR_REGISTRY_URL }}/hanium/bifai:latest &&
+        docker pull 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
         echo "=== 환경 변수 설정 ===" &&
-        export ECR_REGISTRY_URL=${{ secrets.ECR_REGISTRY_URL }} &&
+        export ECR_REGISTRY_URL=070593202382.dkr.ecr.ap-northeast-2.amazonaws.com &&
         export DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com &&
         export DB_PORT=3306 &&
         export DB_NAME=bifai_db &&
