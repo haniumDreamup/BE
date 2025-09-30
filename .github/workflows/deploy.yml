@@ -175,11 +175,21 @@ jobs:
         echo "=== Docker Compose로 서비스 시작 ===" &&
         docker-compose -f ~/docker-compose.prod.yml up -d &&
 
+        echo "=== 컨테이너 시작 직후 상태 ===" &&
+        sleep 5 &&
+        docker ps -a | grep bifai &&
+
+        echo "=== 컨테이너 로그 (최초 30줄) ===" &&
+        docker logs bifai-backend --tail 30 2>&1 || echo "Container not running" &&
+
         echo "=== 컨테이너 시작 대기 (2분) ===" &&
         sleep 120 &&
 
-        echo "=== 컨테이너 상태 확인 ===" &&
-        docker ps | grep bifai-backend &&
+        echo "=== 컨테이너 상태 재확인 ===" &&
+        docker ps -a | grep bifai &&
+
+        echo "=== 컨테이너 로그 (120초 후) ===" &&
+        docker logs bifai-backend --tail 50 2>&1 || echo "Container not running" &&
 
         echo "=== 초기 로그 확인 ===" &&
         docker logs bifai-backend --tail 30 &&
