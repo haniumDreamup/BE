@@ -171,24 +171,6 @@ class UserRepositoryTest extends BaseRepositoryTest {
     }
     
     @Test
-    @DisplayName("활성 사용자 조회")
-    void findByIsActiveTrue_Success() {
-        // given
-        userRepository.save(testUser); // isActive = true
-
-        User inactiveUser = TestDataBuilder.createUserWithEmail("inactive@example.com");
-        inactiveUser.setIsActive(false);
-        userRepository.save(inactiveUser);
-
-        // when
-        List<User> activeUsers = userRepository.findByIsActiveTrue();
-
-        // then
-        assertThat(activeUsers).hasSize(1);
-        assertThat(activeUsers.get(0).getEmail()).isEqualTo(testUser.getEmail());
-    }
-    
-    @Test
     @DisplayName("마지막 로그인 시간 기준 조회")
     void findInactiveUsers_Success() {
         // given

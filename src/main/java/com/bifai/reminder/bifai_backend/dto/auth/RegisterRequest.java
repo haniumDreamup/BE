@@ -34,6 +34,18 @@ public class RegisterRequest {
     @Size(max = 100, message = "이름은 100글자를 초과할 수 없습니다")
     private String fullName;
 
+    // 추가 사용자 정보
+    private LocalDate birthDate;
+
+    @Pattern(regexp = "MALE|FEMALE|OTHER", message = "성별은 MALE, FEMALE, OTHER 중 하나여야 합니다")
+    private String gender;
+
+    @Pattern(regexp = "ko|en", message = "언어는 ko 또는 en만 지원됩니다")
+    private String languagePreference = "ko";
+
+    @Pattern(regexp = "ko|en", message = "보조 언어는 ko 또는 en만 지원됩니다")
+    private String languagePreferenceSecondary = "ko";
+
     // 보호자 정보 (BIF 사용자를 위한 안전망)
     @Size(max = 100, message = "보호자 이름은 100글자를 초과할 수 없습니다")
     private String guardianName;
