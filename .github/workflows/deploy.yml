@@ -180,7 +180,7 @@ jobs:
           -e OPENAI_API_KEY=\${OPENAI_API_KEY} \
           -e AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID} \
           -e AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY} \
-          -e \"JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200\" \
+          -e JAVA_OPTS='-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200' \
           070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
         echo "=== Health Check 시작 (최대 5분 대기) ===" &&
