@@ -138,11 +138,17 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         HOSTNAME: ${{ secrets.EC2_HOST }}
         USER_NAME: ${{ secrets.EC2_USER }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
         echo "$PRIVATE_KEY" > /tmp/ssh_key
         chmod 600 /tmp/ssh_key
 
-        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME bash -s <<EOF
+        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $USER_NAME@$HOSTNAME "export DB_USER='${DB_USER}' DB_PASSWORD='${DB_PASSWORD}' JWT_SECRET='${JWT_SECRET}' OPENAI_API_KEY='${OPENAI_API_KEY}' AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}' AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}' &&
         aws --version &&
 
         echo "=== 기존 컨테이너 정리 ===" &&
@@ -160,16 +166,21 @@ jobs:
 
         echo "=== 백엔드 컨테이너 시작 ===" &&
         docker run -d --name bifai-backend -p 8080:8080 \
-          --env-file /home/ubuntu/.env.prod \
           -e SPRING_PROFILES_ACTIVE=prod \
           -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com \
           -e DB_PORT=3306 \
           -e DB_NAME=bifai_db \
+          -e DB_USER=\${DB_USER} \
+          -e DB_PASSWORD=\${DB_PASSWORD} \
           -e REDIS_HOST=172.17.0.2 \
           -e REDIS_PORT=6379 \
           -e AWS_REGION=ap-northeast-2 \
           -e S3_BUCKET_NAME=bifai-images-prod \
-          -e "JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200" \
+          -e JWT_SECRET=\${JWT_SECRET} \
+          -e OPENAI_API_KEY=\${OPENAI_API_KEY} \
+          -e AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID} \
+          -e AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY} \
+          -e \"JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200\" \
           070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
         echo "=== Health Check 시작 (최대 5분 대기) ===" &&
@@ -202,7 +213,7 @@ jobs:
           docker logs bifai-backend --tail 50
           docker ps -a | grep bifai
           exit 1
-        " &&
+        \" &&
 
-        echo "🎉 배포 성공!"
-        EOF
+        echo \"🎉 배포 성공!\"
+        "
