@@ -97,7 +97,7 @@ npx task-master set-status --id=<id> --status=in-progress
 
 ## CI/CD 상태
 - ✅ GitHub Actions 파이프라인 설정 완료
-- ✅ EC2 자동 배포 설정 완료 
+- ✅ EC2 자동 배포 설정 완료
 - ✅ ECR Docker 이미지 레지스트리 연동
-- ✅ AWS 자격증명 설정 완료# Test commit for AWS key validation
-# AWS keys synchronized
+- ✅ AWS 자격증명 설정 완료
+- ✅ RDS VPC 연결 문제 해결 완료
