@@ -7,8 +7,7 @@ services:
     container_name: bifai-redis
     command: redis-server --appendonly yes
     restart: unless-stopped
-    networks:
-      - bifai-network
+    network_mode: host
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -20,8 +19,7 @@ services:
     image: ${ECR_REGISTRY_URL}/hanium/bifai:latest
     container_name: bifai-backend
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    network_mode: host
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_HOST: ${DB_HOST}
@@ -29,7 +27,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
+      REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       AWS_REGION: ${AWS_REGION:-ap-northeast-2}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
@@ -44,18 +42,12 @@ services:
     volumes:
       - app-logs:/var/log/bifai
       - app-files:/var/bifai/files
-    networks:
-      - bifai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 15s
       retries: 5
       start_period: 180s
-
-networks:
-  bifai-network:
-    driver: bridge
 
 volumes:
   app-logs:
