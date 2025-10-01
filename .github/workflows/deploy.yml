@@ -161,6 +161,10 @@ jobs:
         aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com &&
         docker pull 070593202382.dkr.ecr.ap-northeast-2.amazonaws.com/hanium/bifai:latest &&
 
+        docker stop bifai-backend redis || true &&
+        docker rm bifai-backend redis || true &&
+        sleep 3 &&
+
         export ECR_REGISTRY_URL=$ECR_REGISTRY_URL &&
         export DB_HOST=$DB_HOST &&
         export DB_PORT=3306 &&
