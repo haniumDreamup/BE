@@ -1,0 +1,254 @@
+name: BIF-AI Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: hanium/bifai
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: bifai_db
+          MYSQL_USER: bifai_user
+          MYSQL_PASSWORD: bifaipassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Wait for services
+      run: |
+        sleep 30
+        
+    - name: Run tests
+      env:
+        DB_HOST: localhost
+        DB_PORT: 3306
+        DB_NAME: bifai_db
+        DB_USER: bifai_user
+        DB_PASSWORD: bifaipassword
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        JWT_SECRET: test-secret-key-for-testing-only-minimum-64-characters-hs512-algorithm-needs-to-be-longer-than-this-for-proper-security-super-long
+        SPRING_PROFILES_ACTIVE: test
+      run: |
+        chmod +x ./gradlew
+        ./gradlew test jacocoTestReport --continue || true
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          build/test-results/
+          build/reports/jacoco/
+          
+    # - name: Comment test results
+      #   uses: EnricoMi/publish-unit-test-result-action@v2
+      #   if: always()
+      #   with:
+      #     files: build/test-results/test/TEST-*.xml
+
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      primary-tag: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Build application
+      run: |
+        chmod +x ./gradlew
+        ./gradlew build -x test
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix=commit-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Setup SSH Key
+      run: |
+        echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ssh_key
+        chmod 600 /tmp/ssh_key
+        
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
+        aws --version &&
+        aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com &&
+        docker stop bifai-backend || true &&
+        docker rm bifai-backend || true &&
+        docker ps | grep -q redis || docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine &&
+        docker pull ${{ needs.build.outputs.primary-tag }} &&
+        docker run -d --name bifai-backend --restart unless-stopped -p 8080:8080 -v /home/ubuntu:/home/ubuntu --health-cmd="curl -f http://localhost:8080/api/health || exit 1" --health-interval=30s --health-timeout=10s --health-retries=3 --health-start-period=60s -e SPRING_PROFILES_ACTIVE=prod -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com -e DB_PORT=3306 -e DB_NAME=bifai_db -e DB_USER=${{ secrets.DB_USER }} -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e REDIS_HOST=localhost -e REDIS_PORT=6379 -e AWS_REGION=${{ env.AWS_REGION }} -e S3_BUCKET_NAME=bifai-images-prod -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" ${{ needs.build.outputs.primary-tag }} &&
+        echo "=== Waiting for container to start ===" &&
+        sleep 60 &&
+        echo "=== Container status ===" &&
+        docker ps | grep bifai-backend &&
+        echo "=== Container logs (last 50 lines) ===" &&
+        docker logs bifai-backend --tail 50 &&
+        echo "=== Testing health check with extended timeout ===" &&
+        timeout 600 bash -c "
+          retry_count=0
+          max_retries=60
+          while [ \$retry_count -lt \$max_retries ]; do
+            echo \"Attempt \$((retry_count + 1))/\$max_retries - Testing health endpoint...\"
+            if curl -f -m 10 http://localhost:8080/api/health; then
+              echo \"=== Health check successful! ===\"
+              exit 0
+            fi
+            echo \"Health check failed, waiting 10 seconds before retry...\"
+            docker logs bifai-backend --tail 3
+            sleep 10
+            retry_count=\$((retry_count + 1))
+          done
+          echo \"=== Health check failed after \$max_retries attempts ===\"
+          docker logs bifai-backend --tail 20
+          exit 1
+        " &&
+        echo "=== Deployment successful! ==="
+        '
+        
+    - name: Clean up SSH Key
+      if: always()
+      run: rm -f /tmp/ssh_key
+          
+    - name: Verify deployment
+      run: |
+        echo "✅ EC2 배포 완료!"
+        echo "- 브랜치: ${{ github.ref_name }}"
+        echo "- 커밋: ${{ github.sha }}"
+        echo "- 이미지: ${{ needs.build.outputs.primary-tag }}"
+
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Scan for vulnerabilities
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build.outputs.primary-tag }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    # - name: Upload Trivy scan results
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: 'trivy-results.sarif'
