@@ -183,10 +183,7 @@ jobs:
         aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com &&
         docker stop bifai-backend || true &&
         docker rm bifai-backend || true &&
-        docker stop redis || true &&
-        docker rm redis || true &&
-        sleep 5 &&
-        docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine &&
+        docker ps | grep -q redis || docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine &&
         docker pull ${{ needs.build.outputs.primary-tag }} &&
         docker run -d --name bifai-backend --restart unless-stopped -p 8080:8080 -v /home/ubuntu:/home/ubuntu --health-cmd="curl -f http://localhost:8080/api/health || exit 1" --health-interval=30s --health-timeout=10s --health-retries=3 --health-start-period=60s -e SPRING_PROFILES_ACTIVE=prod -e DB_HOST=bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com -e DB_PORT=3306 -e DB_NAME=bifai_db -e DB_USER=${{ secrets.DB_USER }} -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e REDIS_HOST=localhost -e REDIS_PORT=6379 -e AWS_REGION=${{ env.AWS_REGION }} -e S3_BUCKET_NAME=bifai-images-prod -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" ${{ needs.build.outputs.primary-tag }} &&
         echo "=== Waiting for container to start ===" &&
