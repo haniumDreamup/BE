@@ -2,7 +2,7 @@ package com.bifai.reminder.bifai_backend.service;
 
 import com.bifai.reminder.bifai_backend.entity.*;
 import com.bifai.reminder.bifai_backend.repository.*;
-import com.bifai.reminder.bifai_backend.service.notification.FcmService;
+import com.bifai.reminder.bifai_backend.service.mobile.FcmService;
 import com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

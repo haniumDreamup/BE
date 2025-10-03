@@ -112,5 +112,13 @@ __pycache__/
 *.key
 *.crt
 
+# API Credentials & Service Account Keys
+*-credentials.json
+*service-account.json
+google-cloud-*.json
+firebase-*.json
+src/main/resources/google-cloud-credentials.json
+src/main/resources/firebase-service-account.json
+
 # Flutter web build files (불필요)
 src/main/resources/static/

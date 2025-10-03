@@ -65,6 +65,15 @@ BE/
 API 문서는 애플리케이션 실행 후 다음 주소에서 확인 가능합니다:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
+## AI 서비스 설정
+Mock 데이터를 실제 AI 서비스로 연동하는 방법은 다음 문서를 참고하세요:
+- **[AI 서비스 실제 연동 가이드](docs/AI_SERVICES_SETUP.md)**
+  - Google Cloud Vision API 설정
+  - OpenAI ChatGPT API 설정
+  - Firebase Cloud Messaging 설정
+  - 환경 변수 구성
+  - 비용 관리 및 보안 권장 사항
+
 ## 작업 관리
 ```bash
 # 모든 작업 보기

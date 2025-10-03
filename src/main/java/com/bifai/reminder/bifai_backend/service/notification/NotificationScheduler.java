@@ -8,6 +8,7 @@ import com.bifai.reminder.bifai_backend.repository.DeviceRepository;
 import com.bifai.reminder.bifai_backend.repository.MedicationRepository;
 import com.bifai.reminder.bifai_backend.repository.ScheduleRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
+import com.bifai.reminder.bifai_backend.service.mobile.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,6 +28,9 @@ import java.util.stream.Collectors;
 public class NotificationScheduler {
   
   private final FcmService fcmService;
+
+  private static final FcmService.NotificationCategory HEALTH_CATEGORY = FcmService.NotificationCategory.HEALTH;
+  private static final FcmService.Priority NORMAL_PRIORITY = FcmService.Priority.NORMAL;
   private final UserRepository userRepository;
   private final DeviceRepository deviceRepository;
   private final MedicationRepository medicationRepository;
@@ -139,9 +143,8 @@ public class NotificationScheduler {
     String scheduleName = schedule.getTitle();
     String time = schedule.getExecutionTime().format(
         DateTimeFormatter.ofPattern("HH:mm"));
-    String location = schedule.getDescription(); // 위치 대신 설명 사용
-    
-    fcmService.sendScheduleReminder(fcmToken, scheduleName, time, location);
+
+    fcmService.sendScheduleReminder(fcmToken, scheduleName, time);
     
     log.info("일정 알림 전송 - user: {}, schedule: {}", 
         user.getId(), scheduleName);
@@ -160,8 +163,11 @@ public class NotificationScheduler {
     // 오늘의 통계 계산 - TODO: 실제 메서드 구현 필요
     int medicationsTaken = 0; // medicationRepository.countTakenMedications(user.getId(), date);
     int schedulesCompleted = 0; // scheduleRepository.countCompletedSchedules(user.getId(), date);
-    
-    fcmService.sendDailySummary(fcmToken, medicationsTaken, schedulesCompleted);
+
+    // mobile.FcmService doesn't have sendDailySummary, use sendNotification instead
+    String title = "오늘의 건강 요약";
+    String body = String.format("약 %d개, 일정 %d개 완료", medicationsTaken, schedulesCompleted);
+    fcmService.sendNotification(fcmToken, title, body, null, HEALTH_CATEGORY, NORMAL_PRIORITY);
     
     log.info("일일 요약 전송 - user: {}, medications: {}, schedules: {}", 
         user.getId(), medicationsTaken, schedulesCompleted);
@@ -200,7 +206,8 @@ public class NotificationScheduler {
       throw new IllegalStateException("활성 디바이스가 없습니다");
     }
     
-    fcmService.sendPushNotification(fcmToken, title, body, null);
+    fcmService.sendNotification(fcmToken, title, body, null,
+        FcmService.NotificationCategory.REMINDER, FcmService.Priority.NORMAL);
     log.info("테스트 알림 전송 - user: {}", userId);
   }
   
@@ -223,12 +230,14 @@ public class NotificationScheduler {
       return;
     }
     
+    // mobile.FcmService.sendEmergencyAlert only accepts 3 params
+    String location = (latitude != null && longitude != null)
+        ? String.format("위치: %.6f, %.6f", latitude, longitude)
+        : "위치 정보 없음";
     fcmService.sendEmergencyAlert(
-        guardianTokens, 
-        user.getName(), 
-        message, 
-        latitude, 
-        longitude
+        guardianTokens,
+        user.getName(),
+        location
     );
     
     log.info("긴급 알림 전송 - user: {}, guardians: {}", 

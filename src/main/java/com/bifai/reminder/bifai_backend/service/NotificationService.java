@@ -21,7 +21,12 @@ import java.util.List;
 public class NotificationService {
   
   private final GuardianRepository guardianRepository;
-  private final com.bifai.reminder.bifai_backend.service.notification.FcmService fcmService;
+  private final com.bifai.reminder.bifai_backend.service.mobile.FcmService fcmService;
+
+  private static final com.bifai.reminder.bifai_backend.service.mobile.FcmService.NotificationCategory DEFAULT_CATEGORY =
+      com.bifai.reminder.bifai_backend.service.mobile.FcmService.NotificationCategory.REMINDER;
+  private static final com.bifai.reminder.bifai_backend.service.mobile.FcmService.Priority DEFAULT_PRIORITY =
+      com.bifai.reminder.bifai_backend.service.mobile.FcmService.Priority.NORMAL;
   private final com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler notificationScheduler;
   private final com.bifai.reminder.bifai_backend.repository.UserRepository userRepository;
   private final com.bifai.reminder.bifai_backend.repository.DeviceRepository deviceRepository;
@@ -77,7 +82,7 @@ public class NotificationService {
     try {
       String fcmToken = getFcmTokenForUser(userId);
       if (fcmToken != null) {
-        fcmService.sendPushNotification(fcmToken, title, message, null);
+        fcmService.sendNotification(fcmToken, title, message, null, DEFAULT_CATEGORY, DEFAULT_PRIORITY);
         log.info("푸시 알림 전송 완료: userId={}, title={}", userId, title);
       } else {
         log.warn("FCM 토큰을 찾을 수 없음: userId={}", userId);

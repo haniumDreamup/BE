@@ -4,7 +4,7 @@ import com.bifai.reminder.bifai_backend.dto.ApiResponse;
 import com.bifai.reminder.bifai_backend.dto.notification.NotificationSettingsDto;
 import com.bifai.reminder.bifai_backend.dto.notification.TestNotificationRequest;
 import com.bifai.reminder.bifai_backend.dto.notification.UpdateFcmTokenRequest;
-import com.bifai.reminder.bifai_backend.service.notification.FcmService;
+import com.bifai.reminder.bifai_backend.service.mobile.FcmService;
 import com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler;
 import com.bifai.reminder.bifai_backend.service.notification.NotificationSettingsService;
 import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;

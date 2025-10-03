@@ -5,6 +5,7 @@ import com.bifai.reminder.bifai_backend.entity.Device;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.DeviceRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
+import com.bifai.reminder.bifai_backend.service.mobile.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
