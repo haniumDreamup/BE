@@ -29,13 +29,19 @@ public class OpenAIConfig {
    * ChatClient 빈 생성
    *
    * OpenAiChatModel은 Spring AI Auto-configuration에서 자동 생성
-   * OpenAiChatModel이 있을 때만 ChatClient를 생성
+   * API 키가 없으면 ChatClient를 생성하지 않음
    */
   @Bean
-  @ConditionalOnBean(OpenAiChatModel.class)
-  public ChatClient chatClient(@Autowired OpenAiChatModel chatModel) {
+  public ChatClient chatClient(@Autowired(required = false) OpenAiChatModel chatModel) {
+    // API 키가 없거나 유효하지 않으면 null 반환
     if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("sk-dummy")) {
-      log.warn("OpenAI API 키가 유효하지 않습니다");
+      log.warn("OpenAI API 키가 설정되지 않아 ChatClient를 생성하지 않습니다");
+      return null;
+    }
+
+    // OpenAiChatModel이 자동 구성되지 않았으면 null 반환
+    if (chatModel == null) {
+      log.warn("OpenAI ChatModel이 자동 구성되지 않았습니다");
       return null;
     }
 
