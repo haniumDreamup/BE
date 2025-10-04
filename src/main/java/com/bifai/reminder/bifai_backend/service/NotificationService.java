@@ -5,8 +5,8 @@ import com.bifai.reminder.bifai_backend.entity.FallEvent;
 import com.bifai.reminder.bifai_backend.entity.Guardian;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.repository.GuardianRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,9 +17,8 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
-  
+
   private final GuardianRepository guardianRepository;
   private final com.bifai.reminder.bifai_backend.service.mobile.FcmService fcmService;
 
@@ -30,6 +29,19 @@ public class NotificationService {
   private final com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler notificationScheduler;
   private final com.bifai.reminder.bifai_backend.repository.UserRepository userRepository;
   private final com.bifai.reminder.bifai_backend.repository.DeviceRepository deviceRepository;
+
+  public NotificationService(
+      GuardianRepository guardianRepository,
+      @Autowired(required = false) com.bifai.reminder.bifai_backend.service.mobile.FcmService fcmService,
+      com.bifai.reminder.bifai_backend.service.notification.NotificationScheduler notificationScheduler,
+      com.bifai.reminder.bifai_backend.repository.UserRepository userRepository,
+      com.bifai.reminder.bifai_backend.repository.DeviceRepository deviceRepository) {
+    this.guardianRepository = guardianRepository;
+    this.fcmService = fcmService;
+    this.notificationScheduler = notificationScheduler;
+    this.userRepository = userRepository;
+    this.deviceRepository = deviceRepository;
+  }
 
   /**
    * 보호자에게 긴급 상황 알림 전송
@@ -80,6 +92,11 @@ public class NotificationService {
    */
   public void sendPushNotification(Long userId, String title, String message) {
     try {
+      if (fcmService == null) {
+        log.warn("FCM 서비스가 비활성화되어 푸시 알림을 전송할 수 없습니다: userId={}", userId);
+        return;
+      }
+
       String fcmToken = getFcmTokenForUser(userId);
       if (fcmToken != null) {
         fcmService.sendNotification(fcmToken, title, message, null, DEFAULT_CATEGORY, DEFAULT_PRIORITY);
