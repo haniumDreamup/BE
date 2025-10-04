@@ -181,9 +181,9 @@ jobs:
         docker-compose -f docker-compose.prod.yml down &&
         docker-compose -f docker-compose.prod.yml up -d &&
 
-        echo '=== Health Check 시작 (최대 3분 대기) ===' &&
-        for i in {1..18}; do
-          echo \"시도 \$i/18 - Health Check 테스트 중...\"
+        echo '=== Health Check 시작 (최대 5분 대기) ===' &&
+        for i in {1..30}; do
+          echo \"시도 \$i/30 - Health Check 테스트 중...\"
           if curl -f -m 10 http://localhost:8080/api/health 2>/dev/null; then
             echo \"✅ Health Check 성공!\"
             echo \"🚀 애플리케이션이 정상적으로 시작되었습니다!\"
@@ -193,7 +193,7 @@ jobs:
           sleep 10
         done
 
-        echo \"❌ Health Check가 3분 후에도 실패했습니다\"
+        echo \"❌ Health Check가 5분 후에도 실패했습니다\"
         docker logs bifai-backend --tail 50
         exit 1
         "
