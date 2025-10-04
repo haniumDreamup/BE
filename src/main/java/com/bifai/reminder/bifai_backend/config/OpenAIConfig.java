@@ -5,7 +5,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -29,15 +29,11 @@ public class OpenAIConfig {
    * ChatClient 빈 생성
    *
    * OpenAiChatModel은 Spring AI Auto-configuration에서 자동 생성
+   * OpenAiChatModel이 있을 때만 ChatClient를 생성
    */
   @Bean
-  @ConditionalOnProperty(name = "spring.ai.openai.api-key")
-  public ChatClient chatClient(@Autowired(required = false) OpenAiChatModel chatModel) {
-    if (chatModel == null) {
-      log.warn("OpenAI ChatModel이 자동 구성되지 않았습니다. API 키를 확인하세요.");
-      return null;
-    }
-
+  @ConditionalOnBean(OpenAiChatModel.class)
+  public ChatClient chatClient(@Autowired OpenAiChatModel chatModel) {
     if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("sk-dummy")) {
       log.warn("OpenAI API 키가 유효하지 않습니다");
       return null;
