@@ -24,7 +24,7 @@ spring:
   # JPA Configuration (프로덕션 최적화)
   jpa:
     hibernate:
-      ddl-auto: create  # 임시: DB 완전 재생성 (배포 후 update로 변경 필요)
+      ddl-auto: validate  # 스키마 검증만 수행
     show-sql: false
     properties:
       hibernate:
