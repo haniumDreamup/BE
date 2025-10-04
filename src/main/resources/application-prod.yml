@@ -107,7 +107,7 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
-    baseline-version: 2  # V2까지는 실행된 상태
+    baseline-version: 20  # V20까지는 실행된 상태로 간주
 
   # Batch Configuration
   batch:
