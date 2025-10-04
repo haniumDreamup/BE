@@ -1,10 +1,9 @@
 package com.bifai.reminder.bifai_backend.service.mobile;
 
 import com.google.firebase.messaging.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -13,17 +12,22 @@ import java.util.stream.Collectors;
 
 /**
  * FCM 푸시 알림 서비스
- * 
+ *
  * Firebase Cloud Messaging을 통한 푸시 알림 전송 처리
  * BIF 사용자를 위한 간단하고 명확한 알림 메시지 제공
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
-@ConditionalOnProperty(name = "fcm.enabled", havingValue = "true", matchIfMissing = false)
 public class FcmService {
-  
+
   private final FirebaseMessaging firebaseMessaging;
+
+  public FcmService(@Autowired(required = false) FirebaseMessaging firebaseMessaging) {
+    this.firebaseMessaging = firebaseMessaging;
+    if (firebaseMessaging == null) {
+      log.warn("FirebaseMessaging이 구성되지 않았습니다. FCM 알림이 비활성화됩니다.");
+    }
+  }
   
   // 알림 우선순위
   public enum Priority {

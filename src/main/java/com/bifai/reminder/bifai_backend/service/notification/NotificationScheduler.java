@@ -9,8 +9,8 @@ import com.bifai.reminder.bifai_backend.repository.MedicationRepository;
 import com.bifai.reminder.bifai_backend.repository.ScheduleRepository;
 import com.bifai.reminder.bifai_backend.repository.UserRepository;
 import com.bifai.reminder.bifai_backend.service.mobile.FcmService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +24,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationScheduler {
-  
+
   private final FcmService fcmService;
 
   private static final FcmService.NotificationCategory HEALTH_CATEGORY = FcmService.NotificationCategory.HEALTH;
@@ -35,8 +34,21 @@ public class NotificationScheduler {
   private final DeviceRepository deviceRepository;
   private final MedicationRepository medicationRepository;
   private final ScheduleRepository scheduleRepository;
-  
+
   private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
+  public NotificationScheduler(
+      @Autowired(required = false) FcmService fcmService,
+      UserRepository userRepository,
+      DeviceRepository deviceRepository,
+      MedicationRepository medicationRepository,
+      ScheduleRepository scheduleRepository) {
+    this.fcmService = fcmService;
+    this.userRepository = userRepository;
+    this.deviceRepository = deviceRepository;
+    this.medicationRepository = medicationRepository;
+    this.scheduleRepository = scheduleRepository;
+  }
   
   /**
    * 매분마다 실행되어 약물 복용 알림을 확인하고 전송
@@ -109,22 +121,27 @@ public class NotificationScheduler {
    * 약물 복용 알림 전송
    */
   private void sendMedicationReminder(Medication medication) {
+    if (fcmService == null) {
+      log.debug("FCM 서비스가 비활성화되어 있습니다");
+      return;
+    }
+
     User user = medication.getUser();
     String fcmToken = getActiveFcmToken(user);
-    
+
     if (fcmToken == null) {
       log.debug("FCM 토큰 없음 - user: {}", user.getId());
       return;
     }
-    
+
     String medicationName = medication.getMedicationName();
-    String time = medication.getIntakeTimes() != null && !medication.getIntakeTimes().isEmpty() 
+    String time = medication.getIntakeTimes() != null && !medication.getIntakeTimes().isEmpty()
         ? medication.getIntakeTimes().get(0).format(TIME_FORMATTER)
         : "09:00"; // 기본 시간
-    
+
     fcmService.sendMedicationReminder(fcmToken, medicationName, time);
-    
-    log.info("약물 알림 전송 - user: {}, medication: {}", 
+
+    log.info("약물 알림 전송 - user: {}, medication: {}",
         user.getId(), medicationName);
   }
   
@@ -132,21 +149,26 @@ public class NotificationScheduler {
    * 일정 알림 전송
    */
   private void sendScheduleReminder(Schedule schedule) {
+    if (fcmService == null) {
+      log.debug("FCM 서비스가 비활성화되어 있습니다");
+      return;
+    }
+
     User user = schedule.getUser();
     String fcmToken = getActiveFcmToken(user);
-    
+
     if (fcmToken == null) {
       log.debug("FCM 토큰 없음 - user: {}", user.getId());
       return;
     }
-    
+
     String scheduleName = schedule.getTitle();
     String time = schedule.getExecutionTime().format(
         DateTimeFormatter.ofPattern("HH:mm"));
 
     fcmService.sendScheduleReminder(fcmToken, scheduleName, time);
-    
-    log.info("일정 알림 전송 - user: {}, schedule: {}", 
+
+    log.info("일정 알림 전송 - user: {}, schedule: {}",
         user.getId(), scheduleName);
   }
   
@@ -154,12 +176,17 @@ public class NotificationScheduler {
    * 일일 요약 전송
    */
   private void sendDailySummaryToUser(User user, LocalDate date) {
+    if (fcmService == null) {
+      log.debug("FCM 서비스가 비활성화되어 있습니다");
+      return;
+    }
+
     String fcmToken = getActiveFcmToken(user);
-    
+
     if (fcmToken == null) {
       return;
     }
-    
+
     // 오늘의 통계 계산 - TODO: 실제 메서드 구현 필요
     int medicationsTaken = 0; // medicationRepository.countTakenMedications(user.getId(), date);
     int schedulesCompleted = 0; // scheduleRepository.countCompletedSchedules(user.getId(), date);
@@ -168,8 +195,8 @@ public class NotificationScheduler {
     String title = "오늘의 건강 요약";
     String body = String.format("약 %d개, 일정 %d개 완료", medicationsTaken, schedulesCompleted);
     fcmService.sendNotification(fcmToken, title, body, null, HEALTH_CATEGORY, NORMAL_PRIORITY);
-    
-    log.info("일일 요약 전송 - user: {}, medications: {}, schedules: {}", 
+
+    log.info("일일 요약 전송 - user: {}, medications: {}, schedules: {}",
         user.getId(), medicationsTaken, schedulesCompleted);
   }
   
@@ -197,15 +224,19 @@ public class NotificationScheduler {
    * 특정 사용자에게 즉시 알림 전송 (테스트용)
    */
   public void sendTestNotification(Long userId, String title, String body) {
+    if (fcmService == null) {
+      throw new IllegalStateException("FCM 서비스가 비활성화되어 있습니다");
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-    
+
     String fcmToken = getActiveFcmToken(user);
-    
+
     if (fcmToken == null) {
       throw new IllegalStateException("활성 디바이스가 없습니다");
     }
-    
+
     fcmService.sendNotification(fcmToken, title, body, null,
         FcmService.NotificationCategory.REMINDER, FcmService.Priority.NORMAL);
     log.info("테스트 알림 전송 - user: {}", userId);
@@ -214,22 +245,27 @@ public class NotificationScheduler {
   /**
    * 보호자들에게 긴급 알림 전송
    */
-  public void sendEmergencyToGuardians(Long userId, String message, 
+  public void sendEmergencyToGuardians(Long userId, String message,
                                         Double latitude, Double longitude) {
+    if (fcmService == null) {
+      log.warn("FCM 서비스가 비활성화되어 긴급 알림을 전송할 수 없습니다: userId={}", userId);
+      return;
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-    
+
     // 보호자들의 FCM 토큰 수집
     List<String> guardianTokens = user.getGuardians().stream()
         .map(guardian -> getActiveFcmToken(guardian.getGuardianUser()))
         .filter(token -> token != null)
         .collect(Collectors.toList());
-    
+
     if (guardianTokens.isEmpty()) {
       log.warn("긴급 알림 전송 실패 - 보호자 FCM 토큰 없음: user={}", userId);
       return;
     }
-    
+
     // mobile.FcmService.sendEmergencyAlert only accepts 3 params
     String location = (latitude != null && longitude != null)
         ? String.format("위치: %.6f, %.6f", latitude, longitude)
@@ -239,8 +275,8 @@ public class NotificationScheduler {
         user.getName(),
         location
     );
-    
-    log.info("긴급 알림 전송 - user: {}, guardians: {}", 
+
+    log.info("긴급 알림 전송 - user: {}, guardians: {}",
         userId, guardianTokens.size());
   }
   
