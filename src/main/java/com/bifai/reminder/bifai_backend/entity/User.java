@@ -90,10 +90,11 @@ public class User extends BaseEntity {
      *   <li>UNKNOWN: 평가 필요</li>
      * </ul>
      */
-    @Column(name = "cognitive_level", length = 20)
-    @Enumerated(EnumType.STRING)
-    @Builder.Default
-    private CognitiveLevel cognitiveLevel = CognitiveLevel.MODERATE;
+    // TODO: RDS 접속 문제 해결 후 cognitive_level 컬럼 수동 추가 및 활성화
+    // @Column(name = "cognitive_level", length = 20)
+    // @Enumerated(EnumType.STRING)
+    // @Builder.Default
+    // private CognitiveLevel cognitiveLevel = CognitiveLevel.MODERATE;
     
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
@@ -243,9 +244,10 @@ public class User extends BaseEntity {
      * @throws IllegalArgumentException cognitiveLevel이 null인 경우
      * @since 1.0
      */
-    public void updateCognitiveLevel(CognitiveLevel cognitiveLevel) {
-        this.cognitiveLevel = cognitiveLevel;
-    }
+    // TODO: cognitive_level 컬럼 추가 후 활성화
+    // public void updateCognitiveLevel(CognitiveLevel cognitiveLevel) {
+    //     this.cognitiveLevel = cognitiveLevel;
+    // }
     
     /**
      * 응급 모드를 활성화 또는 비활성화합니다.

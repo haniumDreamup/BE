@@ -24,7 +24,7 @@ spring:
   # JPA Configuration (프로덕션 최적화)
   jpa:
     hibernate:
-      ddl-auto: validate  # 스키마 검증만 수행
+      ddl-auto: none  # 스키마 변경 없음
     show-sql: false
     properties:
       hibernate:
@@ -103,11 +103,10 @@ spring:
             
   # Flyway Configuration
   flyway:
-    enabled: true
+    enabled: false  # V2 실패로 인해 비활성화, ddl-auto=none 사용
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
-    baseline-version: 20  # V20까지는 실행된 상태로 간주
 
   # Batch Configuration
   batch:
