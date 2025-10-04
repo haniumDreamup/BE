@@ -103,10 +103,11 @@ spring:
             
   # Flyway Configuration
   flyway:
-    enabled: false               # Hibernate ddl-auto 사용
+    enabled: true
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
+    baseline-version: 2  # V2까지는 실행된 상태
 
   # Batch Configuration
   batch:
