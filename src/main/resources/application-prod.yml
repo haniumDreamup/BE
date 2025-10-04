@@ -24,7 +24,7 @@ spring:
   # JPA Configuration (프로덕션 최적화)
   jpa:
     hibernate:
-      ddl-auto: none    # Flyway로 스키마 관리
+      ddl-auto: update  # 스키마 자동 업데이트
     show-sql: false
     properties:
       hibernate:
@@ -103,10 +103,9 @@ spring:
             
   # Flyway Configuration
   flyway:
-    enabled: true                # 활성화: 프로덕션 스키마 관리
+    enabled: false               # Hibernate ddl-auto 사용
     baseline-on-migrate: true
-    validate-on-migrate: false   # 초기 배포시에는 false
-    repair: false
+    validate-on-migrate: false
     locations: classpath:db/migration
 
   # Batch Configuration
