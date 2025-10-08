@@ -103,10 +103,11 @@ spring:
             
   # Flyway Configuration
   flyway:
-    enabled: false  # V2 실패로 인해 비활성화, ddl-auto=none 사용
+    enabled: true
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
+    baseline-version: 1  # V1 이미 실행됨
 
   # Batch Configuration
   batch:
