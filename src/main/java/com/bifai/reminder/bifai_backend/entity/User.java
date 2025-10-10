@@ -1,6 +1,7 @@
 package com.bifai.reminder.bifai_backend.entity;
 
 import com.bifai.reminder.bifai_backend.entity.listener.UserEntityListener;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -163,33 +164,44 @@ public class User extends BaseEntity {
     private String providerId;
     
     // 관계 매핑 - 김영한 방식: @JsonIgnore 제거, 엔티티 직접 반환 대신 DTO 사용
+    // 하지만 현재는 엔티티 직접 반환하므로 @JsonIgnore 필수
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Guardian> guardians; // 이 사용자의 보호자들
 
+    @JsonIgnore
     @OneToMany(mappedBy = "guardianUser", fetch = FetchType.LAZY)
     private List<Guardian> guardianFor; // 이 사용자가 보호자인 사용자들
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Device> devices;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Schedule> schedules;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserPreference userPreference;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LocationHistory> locationHistories;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ActivityLog> activities;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Medication> medications;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<HealthMetric> healthMetrics;
     
