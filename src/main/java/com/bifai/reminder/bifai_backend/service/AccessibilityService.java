@@ -32,8 +32,11 @@ public class AccessibilityService {
   /**
    * 사용자 접근성 설정 조회
    * readOnly=false: 설정이 없으면 createDefaultSettings로 INSERT 발생
+   *
+   * IMPORTANT: @Transactional must come BEFORE @Cacheable
+   * Otherwise Spring Cache applies read-only transaction by default
    */
-  @Transactional
+  @Transactional(readOnly = false)
   @Cacheable(value = "accessibilitySettings", key = "#userId")
   public AccessibilitySettingsDto getSettings(Long userId) {
     AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
