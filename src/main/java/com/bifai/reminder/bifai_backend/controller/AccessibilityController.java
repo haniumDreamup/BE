@@ -112,11 +112,20 @@ public class AccessibilityController {
   public ResponseEntity<ApiResponse<AccessibilitySettingsDto>> getSettings(
       @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
-    log.info("접근성 설정 조회 - 사용자: {}", userId);
+    log.info("🔍 접근성 설정 조회 시작 - userDetails: {}, userId: {}",
+             userDetails != null ? "존재" : "null",
+             userDetails != null ? userDetails.getUserId() : "N/A");
+
+    if (userDetails == null) {
+      log.error("❌ 인증 정보가 없습니다 - BifUserDetails가 null");
+      throw new SecurityException("인증 정보가 필요합니다");
+    }
+
+    Long userId = userDetails.getUserId();
+    log.info("✅ 접근성 설정 조회 - 사용자 ID: {}, 사용자명: {}", userId, userDetails.getUsername());
 
     AccessibilitySettingsDto settings = accessibilityService.getSettings(userId);
-    
+
     return ResponseEntity.ok(ApiResponse.success(settings));
   }
   
