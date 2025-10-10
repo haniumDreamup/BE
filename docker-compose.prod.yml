@@ -35,6 +35,8 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO: create
+      SPRING_FLYWAY_ENABLED: false
       JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
     depends_on:
       redis:
