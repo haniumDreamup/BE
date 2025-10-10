@@ -27,10 +27,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create  # 스키마 재생성 (1회성)
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        format_sql: false
+        format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
         jdbc:
           batch_size: 25
@@ -38,6 +38,12 @@ spring:
         order_inserts: true
         order_updates: true
         enable_lazy_load_no_trans: false
+      jakarta:
+        persistence:
+          schema-generation:
+            scripts:
+              action: create
+              create-target: /tmp/schema.sql
     open-in-view: false
         
   # Redis Configuration
