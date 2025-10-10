@@ -48,7 +48,7 @@ public class AccessibilityService {
         return settingsInitializer.createDefaultSettings(userId);
       });
 
-    log.info("✅ getSettings 완료 - settingsId: {}", settings.getId());
+    log.info("✅ getSettings 완료 - settingsId: {}", settings.getSettingsId());
     return toDto(settings);
   }
   

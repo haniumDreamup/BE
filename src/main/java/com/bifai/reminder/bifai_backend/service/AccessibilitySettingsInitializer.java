@@ -52,7 +52,7 @@ public class AccessibilitySettingsInitializer {
 
     log.info("💾 Attempting to save AccessibilitySettings...");
     AccessibilitySettings saved = accessibilitySettingsRepository.save(settings);
-    log.info("✅ AccessibilitySettings saved - id: {}", saved.getId());
+    log.info("✅ AccessibilitySettings saved - settingsId: {}", saved.getSettingsId());
 
     return saved;
   }
