@@ -141,16 +141,17 @@ public class AccessibilityController {
 
       try {
         // 오류 발생 시 기존 설정 조회 시도
-        Long actualUserId = userId != null ? userId : 1L;
-        AccessibilitySettingsDto existingSettings = accessibilityService.getSettings(actualUserId);
+        Long fallbackUserId = userDetails != null ? userDetails.getUserId() : 1L;
+        AccessibilitySettingsDto existingSettings = accessibilityService.getSettings(fallbackUserId);
         return ResponseEntity.ok(ApiResponse.success(existingSettings, "기존 설정을 반환합니다"));
 
       } catch (Exception ex) {
         log.error("기존 설정 조회도 실패: {}", ex.getMessage());
 
         // 최후 수단으로 기본 설정 반환
+        Long defaultUserId = userDetails != null ? userDetails.getUserId() : 1L;
         AccessibilitySettingsDto defaultSettings = AccessibilitySettingsDto.builder()
-          .userId(userId != null ? userId : 1L)
+          .userId(defaultUserId)
           .highContrastEnabled(false)
           .fontSize("medium")
           .voiceGuidanceEnabled(false)
@@ -169,14 +170,13 @@ public class AccessibilityController {
   @PostMapping("/settings/apply-profile")
   @Operation(summary = "접근성 프로파일 적용", description = "미리 정의된 접근성 프로파일을 적용합니다")
   public ResponseEntity<ApiResponse<AccessibilitySettingsDto>> applyProfile(
-      @AuthenticationPrincipal Long userId,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @RequestParam String profileType) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    log.info("프로파일 적용 - 사용자: {}, 프로파일: {}", actualUserId, profileType);
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    log.info("프로파일 적용 - 사용자: {}, 프로파일: {}", userId, profileType);
 
-    AccessibilitySettingsDto settings = accessibilityService.applyProfile(actualUserId, profileType);
+    AccessibilitySettingsDto settings = accessibilityService.applyProfile(userId, profileType);
     
     return ResponseEntity.ok(ApiResponse.success(settings, "프로파일이 적용되었습니다"));
   }
@@ -199,42 +199,39 @@ public class AccessibilityController {
   @GetMapping("/color-schemes/current")
   @Operation(summary = "현재 색상 스키마", description = "사용자의 현재 색상 스키마를 조회합니다")
   public ResponseEntity<ApiResponse<ColorSchemeDto>> getCurrentColorScheme(
-      @AuthenticationPrincipal Long userId) {
+      @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    ColorSchemeDto scheme = accessibilityService.getCurrentColorScheme(actualUserId);
-    
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    ColorSchemeDto scheme = accessibilityService.getCurrentColorScheme(userId);
+
     return ResponseEntity.ok(ApiResponse.success(scheme));
   }
-  
+
   /**
    * 간소화된 네비게이션 구조 조회
    */
   @GetMapping("/simplified-navigation")
   @Operation(summary = "간소화 네비게이션", description = "간소화된 네비게이션 구조를 조회합니다")
   public ResponseEntity<ApiResponse<SimplifiedNavigationDto>> getSimplifiedNavigation(
-      @AuthenticationPrincipal Long userId) {
+      @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    SimplifiedNavigationDto navigation = accessibilityService.getSimplifiedNavigation(actualUserId);
-    
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    SimplifiedNavigationDto navigation = accessibilityService.getSimplifiedNavigation(userId);
+
     return ResponseEntity.ok(ApiResponse.success(navigation));
   }
-  
+
   /**
    * 터치 타겟 최적화 정보
    */
   @GetMapping("/touch-targets")
   @Operation(summary = "터치 타겟 정보", description = "최적화된 터치 타겟 크기 정보를 조회합니다")
   public ResponseEntity<ApiResponse<TouchTargetDto>> getTouchTargetInfo(
-      @AuthenticationPrincipal Long userId,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @RequestParam(required = false) String deviceType) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    TouchTargetDto touchInfo = accessibilityService.getTouchTargetInfo(actualUserId, deviceType);
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    TouchTargetDto touchInfo = accessibilityService.getTouchTargetInfo(userId, deviceType);
     
     return ResponseEntity.ok(ApiResponse.success(touchInfo));
   }
@@ -245,35 +242,33 @@ public class AccessibilityController {
   @PostMapping("/simplify-text")
   @Operation(summary = "텍스트 간소화", description = "복잡한 텍스트를 간단한 문장으로 변환합니다")
   public ResponseEntity<ApiResponse<SimplifiedTextResponse>> simplifyText(
-      @AuthenticationPrincipal Long userId,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody SimplifyTextRequest request) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    log.info("텍스트 간소화 요청 - 사용자: {}", actualUserId);
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    log.info("텍스트 간소화 요청 - 사용자: {}", userId);
 
     SimplifiedTextResponse response = accessibilityService.simplifyText(
-      actualUserId,
+      userId,
       request.getText(),
       request.getTargetLevel()
     );
-    
+
     return ResponseEntity.ok(ApiResponse.success(response));
   }
-  
+
   /**
    * 설정 동기화
    */
   @PostMapping("/settings/sync")
   @Operation(summary = "설정 동기화", description = "접근성 설정을 모든 디바이스에 동기화합니다")
   public ResponseEntity<ApiResponse<SyncStatusDto>> syncSettings(
-      @AuthenticationPrincipal Long userId) {
+      @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    log.info("설정 동기화 요청 - 사용자: {}", actualUserId);
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    log.info("설정 동기화 요청 - 사용자: {}", userId);
 
-    SyncStatusDto status = accessibilityService.syncSettings(actualUserId);
+    SyncStatusDto status = accessibilityService.syncSettings(userId);
     
     return ResponseEntity.ok(ApiResponse.success(status, "동기화가 완료되었습니다"));
   }
