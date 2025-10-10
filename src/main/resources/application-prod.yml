@@ -3,6 +3,8 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiChatAutoConfiguration
 
   # Database Configuration (새 RDS: bifai-db-prod)
   datasource:
@@ -118,7 +120,7 @@ spring:
   # AI Configuration
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:sk-dummy-key-for-missing-config}
       model: gpt-4
       temperature: 0.3
       max-tokens: 500
