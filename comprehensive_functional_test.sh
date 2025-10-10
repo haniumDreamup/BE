@@ -161,14 +161,15 @@ else
 fi
 echo ""
 
-# 7. Accessibility Controller 테스트 (공개 API)
+# 7. Accessibility Controller 테스트 (인증 필요)
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Controller 6/20: Accessibility Controller"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 TOTAL_CONTROLLERS=$((TOTAL_CONTROLLERS + 1))
 
-# 접근성 설정 조회 (공개 API)
-ACC=$(curl -s -X GET "${BASE_URL}/api/v1/accessibility/settings")
+# 접근성 설정 조회 (인증 필요)
+ACC=$(curl -s -X GET "${BASE_URL}/api/v1/accessibility/settings" \
+  -H "Authorization: Bearer $JWT_TOKEN")
 
 STATUS=$(echo "$ACC" | jq -r '.s // .success // false')
 if [ "$STATUS" = "true" ]; then
