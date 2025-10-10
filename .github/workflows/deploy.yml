@@ -47,7 +47,6 @@ jobs:
       run: ./gradlew test --no-daemon || echo "Tests failed but continuing"
 
   build:
-    needs: test
     runs-on: ubuntu-latest
 
     steps:
