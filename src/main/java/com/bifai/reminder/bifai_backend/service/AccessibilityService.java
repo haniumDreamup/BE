@@ -31,13 +31,14 @@ public class AccessibilityService {
   
   /**
    * 사용자 접근성 설정 조회
+   * readOnly=false: 설정이 없으면 createDefaultSettings로 INSERT 발생
    */
-  @Transactional(readOnly = true)
+  @Transactional
   @Cacheable(value = "accessibilitySettings", key = "#userId")
   public AccessibilitySettingsDto getSettings(Long userId) {
     AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
       .orElseGet(() -> createDefaultSettings(userId));
-    
+
     return toDto(settings);
   }
   
@@ -272,10 +273,9 @@ public class AccessibilityService {
   }
   
   /**
-   * 기본 설정 생성
+   * 기본 설정 생성 (부모 트랜잭션에서 호출됨)
    */
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public AccessibilitySettings createDefaultSettings(Long userId) {
+  private AccessibilitySettings createDefaultSettings(Long userId) {
     User user = userRepository.findById(userId)
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
     
