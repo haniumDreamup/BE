@@ -28,10 +28,22 @@ import java.util.Map;
 @Slf4j
 @Tag(name = "Accessibility", description = "접근성 기능 API")
 public class AccessibilityController {
-  
+
   private final VoiceGuidanceService voiceGuidanceService;
   private final AccessibilityService accessibilityService;
-  
+
+  /**
+   * 인증된 사용자 ID 추출 헬퍼 메서드
+   * userDetails가 null이면 SecurityException 발생
+   */
+  private Long extractAuthenticatedUserId(BifUserDetails userDetails) {
+    if (userDetails == null) {
+      log.error("❌ 인증 정보 없음 - BifUserDetails가 null");
+      throw new SecurityException("인증 정보가 필요합니다");
+    }
+    return userDetails.getUserId();
+  }
+
   /**
    * 음성 안내 텍스트 생성
    */
@@ -41,7 +53,7 @@ public class AccessibilityController {
       @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody VoiceGuidanceRequest request) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     log.info("음성 안내 생성 요청 - 사용자: {}, 컨텍스트: {}", userId, request.getContext());
 
     String voiceText = voiceGuidanceService.generateVoiceGuidance(
@@ -138,29 +150,27 @@ public class AccessibilityController {
       @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody AccessibilitySettingsDto request) {
 
+    Long userId = extractAuthenticatedUserId(userDetails);
+    log.info("접근성 설정 업데이트 - 사용자: {}", userId);
+
     try {
-      Long userId = userDetails != null ? userDetails.getUserId() : 1L;
-      log.info("접근성 설정 업데이트 - 사용자: {}", userId);
-
       AccessibilitySettingsDto updated = accessibilityService.updateSettings(userId, request);
-
       return ResponseEntity.ok(ApiResponse.success(updated, "설정이 업데이트되었습니다"));
+
     } catch (Exception e) {
       log.error("접근성 설정 업데이트 실패: {}", e.getMessage(), e);
 
       try {
         // 오류 발생 시 기존 설정 조회 시도
-        Long fallbackUserId = userDetails != null ? userDetails.getUserId() : 1L;
-        AccessibilitySettingsDto existingSettings = accessibilityService.getSettings(fallbackUserId);
+        AccessibilitySettingsDto existingSettings = accessibilityService.getSettings(userId);
         return ResponseEntity.ok(ApiResponse.success(existingSettings, "기존 설정을 반환합니다"));
 
       } catch (Exception ex) {
         log.error("기존 설정 조회도 실패: {}", ex.getMessage());
 
         // 최후 수단으로 기본 설정 반환
-        Long defaultUserId = userDetails != null ? userDetails.getUserId() : 1L;
         AccessibilitySettingsDto defaultSettings = AccessibilitySettingsDto.builder()
-          .userId(defaultUserId)
+          .userId(userId)
           .highContrastEnabled(false)
           .fontSize("medium")
           .voiceGuidanceEnabled(false)
@@ -182,7 +192,7 @@ public class AccessibilityController {
       @AuthenticationPrincipal BifUserDetails userDetails,
       @RequestParam String profileType) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     log.info("프로파일 적용 - 사용자: {}, 프로파일: {}", userId, profileType);
 
     AccessibilitySettingsDto settings = accessibilityService.applyProfile(userId, profileType);
@@ -210,7 +220,7 @@ public class AccessibilityController {
   public ResponseEntity<ApiResponse<ColorSchemeDto>> getCurrentColorScheme(
       @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     ColorSchemeDto scheme = accessibilityService.getCurrentColorScheme(userId);
 
     return ResponseEntity.ok(ApiResponse.success(scheme));
@@ -224,7 +234,7 @@ public class AccessibilityController {
   public ResponseEntity<ApiResponse<SimplifiedNavigationDto>> getSimplifiedNavigation(
       @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     SimplifiedNavigationDto navigation = accessibilityService.getSimplifiedNavigation(userId);
 
     return ResponseEntity.ok(ApiResponse.success(navigation));
@@ -239,7 +249,7 @@ public class AccessibilityController {
       @AuthenticationPrincipal BifUserDetails userDetails,
       @RequestParam(required = false) String deviceType) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     TouchTargetDto touchInfo = accessibilityService.getTouchTargetInfo(userId, deviceType);
     
     return ResponseEntity.ok(ApiResponse.success(touchInfo));
@@ -254,7 +264,7 @@ public class AccessibilityController {
       @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody SimplifyTextRequest request) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     log.info("텍스트 간소화 요청 - 사용자: {}", userId);
 
     SimplifiedTextResponse response = accessibilityService.simplifyText(
@@ -274,7 +284,7 @@ public class AccessibilityController {
   public ResponseEntity<ApiResponse<SyncStatusDto>> syncSettings(
       @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    Long userId = extractAuthenticatedUserId(userDetails);
     log.info("설정 동기화 요청 - 사용자: {}", userId);
 
     SyncStatusDto status = accessibilityService.syncSettings(userId);
