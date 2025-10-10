@@ -25,6 +25,12 @@ spring:
         hbm2ddl.auto: create
         globally_quoted_identifiers: true
         use_sql_comments: false
+      jakarta:
+        persistence:
+          schema-generation:
+            scripts:
+              action: create
+              create-target: /tmp/schema_dev.sql
   
   # MySQL Development Settings
   sql:
@@ -74,7 +80,7 @@ logging:
 
 # Flyway Development Configuration
 flyway:
-  enabled: true
+  enabled: false
   baseline-on-migrate: true
   locations: classpath:db/migration
   validate-on-migrate: true

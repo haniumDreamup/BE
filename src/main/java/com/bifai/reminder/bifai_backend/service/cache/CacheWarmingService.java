@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@org.springframework.context.annotation.Profile("!test")
+@org.springframework.context.annotation.Profile("!test && !prod")  // Temporarily disable in production
 public class CacheWarmingService {
   
   private final UserRepository userRepository;

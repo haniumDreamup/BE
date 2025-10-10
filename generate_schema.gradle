@@ -1,0 +1,17 @@
+configurations {
+    hibernateTools
+}
+
+dependencies {
+    hibernateTools 'org.hibernate:hibernate-core:6.6.4.Final'
+    hibernateTools 'mysql:mysql-connector-java:8.0.33'
+}
+
+task generateSchema(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath + configurations.hibernateTools
+    mainClass = 'org.hibernate.tool.schema.spi.SchemaManagementTool'
+
+    systemProperty 'javax.persistence.schema-generation.scripts.action', 'create'
+    systemProperty 'javax.persistence.schema-generation.scripts.create-target', '/tmp/schema.sql'
+    systemProperty 'hibernate.dialect', 'org.hibernate.dialect.MySQL8Dialect'
+}
