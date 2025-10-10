@@ -24,29 +24,28 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class AccessibilityService {
-  
+
   private final AccessibilitySettingsRepository accessibilitySettingsRepository;
   private final UserRepository userRepository;
   private final SimpMessagingTemplate messagingTemplate;
+  private final AccessibilitySettingsInitializer settingsInitializer;
   
   /**
    * 사용자 접근성 설정 조회
-   * REQUIRES_NEW: 새로운 쓰기 가능한 트랜잭션 강제 생성
-   * readOnly=false: 설정이 없으면 createDefaultSettings로 INSERT 발생
    *
-   * NOTE: @Cacheable removed because it conflicts with write operations
-   * Spring Cache forces read-only transaction even with explicit readOnly=false
+   * Spring AOP Self-Invocation 문제 해결:
+   * - 같은 클래스 내 private 메서드 호출은 프록시를 거치지 않음
+   * - @Transactional이 적용되지 않아 read-only 트랜잭션으로 실행됨
+   * - 해결: createDefaultSettings를 별도 Bean(AccessibilitySettingsInitializer)로 분리
    */
-  @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = false)
+  @Transactional(readOnly = true)
   public AccessibilitySettingsDto getSettings(Long userId) {
-    log.info("✅ getSettings 시작 - userId: {}, Transaction: {}",
-             userId,
-             org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+    log.info("✅ getSettings 시작 - userId: {}", userId);
 
     AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
       .orElseGet(() -> {
-        log.info("⚠️ 설정이 없음 - createDefaultSettings 호출");
-        return createDefaultSettings(userId);
+        log.info("⚠️ 설정이 없음 - AccessibilitySettingsInitializer.createDefaultSettings 호출");
+        return settingsInitializer.createDefaultSettings(userId);
       });
 
     log.info("✅ getSettings 완료 - settingsId: {}", settings.getId());
@@ -60,7 +59,7 @@ public class AccessibilityService {
   @CacheEvict(value = "accessibilitySettings", key = "#userId")
   public AccessibilitySettingsDto updateSettings(Long userId, AccessibilitySettingsDto dto) {
     AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
-      .orElseGet(() -> createDefaultSettings(userId));
+      .orElseGet(() -> settingsInitializer.createDefaultSettings(userId));
     
     // 설정 업데이트
     updateFromDto(settings, dto);
@@ -85,7 +84,7 @@ public class AccessibilityService {
   @CacheEvict(value = "accessibilitySettings", key = "#userId")
   public AccessibilitySettingsDto applyProfile(Long userId, String profileType) {
     AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
-      .orElseGet(() -> createDefaultSettings(userId));
+      .orElseGet(() -> settingsInitializer.createDefaultSettings(userId));
     
     settings.applyProfile(profileType);
     AccessibilitySettings saved = accessibilitySettingsRepository.save(settings);
@@ -283,34 +282,6 @@ public class AccessibilityService {
     return stats;
   }
   
-  /**
-   * 기본 설정 생성 (부모 트랜잭션에서 호출됨)
-   */
-  private AccessibilitySettings createDefaultSettings(Long userId) {
-    log.info("🔧 createDefaultSettings 시작 - userId: {}, Transaction active: {}, Read-only: {}",
-             userId,
-             org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive(),
-             org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly());
-
-    User user = userRepository.findById(userId)
-      .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-
-    AccessibilitySettings settings = AccessibilitySettings.builder()
-      .user(user)
-      .build();
-
-    // BIF 사용자를 위한 기본 설정
-    settings.setSimplifiedUiEnabled(true);
-    settings.setSimpleLanguageEnabled(true);
-    settings.setLargeTouchTargets(true);
-    settings.setVoiceGuidanceEnabled(true);
-
-    log.info("💾 Attempting to save AccessibilitySettings...");
-    AccessibilitySettings saved = accessibilitySettingsRepository.save(settings);
-    log.info("✅ AccessibilitySettings saved - id: {}", saved.getId());
-
-    return saved;
-  }
   
   /**
    * DTO 변환
