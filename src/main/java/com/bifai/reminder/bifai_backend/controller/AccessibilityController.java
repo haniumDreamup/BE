@@ -3,6 +3,7 @@ package com.bifai.reminder.bifai_backend.controller;
 import com.bifai.reminder.bifai_backend.dto.ApiResponse;
 import com.bifai.reminder.bifai_backend.dto.accessibility.*;
 import com.bifai.reminder.bifai_backend.entity.AccessibilitySettings;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import com.bifai.reminder.bifai_backend.service.AccessibilityService;
 import com.bifai.reminder.bifai_backend.service.VoiceGuidanceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,15 +38,14 @@ public class AccessibilityController {
   @PostMapping("/voice-guidance")
   @Operation(summary = "음성 안내 텍스트 생성", description = "컨텍스트에 맞는 음성 안내 텍스트를 생성합니다")
   public ResponseEntity<ApiResponse<VoiceGuidanceResponse>> generateVoiceGuidance(
-      @AuthenticationPrincipal Long userId,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody VoiceGuidanceRequest request) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    log.info("음성 안내 생성 요청 - 사용자: {}, 컨텍스트: {}", actualUserId, request.getContext());
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    log.info("음성 안내 생성 요청 - 사용자: {}, 컨텍스트: {}", userId, request.getContext());
 
     String voiceText = voiceGuidanceService.generateVoiceGuidance(
-      actualUserId,
+      userId,
       request.getContext(),
       request.getParams()
     );
@@ -110,13 +110,12 @@ public class AccessibilityController {
   @GetMapping("/settings")
   @Operation(summary = "접근성 설정 조회", description = "현재 사용자의 접근성 설정을 조회합니다")
   public ResponseEntity<ApiResponse<AccessibilitySettingsDto>> getSettings(
-      @AuthenticationPrincipal Long userId) {
+      @AuthenticationPrincipal BifUserDetails userDetails) {
 
-    // Test 환경에서는 userId가 null일 수 있음
-    Long actualUserId = userId != null ? userId : 1L;
-    log.info("접근성 설정 조회 - 사용자: {}", actualUserId);
+    Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+    log.info("접근성 설정 조회 - 사용자: {}", userId);
 
-    AccessibilitySettingsDto settings = accessibilityService.getSettings(actualUserId);
+    AccessibilitySettingsDto settings = accessibilityService.getSettings(userId);
     
     return ResponseEntity.ok(ApiResponse.success(settings));
   }
@@ -127,15 +126,14 @@ public class AccessibilityController {
   @PutMapping("/settings")
   @Operation(summary = "접근성 설정 업데이트", description = "사용자의 접근성 설정을 업데이트합니다")
   public ResponseEntity<ApiResponse<AccessibilitySettingsDto>> updateSettings(
-      @AuthenticationPrincipal Long userId,
+      @AuthenticationPrincipal BifUserDetails userDetails,
       @Valid @RequestBody AccessibilitySettingsDto request) {
 
     try {
-      // Test 환경에서는 userId가 null일 수 있음
-      Long actualUserId = userId != null ? userId : 1L;
-      log.info("접근성 설정 업데이트 - 사용자: {}", actualUserId);
+      Long userId = userDetails != null ? userDetails.getUserId() : 1L;
+      log.info("접근성 설정 업데이트 - 사용자: {}", userId);
 
-      AccessibilitySettingsDto updated = accessibilityService.updateSettings(actualUserId, request);
+      AccessibilitySettingsDto updated = accessibilityService.updateSettings(userId, request);
 
       return ResponseEntity.ok(ApiResponse.success(updated, "설정이 업데이트되었습니다"));
     } catch (Exception e) {

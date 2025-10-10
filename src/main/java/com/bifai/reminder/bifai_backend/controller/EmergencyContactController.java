@@ -5,6 +5,7 @@ import com.bifai.reminder.bifai_backend.dto.emergencycontact.EmergencyContactReq
 import com.bifai.reminder.bifai_backend.dto.emergencycontact.EmergencyContactResponse;
 import com.bifai.reminder.bifai_backend.dto.response.BifApiResponse;
 import com.bifai.reminder.bifai_backend.security.jwt.JwtTokenProvider;
+import com.bifai.reminder.bifai_backend.security.userdetails.BifUserDetails;
 import com.bifai.reminder.bifai_backend.service.EmergencyContactService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -307,7 +310,11 @@ public class EmergencyContactController {
    * JWT 토큰에서 사용자 ID 추출
    */
   private Long getUserIdFromToken(HttpServletRequest request) {
-    String token = jwtTokenProvider.resolveToken(request);
-    return jwtTokenProvider.getUserId(token);
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !(authentication.getPrincipal() instanceof BifUserDetails)) {
+      throw new SecurityException("인증 정보가 없습니다");
+    }
+    BifUserDetails userDetails = (BifUserDetails) authentication.getPrincipal();
+    return userDetails.getUserId();
   }
 }
