@@ -31,16 +31,25 @@ public class AccessibilityService {
   
   /**
    * 사용자 접근성 설정 조회
+   * REQUIRES_NEW: 새로운 쓰기 가능한 트랜잭션 강제 생성
    * readOnly=false: 설정이 없으면 createDefaultSettings로 INSERT 발생
    *
    * NOTE: @Cacheable removed because it conflicts with write operations
    * Spring Cache forces read-only transaction even with explicit readOnly=false
    */
-  @Transactional(readOnly = false)
+  @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = false)
   public AccessibilitySettingsDto getSettings(Long userId) {
-    AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
-      .orElseGet(() -> createDefaultSettings(userId));
+    log.info("✅ getSettings 시작 - userId: {}, Transaction: {}",
+             userId,
+             org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
 
+    AccessibilitySettings settings = accessibilitySettingsRepository.findByUserId(userId)
+      .orElseGet(() -> {
+        log.info("⚠️ 설정이 없음 - createDefaultSettings 호출");
+        return createDefaultSettings(userId);
+      });
+
+    log.info("✅ getSettings 완료 - settingsId: {}", settings.getId());
     return toDto(settings);
   }
   
@@ -278,20 +287,29 @@ public class AccessibilityService {
    * 기본 설정 생성 (부모 트랜잭션에서 호출됨)
    */
   private AccessibilitySettings createDefaultSettings(Long userId) {
+    log.info("🔧 createDefaultSettings 시작 - userId: {}, Transaction active: {}, Read-only: {}",
+             userId,
+             org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive(),
+             org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly());
+
     User user = userRepository.findById(userId)
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-    
+
     AccessibilitySettings settings = AccessibilitySettings.builder()
       .user(user)
       .build();
-    
+
     // BIF 사용자를 위한 기본 설정
     settings.setSimplifiedUiEnabled(true);
     settings.setSimpleLanguageEnabled(true);
     settings.setLargeTouchTargets(true);
     settings.setVoiceGuidanceEnabled(true);
-    
-    return accessibilitySettingsRepository.save(settings);
+
+    log.info("💾 Attempting to save AccessibilitySettings...");
+    AccessibilitySettings saved = accessibilitySettingsRepository.save(settings);
+    log.info("✅ AccessibilitySettings saved - id: {}", saved.getId());
+
+    return saved;
   }
   
   /**
