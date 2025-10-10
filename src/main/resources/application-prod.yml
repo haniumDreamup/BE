@@ -27,7 +27,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create  # 스키마 재생성
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -170,7 +170,10 @@ logging:
     root: INFO
     com.bifai.reminder: INFO
     org.springframework.web: WARN
-    org.hibernate: WARN
+    org.hibernate: DEBUG
+    org.hibernate.tool.schema: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
   file:
     name: /var/log/bifai/application.log
     max-size: 10MB
