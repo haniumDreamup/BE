@@ -57,6 +57,18 @@ public class DatabaseConfig {
     @Value("${spring.datasource.hikari.leak-detection-threshold:60000}")
     private long leakDetectionThreshold;
 
+    @Value("${spring.jpa.hibernate.ddl-auto:validate}")
+    private String ddlAuto;
+
+    @Value("${spring.jpa.properties.hibernate.dialect:org.hibernate.dialect.H2Dialect}")
+    private String hibernateDialect;
+
+    @Value("${spring.jpa.show-sql:false}")
+    private String showSql;
+
+    @Value("${spring.jpa.properties.hibernate.format_sql:true}")
+    private String formatSql;
+
     /**
      * HikariCP DataSource 설정
      * BIF 서비스를 위한 최적화된 커넥션 풀 구성
@@ -125,12 +137,14 @@ public class DatabaseConfig {
         em.setJpaVendorAdapter(vendorAdapter);
         
         Properties jpaProperties = new Properties();
-        
+
         // Hibernate 기본 설정
-        jpaProperties.setProperty("hibernate.hbm2ddl.auto", "${spring.jpa.hibernate.ddl-auto:validate}");
-        jpaProperties.setProperty("hibernate.dialect", "${spring.jpa.properties.hibernate.dialect:org.hibernate.dialect.H2Dialect}");
-        jpaProperties.setProperty("hibernate.show_sql", "${spring.jpa.show-sql:false}");
-        jpaProperties.setProperty("hibernate.format_sql", "${spring.jpa.properties.hibernate.format_sql:true}");
+        jpaProperties.setProperty("hibernate.hbm2ddl.auto", ddlAuto);
+        jpaProperties.setProperty("hibernate.dialect", hibernateDialect);
+        jpaProperties.setProperty("hibernate.show_sql", showSql);
+        jpaProperties.setProperty("hibernate.format_sql", formatSql);
+
+        log.info("Hibernate 설정 - DDL Auto: {}, Dialect: {}", ddlAuto, hibernateDialect);
         
         // 성능 최적화 설정
         jpaProperties.setProperty("hibernate.jdbc.batch_size", "25");
