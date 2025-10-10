@@ -38,9 +38,13 @@ spring:
         order_inserts: true
         order_updates: true
         enable_lazy_load_no_trans: false
+        hbm2ddl:
+          auto: create
       jakarta:
         persistence:
           schema-generation:
+            database:
+              action: create
             scripts:
               action: create
               create-target: /tmp/schema.sql
