@@ -3,9 +3,8 @@ package com.bifai.reminder.bifai_backend.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -22,29 +21,15 @@ import org.springframework.context.annotation.Profile;
 @Profile("!test")
 public class OpenAIConfig {
 
-  @Value("${spring.ai.openai.api-key:}")
-  private String apiKey;
-
   /**
    * ChatClient 빈 생성
    *
-   * OpenAiChatModel은 Spring AI Auto-configuration에서 자동 생성
-   * API 키가 없으면 ChatClient를 생성하지 않음
+   * OpenAiChatModel이 존재하고, API 키가 설정된 경우에만 생성
    */
   @Bean
-  public ChatClient chatClient(@Autowired(required = false) OpenAiChatModel chatModel) {
-    // API 키가 없거나 유효하지 않으면 null 반환
-    if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("sk-dummy")) {
-      log.warn("OpenAI API 키가 설정되지 않아 ChatClient를 생성하지 않습니다");
-      return null;
-    }
-
-    // OpenAiChatModel이 자동 구성되지 않았으면 null 반환
-    if (chatModel == null) {
-      log.warn("OpenAI ChatModel이 자동 구성되지 않았습니다");
-      return null;
-    }
-
+  @ConditionalOnBean(OpenAiChatModel.class)
+  @ConditionalOnProperty(name = "spring.ai.openai.api-key")
+  public ChatClient chatClient(OpenAiChatModel chatModel) {
     log.info("OpenAI ChatClient 초기화 완료");
     return ChatClient.builder(chatModel).build();
   }
