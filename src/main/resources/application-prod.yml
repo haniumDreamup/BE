@@ -26,7 +26,7 @@ spring:
   # JPA Configuration (프로덕션 최적화)
   jpa:
     hibernate:
-      ddl-auto: validate  # 프로덕션에서는 검증만
+      ddl-auto: none  # 스키마는 이미 존재, DDL 실행 안함
     show-sql: true
     properties:
       hibernate:
