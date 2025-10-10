@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -273,7 +274,8 @@ public class AccessibilityService {
   /**
    * 기본 설정 생성
    */
-  private AccessibilitySettings createDefaultSettings(Long userId) {
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public AccessibilitySettings createDefaultSettings(Long userId) {
     User user = userRepository.findById(userId)
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
     
