@@ -4,7 +4,7 @@
 # 사용자 행동 로깅 API - 모든 엔드포인트가 인증을 요구합니다
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 
 # 색상 코드
 RED='\033[0;31m'

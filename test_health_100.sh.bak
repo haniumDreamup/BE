@@ -4,7 +4,7 @@
 # 헬스체크 API - public API로 모든 요청이 허용됨
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 
 # 색상 코드
 RED='\033[0;31m'

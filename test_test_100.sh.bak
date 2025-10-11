@@ -4,7 +4,7 @@
 # 테스트용 개발 도구 API - TestSecurityConfig에서 모든 /api/test/** 경로가 permitAll()
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 
 # 색상 코드
 RED='\033[0;31m'

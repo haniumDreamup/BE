@@ -5,7 +5,7 @@
 # 특별한 케이스: WebSocket 연결은 HTTP와 다른 프로토콜이므로 연결 자체에 집중
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 WS_URL="ws://localhost:8080/ws"
 
 # 색상 코드

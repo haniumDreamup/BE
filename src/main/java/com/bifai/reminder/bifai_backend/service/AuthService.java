@@ -162,6 +162,53 @@ public class AuthService {
     }
 
     /**
+     * 모바일 Kakao 로그인
+     */
+    public AuthResponse loginWithKakaoMobile(String accessToken, String kakaoId, String email, String name) {
+        log.info("모바일 Kakao 로그인 시도: kakaoId={}, email={}", kakaoId, email);
+
+        // Kakao ID로 사용자 조회 또는 생성
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    // 새 사용자 생성
+                    User newUser = User.builder()
+                            .username("kakao_" + kakaoId)
+                            .email(email)
+                            .name(name)
+                            .fullName(name)
+                            .cognitiveLevel(User.CognitiveLevel.MODERATE)
+                            .isActive(true)
+                            .build();
+
+                    User savedUser = userRepository.save(newUser);
+                    log.info("Kakao 신규 사용자 생성: userId={}, email={}", savedUser.getUserId(), email);
+                    return savedUser;
+                });
+
+        // 마지막 로그인 시간 업데이트
+        user.updateLastLogin();
+        userRepository.save(user);
+
+        log.info("모바일 Kakao 로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
+        return loginUser(user);
+    }
+
+    /**
+     * 모바일 Google 로그인
+     */
+    public AuthResponse loginWithGoogleMobile(String accessToken, String idToken) {
+        log.info("모바일 Google 로그인 시도");
+
+        // TODO: Google ID Token 검증 및 사용자 정보 추출
+        // 현재는 간단한 구현으로 진행하고, 추후 Google API를 통한 검증 추가 필요
+
+        // 임시: ID Token에서 이메일 추출 (실제로는 JWT 디코딩 필요)
+        // 여기서는 프론트엔드에서 이메일을 함께 보내도록 수정 권장
+
+        throw new UnsupportedOperationException("Google 모바일 로그인은 아직 구현되지 않았습니다");
+    }
+
+    /**
      * 회원가입 요청 검증
      */
     private void validateRegisterRequest(RegisterRequest request) {

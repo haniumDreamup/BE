@@ -4,7 +4,7 @@
 # Spring Boot ErrorController - 에러 상황에서 자동 호출되는 컨트롤러
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 
 # 색상 코드
 RED='\033[0;31m'

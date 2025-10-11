@@ -5,7 +5,7 @@
 # 모든 엔드포인트가 404를 반환하는 것이 예상되는 동작입니다.
 
 set -euo pipefail
-BASE_URL="http://43.200.49.171:8080"
+BASE_URL="http://localhost:8080"
 
 # 색상 코드
 RED='\033[0;31m'

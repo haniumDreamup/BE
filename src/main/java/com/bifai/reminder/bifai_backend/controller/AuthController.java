@@ -354,4 +354,56 @@ public class AuthController {
                 .body(ApiResponse.success(loginUrls, "소셜 로그인 주소를 가져왔습니다"));
     }
 
+    /**
+     * 모바일 Kakao 로그인
+     * POST /oauth2/authorization/kakao
+     */
+    @Operation(
+        summary = "모바일 카카오 로그인",
+        description = "모바일 앱에서 Kakao SDK를 통해 얻은 액세스 토큰으로 로그인합니다."
+    )
+    @SecurityRequirements
+    @PostMapping("/oauth2/authorization/kakao")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithKakaoMobile(
+            @RequestBody Map<String, String> request) {
+        log.info("모바일 Kakao 로그인 요청");
+
+        String accessToken = request.get("accessToken");
+        String kakaoId = request.get("kakaoId");
+        String email = request.get("email");
+        String name = request.get("name");
+
+        AuthResponse authResponse = authService.loginWithKakaoMobile(
+            accessToken, kakaoId, email, name
+        );
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(authResponse, "카카오 로그인이 완료되었습니다"));
+    }
+
+    /**
+     * 모바일 Google 로그인
+     * POST /oauth2/authorization/google
+     */
+    @Operation(
+        summary = "모바일 구글 로그인",
+        description = "모바일 앱에서 Google SDK를 통해 얻은 액세스 토큰으로 로그인합니다."
+    )
+    @SecurityRequirements
+    @PostMapping("/oauth2/authorization/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogleMobile(
+            @RequestBody Map<String, String> request) {
+        log.info("모바일 Google 로그인 요청");
+
+        String accessToken = request.get("accessToken");
+        String idToken = request.get("idToken");
+
+        AuthResponse authResponse = authService.loginWithGoogleMobile(
+            accessToken, idToken
+        );
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(authResponse, "구글 로그인이 완료되었습니다"));
+    }
+
 } 
