@@ -90,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/register").permitAll()
                 .requestMatchers("/api/v1/auth/refresh").permitAll()
                 .requestMatchers("/api/v1/auth/oauth2/login-urls").permitAll()
+                .requestMatchers("/api/v1/auth/oauth2/authorization/**").permitAll()  // 모바일 OAuth2 로그인
 
                 // 초대 관련 공개 엔드포인트 (이메일 링크 접근)
                 .requestMatchers("/api/guardian-relationships/accept-invitation").permitAll()
