@@ -167,21 +167,27 @@ public class AuthService {
     public AuthResponse loginWithKakaoMobile(String accessToken, String kakaoId, String email, String name) {
         log.info("모바일 Kakao 로그인 시도: kakaoId={}, email={}", kakaoId, email);
 
-        // Kakao ID로 사용자 조회 또는 생성
-        User user = userRepository.findByEmail(email)
+        // username으로 기존 사용자 조회 (email이 null일 수 있으므로)
+        String username = "kakao_" + kakaoId;
+        User user = userRepository.findByUsername(username)
                 .orElseGet(() -> {
-                    // 새 사용자 생성
+                    // 새 사용자 생성 (email이 없으면 kakaoId 기반 이메일 생성)
+                    String userEmail = (email != null && !email.isEmpty())
+                            ? email
+                            : username + "@kakao.local";
+
                     User newUser = User.builder()
-                            .username("kakao_" + kakaoId)
-                            .email(email)
-                            .name(name)
-                            .fullName(name)
+                            .username(username)
+                            .email(userEmail)
+                            .name(name != null ? name : username)
+                            .fullName(name != null ? name : username)
                             .cognitiveLevel(User.CognitiveLevel.MODERATE)
                             .isActive(true)
                             .build();
 
                     User savedUser = userRepository.save(newUser);
-                    log.info("Kakao 신규 사용자 생성: userId={}, email={}", savedUser.getUserId(), email);
+                    log.info("Kakao 신규 사용자 생성: userId={}, username={}, email={}",
+                            savedUser.getUserId(), username, userEmail);
                     return savedUser;
                 });
 
