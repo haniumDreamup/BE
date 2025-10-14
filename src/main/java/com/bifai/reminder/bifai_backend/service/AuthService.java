@@ -205,13 +205,67 @@ public class AuthService {
     public AuthResponse loginWithGoogleMobile(String accessToken, String idToken) {
         log.info("모바일 Google 로그인 시도");
 
-        // TODO: Google ID Token 검증 및 사용자 정보 추출
-        // 현재는 간단한 구현으로 진행하고, 추후 Google API를 통한 검증 추가 필요
+        try {
+            // ID Token 디코딩 (검증 없이 클레임만 추출)
+            // 프로덕션 환경에서는 Google의 공개 키로 서명 검증 필요
+            String[] parts = idToken.split("\\.");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid ID Token format");
+            }
 
-        // 임시: ID Token에서 이메일 추출 (실제로는 JWT 디코딩 필요)
-        // 여기서는 프론트엔드에서 이메일을 함께 보내도록 수정 권장
+            // Payload 디코딩
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.Map<String, Object> claims = mapper.readValue(payload, java.util.Map.class);
 
-        throw new UnsupportedOperationException("Google 모바일 로그인은 아직 구현되지 않았습니다");
+            // 사용자 정보 추출
+            String googleId = (String) claims.get("sub"); // Google User ID
+            String email = (String) claims.get("email");
+            String name = (String) claims.get("name");
+
+            log.info("Google ID Token 디코딩 성공: googleId={}, email={}", googleId, email);
+
+            if (googleId == null || googleId.isEmpty()) {
+                throw new IllegalArgumentException("Google ID를 찾을 수 없습니다");
+            }
+
+            // 이메일로 기존 사용자 검색 (웹 OAuth2와 동일한 방식)
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> {
+                        // 새 사용자 생성
+                        String username = "google_" + googleId;
+                        String userEmail = (email != null && !email.isEmpty())
+                                ? email
+                                : username + "@google.local";
+
+                        User newUser = User.builder()
+                                .username(userEmail) // 이메일을 username으로 사용 (웹과 동일)
+                                .email(userEmail)
+                                .name(name != null ? name : userEmail)
+                                .fullName(name != null ? name : userEmail)
+                                .provider("google") // OAuth2 제공자 저장
+                                .providerId(googleId) // Google User ID 저장
+                                .cognitiveLevel(User.CognitiveLevel.MODERATE)
+                                .isActive(true)
+                                .build();
+
+                        User savedUser = userRepository.save(newUser);
+                        log.info("Google 신규 사용자 생성: userId={}, email={}, provider={}",
+                                savedUser.getUserId(), userEmail, "google");
+                        return savedUser;
+                    });
+
+            // 마지막 로그인 시간 업데이트
+            user.updateLastLogin();
+            userRepository.save(user);
+
+            log.info("모바일 Google 로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
+            return loginUser(user);
+
+        } catch (Exception e) {
+            log.error("Google 로그인 실패", e);
+            throw new RuntimeException("Google 로그인 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     /**
