@@ -24,9 +24,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     /**
      * 사용자의 활성화된 스케줄 조회 (페이징)
-     * user를 함께 페치하여 N+1 문제 방지
+     * user와 selectedDays를 함께 페치하여 N+1 문제 방지
      */
-    @EntityGraph(attributePaths = {"user"})
+    @EntityGraph(attributePaths = {"user", "selectedDays"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.isActive = true ORDER BY s.nextExecutionTime ASC")
     Page<Schedule> findActiveSchedulesByUser(@Param("user") User user, Pageable pageable);
 
@@ -43,6 +43,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     /**
      * 실행 예정인 스케줄 조회 (다음 N시간 이내)
      */
+    @EntityGraph(attributePaths = {"selectedDays"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.isActive = true AND s.nextExecutionTime <= :endTime AND s.nextExecutionTime >= :startTime ORDER BY s.nextExecutionTime ASC")
     List<Schedule> findUpcomingSchedules(
             @Param("user") User user,
@@ -64,6 +65,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     /**
      * 오늘의 스케줄 조회
      */
+    @EntityGraph(attributePaths = {"selectedDays"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.isActive = true AND s.nextExecutionTime >= :startOfDay AND s.nextExecutionTime < :endOfDay ORDER BY s.nextExecutionTime ASC")
     List<Schedule> findTodaySchedules(
             @Param("user") User user,
@@ -73,6 +75,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     /**
      * 특정 날짜 범위의 스케줄 조회
      */
+    @EntityGraph(attributePaths = {"selectedDays"})
     @Query("SELECT s FROM Schedule s WHERE s.user = :user AND s.isActive = true AND s.nextExecutionTime BETWEEN :startDate AND :endDate ORDER BY s.nextExecutionTime ASC")
     List<Schedule> findSchedulesBetweenDates(
             @Param("user") User user,
