@@ -32,6 +32,9 @@ RUN mkdir -p /var/log/bifai /var/bifai/files /app/logs && \
 # Copy JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
+# Copy Firebase service account (Google Cloud credentials)
+COPY --from=build /app/src/main/resources/firebase-service-account.json /app/firebase-service-account.json
+
 # Switch to non-root user
 USER bifai
 
