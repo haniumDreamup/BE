@@ -6,6 +6,13 @@ spring:
       - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
       - org.springframework.ai.autoconfigure.openai.OpenAiChatAutoConfiguration
 
+  # Multipart File Upload Configuration (스마트폰 사진 지원)
+  servlet:
+    multipart:
+      max-file-size: 10MB      # 단일 파일 최대 크기
+      max-request-size: 10MB   # 전체 요청 최대 크기
+      enabled: true
+
   # Database Configuration (새 RDS: bifai-db-prod)
   datasource:
     url: jdbc:mysql://${DB_HOST:bifai-db-prod.cncwewgskk3u.ap-northeast-2.rds.amazonaws.com}:${DB_PORT:3306}/${DB_NAME:bifai_db}?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
