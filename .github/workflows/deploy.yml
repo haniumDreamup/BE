@@ -62,10 +62,11 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Create Firebase credentials file
+    - name: Create service account credentials files
       run: |
         mkdir -p src/main/resources
         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > src/main/resources/firebase-service-account.json
+        echo '${{ secrets.VISION_SERVICE_ACCOUNT_JSON }}' > src/main/resources/vision-service-account.json
 
     - name: Build application
       env:
