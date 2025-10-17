@@ -228,7 +228,7 @@ firebase:
 google:
   cloud:
     credentials:
-      path: ${GOOGLE_APPLICATION_CREDENTIALS:/firebase-service-account.json}
+      path: /app/firebase-service-account.json
     project-id: bif-ai
     vision:
       enabled: true  # Vision API 활성화

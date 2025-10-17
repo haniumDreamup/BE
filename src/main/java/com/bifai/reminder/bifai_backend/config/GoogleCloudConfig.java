@@ -39,15 +39,27 @@ public class GoogleCloudConfig {
       log.warn("Google Cloud Vision API가 비활성화되었거나 인증 정보가 없습니다");
       return FixedCredentialsProvider.create(null);
     }
-    
+
     try {
-      GoogleCredentials credentials = GoogleCredentials.fromStream(
-          getClass().getResourceAsStream(credentialsPath)
-      );
-      log.info("Google Cloud 인증 정보 로드 성공");
+      GoogleCredentials credentials;
+
+      // classpath 경로인지 파일 시스템 경로인지 확인
+      if (credentialsPath.startsWith("/") || credentialsPath.contains(":")) {
+        // 절대 경로 또는 Windows 경로 (C:)
+        java.io.FileInputStream fileStream = new java.io.FileInputStream(credentialsPath);
+        credentials = GoogleCredentials.fromStream(fileStream);
+        log.info("Google Cloud 인증 정보 로드 성공 (파일 경로: {})", credentialsPath);
+      } else {
+        // classpath 경로
+        credentials = GoogleCredentials.fromStream(
+            getClass().getResourceAsStream(credentialsPath)
+        );
+        log.info("Google Cloud 인증 정보 로드 성공 (classpath: {})", credentialsPath);
+      }
+
       return FixedCredentialsProvider.create(credentials);
     } catch (Exception e) {
-      log.error("Google Cloud 인증 정보 로드 실패", e);
+      log.error("Google Cloud 인증 정보 로드 실패: {}", credentialsPath, e);
       return FixedCredentialsProvider.create(null);
     }
   }
