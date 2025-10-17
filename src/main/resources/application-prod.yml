@@ -224,9 +224,11 @@ firebase:
   config-path: ${FIREBASE_CONFIG_PATH:}
   enabled: false  # FCM 사용시 true로 변경
   
-# Google Cloud Configuration  
+# Google Cloud Configuration
 google:
   cloud:
-    credentials: ${GOOGLE_APPLICATION_CREDENTIALS:}
+    credentials:
+      path: ${GOOGLE_APPLICATION_CREDENTIALS:/firebase-service-account.json}
+    project-id: bif-ai
     vision:
-      enabled: false  # Vision API 사용시 true로 변경
+      enabled: true  # Vision API 활성화
