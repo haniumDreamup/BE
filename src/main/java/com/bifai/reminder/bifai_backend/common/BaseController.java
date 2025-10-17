@@ -73,7 +73,7 @@ public abstract class BaseController {
 
   /**
    * 검증 오류 응답을 생성합니다.
-   * 
+   *
    * @param bindingResult Spring 검증 결과
    * @return 400 Bad Request 응답, 오류가 없으면 null
    */
@@ -82,9 +82,9 @@ public abstract class BaseController {
     if (errorMessage == null) {
       return null;
     }
-    
+
     return ResponseEntity.badRequest()
-        .body(ApiResponse.error(errorMessage));
+        .body(ApiResponse.error("VALIDATION_ERROR", errorMessage));
   }
 
   /**
@@ -112,44 +112,45 @@ public abstract class BaseController {
 
   /**
    * 오류 응답을 생성합니다.
-   * 
+   *
    * @param status HTTP 상태 코드
+   * @param code 오류 코드
    * @param message 오류 메시지
    * @return 오류 응답
    */
-  protected <T> ResponseEntity<ApiResponse<T>> createErrorResponse(HttpStatus status, String message) {
+  protected <T> ResponseEntity<ApiResponse<T>> createErrorResponse(HttpStatus status, String code, String message) {
     return ResponseEntity.status(status)
-        .body(ApiResponse.error(message));
+        .body(ApiResponse.error(code, message));
   }
 
   /**
    * Not Found 응답을 생성합니다.
-   * 
+   *
    * @param message 오류 메시지
    * @return 404 Not Found 응답
    */
   protected <T> ResponseEntity<ApiResponse<T>> createNotFoundResponse(String message) {
-    return createErrorResponse(HttpStatus.NOT_FOUND, message);
+    return createErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", message);
   }
 
   /**
    * Bad Request 응답을 생성합니다.
-   * 
+   *
    * @param message 오류 메시지
    * @return 400 Bad Request 응답
    */
   protected <T> ResponseEntity<ApiResponse<T>> createBadRequestResponse(String message) {
-    return createErrorResponse(HttpStatus.BAD_REQUEST, message);
+    return createErrorResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST", message);
   }
 
   /**
    * Internal Server Error 응답을 생성합니다.
-   * 
+   *
    * @param message 오류 메시지
    * @return 500 Internal Server Error 응답
    */
   protected <T> ResponseEntity<ApiResponse<T>> createInternalErrorResponse(String message) {
-    return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message);
+    return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", message);
   }
 
   /**

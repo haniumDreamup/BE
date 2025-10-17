@@ -126,7 +126,7 @@ public class AuthController {
 
             LoggingUtil.logSecurityEvent("registration_validation_failed", errorMessage);
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(errorMessage));
+                    .body(ApiResponse.error("VALIDATION_ERROR", errorMessage));
         }
 
         AuthResponse authResponse = authService.register(request);
@@ -208,7 +208,7 @@ public class AuthController {
                     .collect(Collectors.joining(", "));
             
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(errorMessage));
+                    .body(ApiResponse.error("VALIDATION_ERROR", errorMessage));
         }
 
         AuthResponse authResponse = authService.login(request);
@@ -257,7 +257,7 @@ public class AuthController {
                     .collect(Collectors.joining(", "));
             
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(errorMessage));
+                    .body(ApiResponse.error("VALIDATION_ERROR", errorMessage));
         }
 
         AuthResponse authResponse = authService.refreshToken(request);

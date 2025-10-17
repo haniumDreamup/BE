@@ -40,7 +40,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("시스템 통계 조회 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("통계 조회 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "통계 조회 중 오류가 발생했습니다"));
         }
     }
 
@@ -60,7 +60,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("활성 세션 조회 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("세션 조회 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "세션 조회 중 오류가 발생했습니다"));
         }
     }
 
@@ -80,7 +80,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("세션 종료 실패: userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("세션 종료 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "세션 종료 중 오류가 발생했습니다"));
         }
     }
 
@@ -104,7 +104,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("인증 로그 조회 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("로그 조회 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "로그 조회 중 오류가 발생했습니다"));
         }
     }
 
@@ -124,7 +124,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("시스템 설정 조회 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("설정 조회 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "설정 조회 중 오류가 발생했습니다"));
         }
     }
 
@@ -145,7 +145,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("시스템 설정 수정 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("설정 수정 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "설정 수정 중 오류가 발생했습니다"));
         }
     }
 
@@ -165,7 +165,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("백업 생성 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("백업 생성 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "백업 생성 중 오류가 발생했습니다"));
         }
     }
 
@@ -186,7 +186,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("캐시 초기화 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("캐시 초기화 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "캐시 초기화 중 오류가 발생했습니다"));
         }
     }
 }

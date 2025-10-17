@@ -43,7 +43,7 @@ public class PoseController {
     if (currentUserId == null) {
       log.warn("인증되지 않은 사용자의 Pose 데이터 전송 시도");
       return ResponseEntity.status(401)
-          .body(ApiResponse.error("로그인이 필요합니다"));
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
     }
 
     log.debug("Pose 데이터 수신 - userId: {}, timestamp: {}",
@@ -61,7 +61,7 @@ public class PoseController {
     } catch (Exception e) {
       log.error("Pose 데이터 처리 중 오류", e);
       return ResponseEntity.internalServerError()
-          .body(ApiResponse.error("포즈 데이터 처리에 실패했습니다"));
+          .body(ApiResponse.error("OPERATION_FAILED", "포즈 데이터 처리에 실패했습니다"));
     }
   }
   
@@ -77,14 +77,14 @@ public class PoseController {
     if (currentUserId == null) {
       log.warn("인증되지 않은 사용자의 Pose 데이터 일괄 전송 시도");
       return ResponseEntity.status(401)
-          .body(ApiResponse.error("로그인이 필요합니다"));
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
     }
 
     // 빈 리스트 검증 - 비즈니스 로직상 빈 배열은 400 에러
     if (poseDataList == null || poseDataList.isEmpty()) {
       log.warn("빈 Pose 데이터 리스트 전송 시도");
       return ResponseEntity.badRequest()
-          .body(ApiResponse.error("포즈 데이터가 비어있습니다"));
+          .body(ApiResponse.error("VALIDATION_ERROR", "포즈 데이터가 비어있습니다"));
     }
 
     log.debug("Pose 데이터 일괄 수신 - 프레임 수: {}", poseDataList.size());
@@ -101,7 +101,7 @@ public class PoseController {
     } catch (Exception e) {
       log.error("Pose 데이터 일괄 처리 중 오류", e);
       return ResponseEntity.internalServerError()
-          .body(ApiResponse.error("포즈 데이터 일괄 처리에 실패했습니다"));
+          .body(ApiResponse.error("OPERATION_FAILED", "포즈 데이터 일괄 처리에 실패했습니다"));
     }
   }
   
@@ -117,14 +117,14 @@ public class PoseController {
     if (currentUserId == null) {
       log.warn("인증되지 않은 사용자의 낙상 상태 조회 시도");
       return ResponseEntity.status(401)
-          .body(ApiResponse.error("로그인이 필요합니다"));
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
     }
 
     // userId 유효성 검증
     if (userId == null || userId <= 0) {
       log.warn("잘못된 사용자 ID로 낙상 상태 조회 시도: {}", userId);
       return ResponseEntity.badRequest()
-          .body(ApiResponse.error("올바른 사용자 ID를 입력해주세요"));
+          .body(ApiResponse.error("VALIDATION_ERROR", "올바른 사용자 ID를 입력해주세요"));
     }
 
     log.debug("낙상 상태 조회 - userId: {}", userId);
@@ -140,7 +140,7 @@ public class PoseController {
     } catch (Exception e) {
       log.error("낙상 상태 조회 중 오류", e);
       return ResponseEntity.internalServerError()
-          .body(ApiResponse.error("낙상 상태 조회에 실패했습니다"));
+          .body(ApiResponse.error("OPERATION_FAILED", "낙상 상태 조회에 실패했습니다"));
     }
   }
   
@@ -157,14 +157,14 @@ public class PoseController {
     if (currentUserId == null) {
       log.warn("인증되지 않은 사용자의 낙상 피드백 제출 시도");
       return ResponseEntity.status(401)
-          .body(ApiResponse.error("로그인이 필요합니다"));
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
     }
 
     // eventId 유효성 검증
     if (eventId == null || eventId <= 0) {
       log.warn("잘못된 이벤트 ID로 낙상 피드백 제출 시도: {}", eventId);
       return ResponseEntity.badRequest()
-          .body(ApiResponse.error("올바른 이벤트 ID를 입력해주세요"));
+          .body(ApiResponse.error("VALIDATION_ERROR", "올바른 이벤트 ID를 입력해주세요"));
     }
 
     log.debug("낙상 피드백 제출 - eventId: {}", eventId);
@@ -183,7 +183,7 @@ public class PoseController {
     } catch (Exception e) {
       log.error("낙상 피드백 제출 중 오류", e);
       return ResponseEntity.internalServerError()
-          .body(ApiResponse.error("피드백 제출에 실패했습니다"));
+          .body(ApiResponse.error("OPERATION_FAILED", "피드백 제출에 실패했습니다"));
     }
   }
 }

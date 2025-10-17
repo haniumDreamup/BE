@@ -44,7 +44,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 정보 조회 실패", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("인증이 필요합니다"));
+                .body(ApiResponse.error("UNAUTHORIZED", "인증이 필요합니다"));
         }
     }
 
@@ -66,7 +66,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 정보 수정 실패", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("인증이 필요합니다"));
+                .body(ApiResponse.error("UNAUTHORIZED", "인증이 필요합니다"));
         }
     }
 
@@ -87,7 +87,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 정보 조회 실패: userId={}", userId, e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("사용자를 찾을 수 없습니다"));
+                .body(ApiResponse.error("NOT_FOUND", "사용자를 찾을 수 없습니다"));
         }
     }
 
@@ -108,7 +108,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 목록 조회 실패", e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 목록을 가져오는 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "사용자 목록을 가져오는 중 오류가 발생했습니다"));
         }
     }
 
@@ -129,7 +129,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 비활성화 실패: userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 비활성화 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "사용자 비활성화 중 오류가 발생했습니다"));
         }
     }
 
@@ -150,7 +150,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 활성화 실패: userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 활성화 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "사용자 활성화 중 오류가 발생했습니다"));
         }
     }
 
@@ -173,7 +173,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("사용자 역할 수정 실패: userId={}", userId, e);
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("사용자 역할 수정 중 오류가 발생했습니다"));
+                .body(ApiResponse.error("INTERNAL_ERROR", "사용자 역할 수정 중 오류가 발생했습니다"));
         }
     }
 

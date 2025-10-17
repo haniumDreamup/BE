@@ -120,7 +120,7 @@ public class EmergencyController extends BaseController {
       return createSuccessResponse(response, "긴급 상황 정보를 가져왔습니다");
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
-          .body(ApiResponse.error("긴급 상황을 찾을 수 없습니다"));
+          .body(ApiResponse.error("NOT_FOUND", "긴급 상황을 찾을 수 없습니다"));
     }
   }
 

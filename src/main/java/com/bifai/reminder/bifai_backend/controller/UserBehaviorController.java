@@ -73,7 +73,7 @@ public class UserBehaviorController {
       
     } catch (Exception e) {
       log.error("행동 로그 전송 실패", e);
-      return ResponseEntity.ok(ApiResponse.error("로그 전송에 실패했습니다"));
+      return ResponseEntity.ok(ApiResponse.error("OPERATION_FAILED", "로그 전송에 실패했습니다"));
     }
   }
   
