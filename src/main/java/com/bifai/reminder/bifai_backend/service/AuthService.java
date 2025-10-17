@@ -319,9 +319,9 @@ public class AuthService {
                 userDetails.getAuthorities()  // BifUserDetails에서 권한 정보 가져오기
         );
 
-        // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.generateAccessToken(authentication);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+        // JWT 토큰 생성 - user_id claim 포함
+        String accessToken = jwtTokenProvider.createAccessToken(user);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user);
 
         // Refresh Token을 Redis에 저장
         refreshTokenService.saveRefreshToken(
