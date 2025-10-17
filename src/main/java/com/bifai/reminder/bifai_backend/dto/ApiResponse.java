@@ -67,4 +67,9 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> error(String message) {
         return error("VALIDATION_ERROR", message, "입력값을 확인해주세요");
     }
+
+    // code + message만으로 에러 응답 생성 (userAction 없음)
+    public static <T> ApiResponse<T> error(String code, String message) {
+        return error(code, message, "다시 시도해주세요");
+    }
 }
