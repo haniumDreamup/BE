@@ -1,594 +1,126 @@
 package com.bifai.reminder.bifai_backend.service.vision;
 
-import com.google.cloud.vision.v1.*;
-import com.google.protobuf.ByteString;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.model.Media;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Google Cloud Vision API 서비스
- * 이미지 분석 및 BIF 사용자를 위한 설명 생성
+ * GPT-4o Vision 기반 이미지 분석 서비스
+ * (기존 GoogleVisionService를 GPT-4o로 교체)
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @org.springframework.context.annotation.Profile("!test")
-@org.springframework.boot.autoconfigure.condition.ConditionalOnBean(com.google.cloud.vision.v1.ImageAnnotatorClient.class)
 public class GoogleVisionService {
-  
-  private final ImageAnnotatorClient visionClient;
-  
-  @Value("${google.cloud.vision.max-results:10}")
-  private int maxResults;
-  
-  @Value("${google.cloud.vision.confidence-threshold:0.6}")
-  private float confidenceThreshold;
 
-  @Value("${google.cloud.vision.high-confidence-threshold:0.85}")
-  private float highConfidenceThreshold;
-  
+  private final ChatClient.Builder chatClientBuilder;
+
+  @Value("${spring.ai.openai.chat.options.model:gpt-4o}")
+  private String model;
+
   /**
-   * 이미지 종합 분석
+   * 이미지 종합 분석 (기존 API 호환)
    */
   public VisionAnalysisResult analyzeImage(MultipartFile imageFile) throws IOException {
-    if (visionClient == null) {
-      log.error("Google Vision API 클라이언트가 초기화되지 않았습니다");
-      throw new IllegalStateException("이미지 분석 서비스를 사용할 수 없습니다");
-    }
-    
     if (imageFile == null || imageFile.isEmpty()) {
       log.warn("Empty or null image file provided");
       throw new IllegalArgumentException("이미지 파일이 필요합니다");
     }
-    
-    if (imageFile.getSize() > 20 * 1024 * 1024) { // 20MB 제한
+
+    if (imageFile.getSize() > 20 * 1024 * 1024) {
       log.warn("Image file too large: {} bytes", imageFile.getSize());
       throw new IllegalArgumentException("이미지 파일이 너무 큽니다 (최대 20MB)");
     }
-    
+
+    long startTime = System.currentTimeMillis();
+
     try {
-      // 이미지 준비
-      ByteString imgBytes = ByteString.copyFrom(imageFile.getBytes());
-      Image image = Image.newBuilder().setContent(imgBytes).build();
-      
-      // 분석 요청 구성
-      List<AnnotateImageRequest> requests = new ArrayList<>();
-      
-      // 1. 객체 감지
-      requests.add(AnnotateImageRequest.newBuilder()
-          .addFeatures(Feature.newBuilder()
-              .setType(Feature.Type.OBJECT_LOCALIZATION)
-              .setMaxResults(maxResults))
-          .setImage(image)
-          .build());
-      
-      // 2. 라벨 감지 (장면 이해)
-      requests.add(AnnotateImageRequest.newBuilder()
-          .addFeatures(Feature.newBuilder()
-              .setType(Feature.Type.LABEL_DETECTION)
-              .setMaxResults(maxResults))
-          .setImage(image)
-          .build());
-      
-      // 3. 텍스트 감지
-      requests.add(AnnotateImageRequest.newBuilder()
-          .addFeatures(Feature.newBuilder()
-              .setType(Feature.Type.TEXT_DETECTION))
-          .setImage(image)
-          .build());
-      
-      // 4. 안전성 감지
-      requests.add(AnnotateImageRequest.newBuilder()
-          .addFeatures(Feature.newBuilder()
-              .setType(Feature.Type.SAFE_SEARCH_DETECTION))
-          .setImage(image)
-          .build());
-      
-      // 5. 얼굴 감지
-      requests.add(AnnotateImageRequest.newBuilder()
-          .addFeatures(Feature.newBuilder()
-              .setType(Feature.Type.FACE_DETECTION)
-              .setMaxResults(maxResults))
-          .setImage(image)
-          .build());
-      
-      // API 호출
-      BatchAnnotateImagesResponse response = visionClient.batchAnnotateImages(requests);
-      List<AnnotateImageResponse> responses = response.getResponsesList();
-      
-      // 결과 파싱
-      VisionAnalysisResult result = new VisionAnalysisResult();
-      
-      // 객체 정보
-      if (!responses.get(0).getLocalizedObjectAnnotationsList().isEmpty()) {
-        result.setObjects(parseObjects(responses.get(0)));
-      }
-      
-      // 라벨 정보
-      if (!responses.get(1).getLabelAnnotationsList().isEmpty()) {
-        result.setLabels(parseLabels(responses.get(1)));
-      }
-      
-      // 텍스트 정보
-      if (!responses.get(2).getTextAnnotationsList().isEmpty()) {
-        result.setText(parseText(responses.get(2)));
-      }
-      
-      // 안전성 정보
-      if (responses.get(3).hasSafeSearchAnnotation()) {
-        result.setSafetyInfo(parseSafety(responses.get(3)));
-      }
-      
-      // 얼굴 정보
-      if (!responses.get(4).getFaceAnnotationsList().isEmpty()) {
-        result.setFaces(parseFaces(responses.get(4)));
-      }
-      
-      // BIF 사용자를 위한 간단한 설명 생성
-      result.setSimpleDescription(generateSimpleDescription(result));
-      
-      return result;
-      
+      String prompt = """
+          당신은 인지 능력이 낮은 사용자(IQ 70-85)를 돕는 AI 비서입니다.
+
+          이 사진을 분석하고 아래 형식으로 설명해주세요:
+
+          **🚨 위험 상황** (있을 경우만)
+          - 불, 연기, 피, 날카로운 물건 등 발견시
+          - "⚠️⚠️⚠️ 위험할 수 있어요! [발견된 것]: 안전한 곳으로 이동하세요!"
+
+          **📍 지금 상황**
+          - 한 문장으로 무슨 상황인지 (예: "실내에서 식사 중이에요", "길을 건널 준비를 하고 있어요")
+
+          **✓ 확실히 보이는 것**
+          - 85% 이상 확신하는 물건들 쉼표로 나열 (예: "테이블, 의자, 사람 2명")
+
+          **? 아마도 있는 것**
+          - 60-85% 확신하는 것들 (예: "컵, 접시")
+
+          **👤 사람 정보**
+          - 몇 명인지 + 표정/감정 (예: "사람 2명 (웃고 있어요 😊)")
+
+          **📝 글자** (사진에 텍스트가 있으면)
+          - 50자 이내로 요약
+
+          **💡 도움말** (유용한 조언이 있으면)
+          - 예: "빨간불이에요. 초록불을 기다리세요"
+          - 예: "횡단보도가 보여요. 좌우를 살펴보세요"
+
+          규칙:
+          - 초등학교 5학년이 이해할 수 있는 쉬운 말
+          - 한 문장은 15단어 이하
+          - 위험은 최상단에 ⚠️로 강조
+          - 없는 섹션은 생략
+          - 이모지 사용 (😊😢😠😮 등)
+          """;
+
+      // 이미지를 Resource로 변환
+      byte[] imageBytes = imageFile.getBytes();
+      ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
+      Media media = new Media(MimeTypeUtils.IMAGE_JPEG, imageResource);
+
+      // UserMessage 생성
+      UserMessage userMessage = new UserMessage(prompt, List.of(media));
+
+      // ChatClient로 요청
+      ChatClient chatClient = chatClientBuilder.build();
+      ChatResponse response = chatClient.prompt()
+          .messages(userMessage)
+          .call()
+          .chatResponse();
+
+      String gptDescription = response.getResult().getOutput().getContent();
+
+      long duration = System.currentTimeMillis() - startTime;
+
+      log.info("GPT-4o Vision 분석 완료 - 소요시간: {}ms", duration);
+
+      // 기존 VisionAnalysisResult 형식으로 변환
+      return VisionAnalysisResult.builder()
+          .simpleDescription(gptDescription)
+          .objects(new ArrayList<>())  // GPT는 구조화된 객체 리스트 안줌
+          .labels(new ArrayList<>())
+          .faces(new ArrayList<>())
+          .build();
+
     } catch (Exception e) {
-      log.error("이미지 분석 중 오류 발생", e);
+      log.error("GPT-4o Vision 분석 중 오류 발생", e);
       throw new IOException("이미지 분석 실패: " + e.getMessage());
     }
   }
-  
-  /**
-   * 객체 정보 파싱
-   */
-  private List<DetectedObject> parseObjects(AnnotateImageResponse response) {
-    return response.getLocalizedObjectAnnotationsList().stream()
-        .filter(obj -> obj.getScore() >= confidenceThreshold)
-        .map(obj -> DetectedObject.builder()
-            .name(translateToKorean(obj.getName()))
-            .confidence(obj.getScore())
-            .boundingBox(BoundingBox.from(obj.getBoundingPoly()))
-            .build())
-        .collect(Collectors.toList());
-  }
-  
-  /**
-   * 라벨 정보 파싱
-   */
-  private List<Label> parseLabels(AnnotateImageResponse response) {
-    return response.getLabelAnnotationsList().stream()
-        .filter(label -> label.getScore() >= confidenceThreshold)
-        .map(label -> Label.builder()
-            .description(translateToKorean(label.getDescription()))
-            .confidence(label.getScore())
-            .build())
-        .collect(Collectors.toList());
-  }
-  
-  /**
-   * 텍스트 정보 파싱
-   */
-  private String parseText(AnnotateImageResponse response) {
-    if (response.getTextAnnotationsList().isEmpty()) {
-      return null;
-    }
-    // 첫 번째 텍스트 어노테이션은 전체 텍스트
-    return response.getTextAnnotations(0).getDescription();
-  }
-  
-  /**
-   * 안전성 정보 파싱
-   */
-  private SafetyInfo parseSafety(AnnotateImageResponse response) {
-    SafeSearchAnnotation safety = response.getSafeSearchAnnotation();
-    return SafetyInfo.builder()
-        .adult(safety.getAdult().name())
-        .violence(safety.getViolence().name())
-        .medical(safety.getMedical().name())
-        .build();
-  }
-  
-  /**
-   * 얼굴 정보 파싱
-   */
-  private List<FaceInfo> parseFaces(AnnotateImageResponse response) {
-    return response.getFaceAnnotationsList().stream()
-        .map(face -> FaceInfo.builder()
-            .joy(face.getJoyLikelihood().name())
-            .sorrow(face.getSorrowLikelihood().name())
-            .anger(face.getAngerLikelihood().name())
-            .surprise(face.getSurpriseLikelihood().name())
-            .confidence(face.getDetectionConfidence())
-            .build())
-        .collect(Collectors.toList());
-  }
-  
-  /**
-   * BIF 사용자를 위한 간단한 설명 생성
-   */
-  private String generateSimpleDescription(VisionAnalysisResult result) {
-    StringBuilder description = new StringBuilder();
-
-    // 🚨 0. 응급/위험 상황 최우선 감지
-    List<String> emergencyKeywords = Arrays.asList("불", "연기", "피", "부상", "구급차", "경찰차", "위험", "응급");
-    List<DetectedObject> emergencyObjects = result.getObjects().stream()
-        .filter(obj -> emergencyKeywords.contains(obj.getName()))
-        .collect(Collectors.toList());
-
-    if (!emergencyObjects.isEmpty()) {
-      description.append("⚠️⚠️⚠️ 위험할 수 있어요!\n");
-      description.append("🚨 발견: ");
-      description.append(emergencyObjects.stream()
-          .map(DetectedObject::getName)
-          .distinct()
-          .collect(Collectors.joining(", ")));
-      description.append("\n안전한 곳으로 이동하세요!\n\n");
-    }
-
-    // 1. 신뢰도별로 객체 분류
-    List<DetectedObject> highConfidence = result.getObjects().stream()
-        .filter(obj -> obj.getConfidence() >= highConfidenceThreshold)
-        .filter(obj -> !emergencyKeywords.contains(obj.getName())) // 응급 객체 제외
-        .collect(Collectors.toList());
-
-    List<DetectedObject> mediumConfidence = result.getObjects().stream()
-        .filter(obj -> obj.getConfidence() >= confidenceThreshold
-            && obj.getConfidence() < highConfidenceThreshold)
-        .filter(obj -> !emergencyKeywords.contains(obj.getName())) // 응급 객체 제외
-        .collect(Collectors.toList());
-
-    // 2. 상황 컨텍스트 이해 (교통/도로 상황)
-    String situationContext = detectSituationContext(result);
-    if (situationContext != null) {
-      description.append("📍 상황: ").append(situationContext).append("\n\n");
-    }
-
-    // 3. 확실하게 보이는 것 (85% 이상)
-    if (!highConfidence.isEmpty()) {
-      Map<String, Integer> counts = new HashMap<>();
-      for (DetectedObject obj : highConfidence) {
-        counts.merge(obj.getName(), 1, Integer::sum);
-      }
-
-      description.append("✓ 확실히 보여요: ");
-      List<String> items = new ArrayList<>();
-      for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-        if (entry.getValue() == 1) {
-          items.add(entry.getKey());
-        } else {
-          items.add(entry.getKey() + " " + entry.getValue() + "개");
-        }
-      }
-      description.append(String.join(", ", items)).append("\n");
-    }
-
-    // 4. 아마도 있을 것 같은 것 (60-85%)
-    if (!mediumConfidence.isEmpty()) {
-      Map<String, Integer> counts = new HashMap<>();
-      for (DetectedObject obj : mediumConfidence) {
-        counts.merge(obj.getName(), 1, Integer::sum);
-      }
-
-      description.append("? 아마도 있을 것 같아요: ");
-      List<String> items = new ArrayList<>();
-      for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-        if (entry.getValue() == 1) {
-          items.add(entry.getKey());
-        } else {
-          items.add(entry.getKey() + " " + entry.getValue() + "개");
-        }
-      }
-      description.append(String.join(", ", items)).append("\n");
-    }
-
-    // 5. 사람 정보 + 감정 (모든 사람의 감정 요약)
-    if (!result.getFaces().isEmpty()) {
-      description.append("👤 사람 ").append(result.getFaces().size()).append("명");
-
-      // 모든 사람의 감정 분석
-      Map<String, Integer> emotionCounts = new HashMap<>();
-      for (FaceInfo face : result.getFaces()) {
-        if ("VERY_LIKELY".equals(face.getJoy()) || "LIKELY".equals(face.getJoy())) {
-          emotionCounts.merge("기분 좋음 😊", 1, Integer::sum);
-        } else if ("VERY_LIKELY".equals(face.getSorrow())) {
-          emotionCounts.merge("슬픔 😢", 1, Integer::sum);
-        } else if ("VERY_LIKELY".equals(face.getAnger())) {
-          emotionCounts.merge("화남 😠", 1, Integer::sum);
-        } else if ("VERY_LIKELY".equals(face.getSurprise())) {
-          emotionCounts.merge("놀람 😮", 1, Integer::sum);
-        }
-      }
-
-      if (!emotionCounts.isEmpty()) {
-        description.append(" (");
-        List<String> emotions = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : emotionCounts.entrySet()) {
-          if (entry.getValue() == 1) {
-            emotions.add(entry.getKey());
-          } else {
-            emotions.add(entry.getValue() + "명 " + entry.getKey());
-          }
-        }
-        description.append(String.join(", ", emotions));
-        description.append(")");
-      }
-      description.append("\n");
-    }
-
-    // 6. 텍스트가 있으면 (50자 제한)
-    if (result.getText() != null && !result.getText().isEmpty()) {
-      String text = result.getText().trim();
-      if (text.length() > 50) {
-        text = text.substring(0, 50) + "...";
-      }
-      description.append("📝 글자: ").append(text).append("\n");
-    }
-
-    // 7. ⚠️ 안전성 경고
-    if (result.getSafetyInfo() != null && isUnsafe(result.getSafetyInfo())) {
-      description.append("\n⚠️ 주의: 조심해야 할 내용이 있어요!\n");
-    }
-
-    // 8. 아무것도 없으면
-    if (description.length() == 0) {
-      return "사진을 확인했지만 특별한 것을 찾지 못했어요";
-    }
-
-    return description.toString().trim();
-  }
 
   /**
-   * 상황 컨텍스트 감지 (객체 조합으로 상황 이해)
-   */
-  private String detectSituationContext(VisionAnalysisResult result) {
-    Set<String> objectNames = result.getObjects().stream()
-        .map(DetectedObject::getName)
-        .collect(Collectors.toSet());
-
-    // 도로 횡단 상황
-    if (objectNames.contains("횡단보도") && objectNames.contains("신호등")) {
-      return "길을 건널 수 있는 곳이에요. 신호를 확인하세요!";
-    }
-    if (objectNames.contains("횡단보도")) {
-      return "횡단보도가 보여요. 좌우를 살펴보세요!";
-    }
-
-    // 실내 휴식 상황
-    if (objectNames.contains("침대") && objectNames.contains("사람")) {
-      return "휴식 중인 것 같아요";
-    }
-
-    // 식사 상황
-    if ((objectNames.contains("음식") || objectNames.contains("밥") || objectNames.contains("빵"))
-        && (objectNames.contains("테이블") || objectNames.contains("접시"))) {
-      return "식사 중이에요";
-    }
-
-    // 교통 상황
-    if (objectNames.contains("자동차") && objectNames.contains("길")) {
-      return "도로에 차량이 있어요. 조심하세요!";
-    }
-
-    // 의료 상황
-    if (objectNames.contains("병원") || (objectNames.contains("구급차"))) {
-      return "의료 관련 장소예요";
-    }
-
-    return null; // 특별한 상황 없음
-  }
-  
-  /**
-   * 안전성 체크
-   */
-  private boolean isUnsafe(SafetyInfo safety) {
-    if (safety == null) {
-      log.debug("Safety info is null, assuming safe");
-      return false;
-    }
-    
-    boolean adultUnsafe = isLikelihoodUnsafe(safety.getAdult());
-    boolean violenceUnsafe = isLikelihoodUnsafe(safety.getViolence());
-    
-    log.debug("Safety check - Adult: {}, Violence: {}", safety.getAdult(), safety.getViolence());
-    return adultUnsafe || violenceUnsafe;
-  }
-  
-  /**
-   * 위험도 수준 확인
-   */
-  private boolean isLikelihoodUnsafe(String likelihood) {
-    if (likelihood == null) {
-      return false;
-    }
-    
-    return !likelihood.equals("VERY_UNLIKELY") && !likelihood.equals("UNLIKELY");
-  }
-  
-  // 단어 사전을 클래스 레벨 상수로 이동하여 성능 개선
-  private static final Map<String, String> KOREAN_DICTIONARY;
-  
-  static {
-    Map<String, String> dictionary = new HashMap<>();
-
-    // 🚨 응급/위험 관련 (최우선)
-    dictionary.put("fire", "불");
-    dictionary.put("smoke", "연기");
-    dictionary.put("blood", "피");
-    dictionary.put("injury", "부상");
-    dictionary.put("ambulance", "구급차");
-    dictionary.put("police car", "경찰차");
-    dictionary.put("warning", "경고");
-    dictionary.put("danger", "위험");
-    dictionary.put("emergency", "응급");
-
-    // 🚦 도로/교통 안전
-    dictionary.put("road", "길");
-    dictionary.put("street", "거리");
-    dictionary.put("crosswalk", "횡단보도");
-    dictionary.put("traffic light", "신호등");
-    dictionary.put("stop sign", "정지 표지판");
-    dictionary.put("sidewalk", "인도");
-    dictionary.put("pedestrian", "보행자");
-
-    // 👥 사람
-    dictionary.put("person", "사람");
-    dictionary.put("man", "남자");
-    dictionary.put("woman", "여자");
-    dictionary.put("child", "아이");
-    dictionary.put("baby", "아기");
-    dictionary.put("boy", "소년");
-    dictionary.put("girl", "소녀");
-
-    // 👔 의류
-    dictionary.put("clothing", "옷");
-    dictionary.put("suit", "정장");
-    dictionary.put("jacket", "재킷");
-    dictionary.put("coat", "코트");
-    dictionary.put("shirt", "셔츠");
-    dictionary.put("pants", "바지");
-    dictionary.put("dress", "드레스");
-    dictionary.put("shoe", "신발");
-    dictionary.put("shoes", "신발");
-    dictionary.put("hat", "모자");
-    dictionary.put("tie", "넥타이");
-    dictionary.put("glasses", "안경");
-    dictionary.put("sunglasses", "선글라스");
-    dictionary.put("glove", "장갑");
-    dictionary.put("gloves", "장갑");
-
-    // 🚗 교통수단
-    dictionary.put("car", "자동차");
-    dictionary.put("bus", "버스");
-    dictionary.put("truck", "트럭");
-    dictionary.put("bicycle", "자전거");
-    dictionary.put("motorcycle", "오토바이");
-    dictionary.put("taxi", "택시");
-    dictionary.put("train", "기차");
-    dictionary.put("subway", "지하철");
-
-    // 🐾 동물
-    dictionary.put("dog", "강아지");
-    dictionary.put("cat", "고양이");
-    dictionary.put("bird", "새");
-    dictionary.put("fish", "물고기");
-    dictionary.put("animal", "동물");
-
-    // 🍽️ 음식
-    dictionary.put("food", "음식");
-    dictionary.put("fruit", "과일");
-    dictionary.put("vegetable", "채소");
-    dictionary.put("drink", "음료");
-    dictionary.put("coffee", "커피");
-    dictionary.put("tea", "차");
-    dictionary.put("water", "물");
-    dictionary.put("rice", "밥");
-    dictionary.put("bread", "빵");
-    dictionary.put("noodle", "면");
-    dictionary.put("soup", "국");
-    dictionary.put("meat", "고기");
-    dictionary.put("chicken", "닭고기");
-    dictionary.put("beef", "소고기");
-    dictionary.put("pork", "돼지고기");
-
-    // 🏢 가구/건물
-    dictionary.put("tree", "나무");
-    dictionary.put("building", "건물");
-    dictionary.put("house", "집");
-    dictionary.put("table", "테이블");
-    dictionary.put("chair", "의자");
-    dictionary.put("door", "문");
-    dictionary.put("window", "창문");
-    dictionary.put("bed", "침대");
-    dictionary.put("sofa", "소파");
-    dictionary.put("desk", "책상");
-
-    // 📱 전자기기
-    dictionary.put("phone", "전화기");
-    dictionary.put("smartphone", "스마트폰");
-    dictionary.put("computer", "컴퓨터");
-    dictionary.put("laptop", "노트북");
-    dictionary.put("tablet", "태블릿");
-    dictionary.put("television", "TV");
-    dictionary.put("tv", "TV");
-    dictionary.put("camera", "카메라");
-
-    // 🏪 장소
-    dictionary.put("hospital", "병원");
-    dictionary.put("pharmacy", "약국");
-    dictionary.put("store", "가게");
-    dictionary.put("restaurant", "식당");
-    dictionary.put("bank", "은행");
-    dictionary.put("post office", "우체국");
-    dictionary.put("school", "학교");
-    dictionary.put("office", "사무실");
-
-    // 🌤️ 날씨/자연
-    dictionary.put("sky", "하늘");
-    dictionary.put("cloud", "구름");
-    dictionary.put("rain", "비");
-    dictionary.put("snow", "눈");
-    dictionary.put("sun", "태양");
-    dictionary.put("flower", "꽃");
-    dictionary.put("grass", "풀");
-    dictionary.put("mountain", "산");
-    dictionary.put("river", "강");
-
-    // 🏠 실내 물품
-    dictionary.put("refrigerator", "냉장고");
-    dictionary.put("microwave", "전자레인지");
-    dictionary.put("sink", "싱크대");
-    dictionary.put("toilet", "화장실");
-    dictionary.put("shower", "샤워기");
-    dictionary.put("mirror", "거울");
-    dictionary.put("clock", "시계");
-    dictionary.put("lamp", "램프");
-    dictionary.put("light", "불빛");
-
-    // 📚 기타 일상
-    dictionary.put("book", "책");
-    dictionary.put("bag", "가방");
-    dictionary.put("umbrella", "우산");
-    dictionary.put("watch", "시계");
-    dictionary.put("bottle", "병");
-    dictionary.put("cup", "컵");
-    dictionary.put("plate", "접시");
-    dictionary.put("spoon", "숟가락");
-    dictionary.put("fork", "포크");
-    dictionary.put("knife", "칼");
-    dictionary.put("pen", "펜");
-    dictionary.put("pencil", "연필");
-    dictionary.put("paper", "종이");
-
-    KOREAN_DICTIONARY = Collections.unmodifiableMap(dictionary);
-  }
-  
-  /**
-   * 영어를 한국어로 번역 (간단한 매핑)
-   */
-  private String translateToKorean(String english) {
-    if (english == null || english.trim().isEmpty()) {
-      log.debug("Empty or null English text provided for translation");
-      return "알 수 없음";
-    }
-    
-    String normalized = english.toLowerCase().trim();
-    String korean = KOREAN_DICTIONARY.get(normalized);
-    
-    if (korean == null) {
-      log.debug("No Korean translation found for: {}", english);
-      return english; // 번역이 없으면 원본 반환
-    }
-    
-    return korean;
-  }
-  
-  /**
-   * 분석 결과 DTO
+   * 기존 DTO 호환성 유지
    */
   @lombok.Data
   @lombok.Builder
@@ -603,15 +135,15 @@ public class GoogleVisionService {
     private SafetyInfo safetyInfo;
     @Builder.Default
     private List<FaceInfo> faces = new ArrayList<>();
-    private String simpleDescription;
-    
+    private String simpleDescription;  // GPT-4o 생성 설명
+
     public static VisionAnalysisResult empty() {
       return VisionAnalysisResult.builder()
           .simpleDescription("이미지를 분석할 수 없습니다")
           .build();
     }
   }
-  
+
   @lombok.Data
   @lombok.Builder
   public static class DetectedObject {
@@ -619,14 +151,14 @@ public class GoogleVisionService {
     private float confidence;
     private BoundingBox boundingBox;
   }
-  
+
   @lombok.Data
   @lombok.Builder
   public static class Label {
     private String description;
     private float confidence;
   }
-  
+
   @lombok.Data
   @lombok.Builder
   public static class SafetyInfo {
@@ -634,7 +166,7 @@ public class GoogleVisionService {
     private String violence;
     private String medical;
   }
-  
+
   @lombok.Data
   @lombok.Builder
   public static class FaceInfo {
@@ -644,43 +176,10 @@ public class GoogleVisionService {
     private String surprise;
     private float confidence;
   }
-  
+
   @lombok.Data
   @lombok.Builder
   public static class BoundingBox {
     private float x1, y1, x2, y2;
-    
-    public static BoundingBox from(BoundingPoly poly) {
-      if (poly == null) {
-        log.warn("BoundingPoly is null");
-        return null;
-      }
-      
-      if (poly.getNormalizedVerticesCount() < 2) {
-        log.warn("BoundingPoly has insufficient vertices: {}", poly.getNormalizedVerticesCount());
-        return createDefaultBoundingBox();
-      }
-      
-      try {
-        return BoundingBox.builder()
-            .x1(poly.getNormalizedVertices(0).getX())
-            .y1(poly.getNormalizedVertices(0).getY())
-            .x2(poly.getNormalizedVertices(1).getX())
-            .y2(poly.getNormalizedVertices(1).getY())
-            .build();
-      } catch (Exception e) {
-        log.error("Failed to create BoundingBox from BoundingPoly", e);
-        return createDefaultBoundingBox();
-      }
-    }
-    
-    private static BoundingBox createDefaultBoundingBox() {
-      return BoundingBox.builder()
-          .x1(0.0f)
-          .y1(0.0f)
-          .x2(1.0f)
-          .y2(1.0f)
-          .build();
-    }
   }
 }
