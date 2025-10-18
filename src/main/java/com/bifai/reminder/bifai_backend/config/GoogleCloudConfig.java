@@ -15,9 +15,10 @@ import java.io.IOException;
 
 /**
  * Google Cloud Vision API 설정
+ * (GPT-4o로 교체하여 비활성화)
  */
 @Slf4j
-@Configuration
+//@Configuration  // GPT-4o 사용으로 비활성화
 @org.springframework.context.annotation.Profile("!test")
 public class GoogleCloudConfig {
   
