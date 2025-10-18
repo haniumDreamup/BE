@@ -47,6 +47,9 @@ public class GoogleVisionService {
     long startTime = System.currentTimeMillis();
 
     try {
+      log.info("GPT-4o-mini Vision 분석 시작 - 파일: {}, 크기: {}bytes",
+          imageFile.getOriginalFilename(), imageFile.getSize());
+
       String prompt = """
           당신은 인지 능력이 낮은 사용자(IQ 70-85)를 돕는 AI 비서입니다.
 
@@ -84,11 +87,14 @@ public class GoogleVisionService {
           """;
 
       // 이미지를 Resource로 변환
+      log.debug("이미지를 ByteArrayResource로 변환 중...");
       byte[] imageBytes = imageFile.getBytes();
       ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
 
       // ChatClient로 요청 (Spring AI 1.0.0-M7 방식)
+      log.info("ChatClient 생성 및 GPT-4o-mini API 호출 시작...");
       ChatClient chatClient = chatClientBuilder.build();
+
       String gptDescription = chatClient.prompt()
           .user(u -> u.text(prompt)
               .media(MimeTypeUtils.IMAGE_JPEG, imageResource))
@@ -97,7 +103,8 @@ public class GoogleVisionService {
 
       long duration = System.currentTimeMillis() - startTime;
 
-      log.info("GPT-4o Vision 분석 완료 - 소요시간: {}ms", duration);
+      log.info("GPT-4o-mini Vision 분석 완료 - 소요시간: {}ms, 응답길이: {}자",
+          duration, gptDescription != null ? gptDescription.length() : 0);
 
       // 기존 VisionAnalysisResult 형식으로 변환
       return VisionAnalysisResult.builder()
@@ -108,8 +115,15 @@ public class GoogleVisionService {
           .build();
 
     } catch (Exception e) {
-      log.error("GPT-4o Vision 분석 중 오류 발생", e);
-      throw new IOException("이미지 분석 실패: " + e.getMessage());
+      log.error("❌ GPT-4o-mini Vision 분석 실패 - 파일: {}, 에러: {}",
+          imageFile.getOriginalFilename(), e.getMessage(), e);
+
+      // 상세 에러 정보 로깅
+      if (e.getCause() != null) {
+        log.error("원인: {}", e.getCause().getMessage());
+      }
+
+      throw new IOException("이미지 분석 실패: " + e.getMessage(), e);
     }
   }
 
