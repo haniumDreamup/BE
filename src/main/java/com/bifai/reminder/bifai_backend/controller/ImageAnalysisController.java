@@ -41,16 +41,13 @@ public class ImageAnalysisController {
   private final ImageAnalysisService imageAnalysisService;
   private final JwtAuthUtils jwtAuthUtils;
   private GoogleVisionService googleVisionService;
-  private com.bifai.reminder.bifai_backend.service.vision.GptVisionService gptVisionService;
 
   public ImageAnalysisController(ImageAnalysisService imageAnalysisService,
                                 JwtAuthUtils jwtAuthUtils,
-                                @Autowired(required = false) GoogleVisionService googleVisionService,
-                                @Autowired(required = false) com.bifai.reminder.bifai_backend.service.vision.GptVisionService gptVisionService) {
+                                @Autowired(required = false) GoogleVisionService googleVisionService) {
     this.imageAnalysisService = imageAnalysisService;
     this.jwtAuthUtils = jwtAuthUtils;
     this.googleVisionService = googleVisionService;
-    this.gptVisionService = gptVisionService;
   }
 
   /**
@@ -470,149 +467,6 @@ public class ImageAnalysisController {
     public void addDanger(String danger) {
       this.isDangerous = true;
       this.dangers.add(danger);
-    }
-  }
-
-  /**
-   * GPT-4o Vision 분석 (고품질)
-   */
-  @PostMapping(value = "/gpt-analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "GPT-4o 이미지 분석", description = "GPT-4o로 BIF 친화적인 고품질 분석")
-  public ResponseEntity<BifApiResponse<com.bifai.reminder.bifai_backend.service.vision.GptVisionService.GptVisionResult>> gptAnalyze(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @Parameter(description = "분석할 이미지 파일", required = true)
-      @RequestPart("image") @NotNull MultipartFile imageFile) {
-
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      log.warn("인증되지 않은 사용자의 GPT 분석 시도");
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(BifApiResponse.error(
-              "UNAUTHORIZED",
-              "로그인이 필요합니다",
-              "다시 로그인해주세요"
-          ));
-    }
-
-    log.info("GPT-4o Vision 분석 요청 - 파일명: {}, 크기: {} bytes",
-        imageFile.getOriginalFilename(), imageFile.getSize());
-
-    try {
-      validateImageFile(imageFile);
-
-      if (gptVisionService == null) {
-        log.warn("GptVisionService가 사용 불가능합니다");
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(BifApiResponse.error(
-                "SERVICE_UNAVAILABLE",
-                "GPT 분석 서비스를 사용할 수 없습니다",
-                "나중에 다시 시도해주세요"
-            ));
-      }
-
-      var result = gptVisionService.analyzeImage(imageFile);
-
-      log.info("GPT-4o Vision 분석 완료 - 성공: {}, 토큰: {}, 시간: {}ms",
-          result.isSuccess(),
-          result.getTokensUsed(),
-          result.getProcessingTimeMs());
-
-      return ResponseEntity.ok(BifApiResponse.success(result, "이미지 분석이 완료되었습니다"));
-
-    } catch (IllegalArgumentException e) {
-      log.warn("이미지 검증 실패: {}", e.getMessage());
-      return ResponseEntity.badRequest()
-          .body(BifApiResponse.error(
-              "IMAGE_VALIDATION_ERROR",
-              e.getMessage(),
-              "올바른 이미지 파일을 선택해주세요"
-          ));
-    } catch (Exception e) {
-      log.error("GPT-4o Vision 분석 오류", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(BifApiResponse.error(
-              "GPT_ANALYSIS_ERROR",
-              "이미지 분석 중 오류가 발생했습니다",
-              "잠시 후 다시 시도해주세요"
-          ));
-    }
-  }
-
-  /**
-   * GPT-4o 응급 상황 분석
-   */
-  @PostMapping(value = "/gpt-emergency", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "GPT-4o 응급 분석", description = "위험 상황에 특화된 GPT-4o 분석")
-  public ResponseEntity<BifApiResponse<com.bifai.reminder.bifai_backend.service.vision.GptVisionService.GptVisionResult>> gptEmergencyAnalyze(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @Parameter(description = "분석할 이미지 파일", required = true)
-      @RequestPart("image") @NotNull MultipartFile imageFile) {
-
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(BifApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다", "다시 로그인해주세요"));
-    }
-
-    log.warn("GPT-4o 응급 분석 요청 - 사용자: {}", userId);
-
-    try {
-      validateImageFile(imageFile);
-
-      if (gptVisionService == null) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(BifApiResponse.error("SERVICE_UNAVAILABLE", "서비스를 사용할 수 없습니다", "다시 시도해주세요"));
-      }
-
-      var result = gptVisionService.analyzeEmergency(imageFile);
-
-      log.warn("GPT-4o 응급 분석 완료 - 위험 수준: {}", result.getDangerLevel());
-
-      return ResponseEntity.ok(BifApiResponse.success(result, "응급 분석이 완료되었습니다"));
-
-    } catch (Exception e) {
-      log.error("GPT-4o 응급 분석 오류", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(BifApiResponse.error("EMERGENCY_ANALYSIS_ERROR", "분석 중 오류가 발생했습니다", "다시 시도해주세요"));
-    }
-  }
-
-  /**
-   * GPT-4o 도로 횡단 분석
-   */
-  @PostMapping(value = "/gpt-road-crossing", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "GPT-4o 도로 횡단 분석", description = "안전한 도로 횡단을 위한 GPT-4o 분석")
-  public ResponseEntity<BifApiResponse<com.bifai.reminder.bifai_backend.service.vision.GptVisionService.GptVisionResult>> gptRoadCrossingAnalyze(
-      @AuthenticationPrincipal UserDetails userDetails,
-      @Parameter(description = "도로 사진", required = true)
-      @RequestPart("image") @NotNull MultipartFile imageFile) {
-
-    Long userId = jwtAuthUtils.getCurrentUserId();
-    if (userId == null) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(BifApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다", "다시 로그인해주세요"));
-    }
-
-    log.info("GPT-4o 도로 횡단 분석 요청 - 사용자: {}", userId);
-
-    try {
-      validateImageFile(imageFile);
-
-      if (gptVisionService == null) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(BifApiResponse.error("SERVICE_UNAVAILABLE", "서비스를 사용할 수 없습니다", "다시 시도해주세요"));
-      }
-
-      var result = gptVisionService.analyzeRoadCrossing(imageFile);
-
-      log.info("GPT-4o 도로 횡단 분석 완료");
-
-      return ResponseEntity.ok(BifApiResponse.success(result, "도로 횡단 분석이 완료되었습니다"));
-
-    } catch (Exception e) {
-      log.error("GPT-4o 도로 횡단 분석 오류", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(BifApiResponse.error("ROAD_CROSSING_ERROR", "분석 중 오류가 발생했습니다", "다시 시도해주세요"));
     }
   }
 }
