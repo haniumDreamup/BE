@@ -29,8 +29,11 @@ public class GoogleVisionService {
   @Value("${google.cloud.vision.max-results:10}")
   private int maxResults;
   
-  @Value("${google.cloud.vision.confidence-threshold:0.7}")
+  @Value("${google.cloud.vision.confidence-threshold:0.6}")
   private float confidenceThreshold;
+
+  @Value("${google.cloud.vision.high-confidence-threshold:0.85}")
+  private float highConfidenceThreshold;
   
   /**
    * 이미지 종합 분석
@@ -210,17 +213,27 @@ public class GoogleVisionService {
    */
   private String generateSimpleDescription(VisionAnalysisResult result) {
     StringBuilder description = new StringBuilder();
-    
-    // 주요 객체 설명
-    if (!result.getObjects().isEmpty()) {
-      Map<String, Integer> objectCounts = new HashMap<>();
-      for (DetectedObject obj : result.getObjects()) {
-        objectCounts.merge(obj.getName(), 1, Integer::sum);
+
+    // 1. 신뢰도별로 객체 분류
+    List<DetectedObject> highConfidence = result.getObjects().stream()
+        .filter(obj -> obj.getConfidence() >= highConfidenceThreshold)
+        .collect(Collectors.toList());
+
+    List<DetectedObject> mediumConfidence = result.getObjects().stream()
+        .filter(obj -> obj.getConfidence() >= confidenceThreshold
+            && obj.getConfidence() < highConfidenceThreshold)
+        .collect(Collectors.toList());
+
+    // 2. 확실하게 보이는 것 (85% 이상)
+    if (!highConfidence.isEmpty()) {
+      Map<String, Integer> counts = new HashMap<>();
+      for (DetectedObject obj : highConfidence) {
+        counts.merge(obj.getName(), 1, Integer::sum);
       }
-      
-      description.append("발견한 것: ");
+
+      description.append("✓ 확실히 보여요: ");
       List<String> items = new ArrayList<>();
-      for (Map.Entry<String, Integer> entry : objectCounts.entrySet()) {
+      for (Map.Entry<String, Integer> entry : counts.entrySet()) {
         if (entry.getValue() == 1) {
           items.add(entry.getKey());
         } else {
@@ -229,24 +242,65 @@ public class GoogleVisionService {
       }
       description.append(String.join(", ", items)).append("\n");
     }
-    
-    // 텍스트가 있으면
-    if (result.getText() != null && !result.getText().isEmpty()) {
-      description.append("글자가 있어요: ").append(result.getText().trim()).append("\n");
-    }
-    
-    // 안전성 경고
-    if (result.getSafetyInfo() != null) {
-      if (isUnsafe(result.getSafetyInfo())) {
-        description.append("⚠️ 주의가 필요한 내용이 있어요\n");
+
+    // 3. 아마도 있을 것 같은 것 (60-85%)
+    if (!mediumConfidence.isEmpty()) {
+      Map<String, Integer> counts = new HashMap<>();
+      for (DetectedObject obj : mediumConfidence) {
+        counts.merge(obj.getName(), 1, Integer::sum);
       }
+
+      description.append("? 아마도 있을 것 같아요: ");
+      List<String> items = new ArrayList<>();
+      for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+        if (entry.getValue() == 1) {
+          items.add(entry.getKey());
+        } else {
+          items.add(entry.getKey() + " " + entry.getValue() + "개");
+        }
+      }
+      description.append(String.join(", ", items)).append("\n");
     }
-    
-    // 사람 얼굴
+
+    // 4. 사람 정보 + 감정 (있다면)
     if (!result.getFaces().isEmpty()) {
-      description.append("사람 ").append(result.getFaces().size()).append("명이 보여요\n");
+      description.append("👤 사람 ").append(result.getFaces().size()).append("명");
+
+      // 첫 번째 사람의 감정이 뚜렷하면 추가
+      FaceInfo mainFace = result.getFaces().get(0);
+      if ("VERY_LIKELY".equals(mainFace.getJoy())) {
+        description.append(" (웃고 있어요 😊)");
+      } else if ("LIKELY".equals(mainFace.getJoy())) {
+        description.append(" (기분이 좋아 보여요)");
+      } else if ("VERY_LIKELY".equals(mainFace.getSorrow())) {
+        description.append(" (슬퍼 보여요 😢)");
+      } else if ("VERY_LIKELY".equals(mainFace.getAnger())) {
+        description.append(" (화나 보여요 😠)");
+      } else if ("VERY_LIKELY".equals(mainFace.getSurprise())) {
+        description.append(" (놀란 것 같아요 😮)");
+      }
+      description.append("\n");
     }
-    
+
+    // 5. 텍스트가 있으면
+    if (result.getText() != null && !result.getText().isEmpty()) {
+      String text = result.getText().trim();
+      if (text.length() > 50) {
+        text = text.substring(0, 50) + "...";
+      }
+      description.append("📝 글자: ").append(text).append("\n");
+    }
+
+    // 6. ⚠️ 안전성 경고 (가장 중요하므로 마지막에 강조)
+    if (result.getSafetyInfo() != null && isUnsafe(result.getSafetyInfo())) {
+      description.append("\n⚠️ 주의: 조심해야 할 내용이 있어요!\n");
+    }
+
+    // 7. 아무것도 없으면
+    if (description.length() == 0) {
+      return "사진을 확인했지만 특별한 것을 찾지 못했어요";
+    }
+
     return description.toString().trim();
   }
   
@@ -282,20 +336,156 @@ public class GoogleVisionService {
   
   static {
     Map<String, String> dictionary = new HashMap<>();
+
+    // 🚨 응급/위험 관련 (최우선)
+    dictionary.put("fire", "불");
+    dictionary.put("smoke", "연기");
+    dictionary.put("blood", "피");
+    dictionary.put("injury", "부상");
+    dictionary.put("ambulance", "구급차");
+    dictionary.put("police car", "경찰차");
+    dictionary.put("warning", "경고");
+    dictionary.put("danger", "위험");
+    dictionary.put("emergency", "응급");
+
+    // 🚦 도로/교통 안전
+    dictionary.put("road", "길");
+    dictionary.put("street", "거리");
+    dictionary.put("crosswalk", "횡단보도");
+    dictionary.put("traffic light", "신호등");
+    dictionary.put("stop sign", "정지 표지판");
+    dictionary.put("sidewalk", "인도");
+    dictionary.put("pedestrian", "보행자");
+
+    // 👥 사람
     dictionary.put("person", "사람");
+    dictionary.put("man", "남자");
+    dictionary.put("woman", "여자");
+    dictionary.put("child", "아이");
+    dictionary.put("baby", "아기");
+    dictionary.put("boy", "소년");
+    dictionary.put("girl", "소녀");
+
+    // 👔 의류
+    dictionary.put("clothing", "옷");
+    dictionary.put("suit", "정장");
+    dictionary.put("jacket", "재킷");
+    dictionary.put("coat", "코트");
+    dictionary.put("shirt", "셔츠");
+    dictionary.put("pants", "바지");
+    dictionary.put("dress", "드레스");
+    dictionary.put("shoe", "신발");
+    dictionary.put("shoes", "신발");
+    dictionary.put("hat", "모자");
+    dictionary.put("tie", "넥타이");
+    dictionary.put("glasses", "안경");
+    dictionary.put("sunglasses", "선글라스");
+    dictionary.put("glove", "장갑");
+    dictionary.put("gloves", "장갑");
+
+    // 🚗 교통수단
     dictionary.put("car", "자동차");
+    dictionary.put("bus", "버스");
+    dictionary.put("truck", "트럭");
+    dictionary.put("bicycle", "자전거");
+    dictionary.put("motorcycle", "오토바이");
+    dictionary.put("taxi", "택시");
+    dictionary.put("train", "기차");
+    dictionary.put("subway", "지하철");
+
+    // 🐾 동물
     dictionary.put("dog", "강아지");
     dictionary.put("cat", "고양이");
+    dictionary.put("bird", "새");
+    dictionary.put("fish", "물고기");
+    dictionary.put("animal", "동물");
+
+    // 🍽️ 음식
     dictionary.put("food", "음식");
+    dictionary.put("fruit", "과일");
+    dictionary.put("vegetable", "채소");
+    dictionary.put("drink", "음료");
+    dictionary.put("coffee", "커피");
+    dictionary.put("tea", "차");
+    dictionary.put("water", "물");
+    dictionary.put("rice", "밥");
+    dictionary.put("bread", "빵");
+    dictionary.put("noodle", "면");
+    dictionary.put("soup", "국");
+    dictionary.put("meat", "고기");
+    dictionary.put("chicken", "닭고기");
+    dictionary.put("beef", "소고기");
+    dictionary.put("pork", "돼지고기");
+
+    // 🏢 가구/건물
     dictionary.put("tree", "나무");
     dictionary.put("building", "건물");
-    dictionary.put("phone", "전화기");
-    dictionary.put("computer", "컴퓨터");
-    dictionary.put("book", "책");
+    dictionary.put("house", "집");
     dictionary.put("table", "테이블");
     dictionary.put("chair", "의자");
     dictionary.put("door", "문");
     dictionary.put("window", "창문");
+    dictionary.put("bed", "침대");
+    dictionary.put("sofa", "소파");
+    dictionary.put("desk", "책상");
+
+    // 📱 전자기기
+    dictionary.put("phone", "전화기");
+    dictionary.put("smartphone", "스마트폰");
+    dictionary.put("computer", "컴퓨터");
+    dictionary.put("laptop", "노트북");
+    dictionary.put("tablet", "태블릿");
+    dictionary.put("television", "TV");
+    dictionary.put("tv", "TV");
+    dictionary.put("camera", "카메라");
+
+    // 🏪 장소
+    dictionary.put("hospital", "병원");
+    dictionary.put("pharmacy", "약국");
+    dictionary.put("store", "가게");
+    dictionary.put("restaurant", "식당");
+    dictionary.put("bank", "은행");
+    dictionary.put("post office", "우체국");
+    dictionary.put("school", "학교");
+    dictionary.put("office", "사무실");
+
+    // 🌤️ 날씨/자연
+    dictionary.put("sky", "하늘");
+    dictionary.put("cloud", "구름");
+    dictionary.put("rain", "비");
+    dictionary.put("snow", "눈");
+    dictionary.put("sun", "태양");
+    dictionary.put("flower", "꽃");
+    dictionary.put("grass", "풀");
+    dictionary.put("mountain", "산");
+    dictionary.put("river", "강");
+
+    // 🏠 실내 물품
+    dictionary.put("refrigerator", "냉장고");
+    dictionary.put("microwave", "전자레인지");
+    dictionary.put("sink", "싱크대");
+    dictionary.put("toilet", "화장실");
+    dictionary.put("shower", "샤워기");
+    dictionary.put("mirror", "거울");
+    dictionary.put("clock", "시계");
+    dictionary.put("lamp", "램프");
+    dictionary.put("light", "불빛");
+
+    // 📚 기타 일상
+    dictionary.put("book", "책");
+    dictionary.put("bag", "가방");
+    dictionary.put("umbrella", "우산");
+    dictionary.put("watch", "시계");
+    dictionary.put("bottle", "병");
+    dictionary.put("cup", "컵");
+    dictionary.put("plate", "접시");
+    dictionary.put("spoon", "숟가락");
+    dictionary.put("fork", "포크");
+    dictionary.put("knife", "칼");
+    dictionary.put("pen", "펜");
+    dictionary.put("pencil", "연필");
+    dictionary.put("paper", "종이");
+
     KOREAN_DICTIONARY = Collections.unmodifiableMap(dictionary);
   }
   

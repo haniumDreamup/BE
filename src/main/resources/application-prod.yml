@@ -239,3 +239,6 @@ google:
     project-id: bif-ai-vision  # Vision 프로젝트
     vision:
       enabled: true  # Vision API 활성화
+      confidence-threshold: 0.6  # 60% 이상 객체 감지
+      high-confidence-threshold: 0.85  # 85% 이상은 확실함으로 표시
+      max-results: 15  # 최대 15개 객체 반환
