@@ -4,9 +4,8 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.messages.Media;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
@@ -87,19 +86,14 @@ public class GoogleVisionService {
       // 이미지를 Resource로 변환
       byte[] imageBytes = imageFile.getBytes();
       ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
-      Media media = new Media(MimeTypeUtils.IMAGE_JPEG, imageResource);
 
-      // UserMessage 생성
-      UserMessage userMessage = new UserMessage(prompt, List.of(media));
-
-      // ChatClient로 요청
+      // ChatClient로 요청 (Spring AI 1.0.0-M7 방식)
       ChatClient chatClient = chatClientBuilder.build();
-      ChatResponse response = chatClient.prompt()
-          .messages(userMessage)
+      String gptDescription = chatClient.prompt()
+          .user(u -> u.text(prompt)
+              .media(MimeTypeUtils.IMAGE_JPEG, imageResource))
           .call()
-          .chatResponse();
-
-      String gptDescription = response.getResult().getOutput().getContent();
+          .content();
 
       long duration = System.currentTimeMillis() - startTime;
 
