@@ -27,7 +27,7 @@ public class GoogleVisionService {
 
   private final ChatClient.Builder chatClientBuilder;
 
-  @Value("${spring.ai.openai.chat.options.model:gpt-4o}")
+  @Value("${spring.ai.openai.chat.options.model:gpt-4o-mini}")
   private String model;
 
   /**

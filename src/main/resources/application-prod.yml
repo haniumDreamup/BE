@@ -129,7 +129,7 @@ spring:
       api-key: ${OPENAI_API_KEY:sk-dummy-key-for-missing-config}
       chat:
         options:
-          model: gpt-4o  # GPT-4o Vision 사용
+          model: gpt-4o-mini  # GPT-4o-mini: 2배 빠름, 10배 저렴
           temperature: 0.3  # BIF 친화적 일관성
           max-tokens: 1000  # Vision 분석 결과가 길 수 있음
       
@@ -143,6 +143,11 @@ server:
     include-message: never  # Production에서는 상세 에러 숨김
     include-stacktrace: never
   forward-headers-strategy: native  # 프록시 뒤에서 실행시
+  # Tomcat 타임아웃 설정 (GPT-4o Vision 응답 대기)
+  tomcat:
+    connection-timeout: 120000  # 2분 (기본 20초 → 120초)
+    keep-alive-timeout: 120000
+    max-keep-alive-requests: 100
     
 # Application Configuration
 app:
