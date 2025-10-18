@@ -263,6 +263,9 @@ public class ScheduleService extends BaseService {
     Schedule schedule = findScheduleById(scheduleId);
     validateScheduleAccess(schedule);
 
+    // Lazy loading 초기화 (LazyInitializationException 방지)
+    schedule.getSelectedDays().size();
+
     // 실행 완료 처리 (다음 실행 시간 자동 계산)
     schedule.markExecuted();
 
