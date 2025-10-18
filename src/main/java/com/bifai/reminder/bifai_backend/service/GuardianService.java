@@ -37,7 +37,11 @@ public class GuardianService {
 
     /**
      * 현재 사용자의 보호자 목록 조회
+     *
+     * <p>Best Practice: @Transactional(readOnly = true)를 메서드에 명시하여
+     * 트랜잭션 범위 내에서 Guardian의 Lazy 필드 접근 보장</p>
      */
+    @Transactional(readOnly = true)
     public List<Guardian> getMyGuardians() {
         User currentUser = getCurrentUser();
         return guardianRepository.findByUserAndIsActiveTrue(currentUser);
@@ -45,7 +49,11 @@ public class GuardianService {
 
     /**
      * 현재 보호자가 보호 중인 사용자 목록 조회
+     *
+     * <p>Best Practice: @Transactional(readOnly = true)를 메서드에 명시하여
+     * 트랜잭션 범위 내에서 Guardian의 Lazy 필드 접근 보장</p>
      */
+    @Transactional(readOnly = true)
     public List<Guardian> getProtectedUsers() {
         User currentGuardian = getCurrentUser();
         return guardianRepository.findByGuardianUserAndIsActiveTrue(currentGuardian);
@@ -187,61 +195,79 @@ public class GuardianService {
 
     /**
      * 특정 사용자의 보호자인지 확인 (Method Security용)
+     *
+     * <p>Best Practice: 조회 메서드에 @Transactional(readOnly = true) 추가</p>
      */
+    @Transactional(readOnly = true)
     public boolean isGuardianOf(Long userId) {
         User currentUser = getCurrentUser();
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
-        
+
         return guardianRepository.existsByUserAndGuardianUserAndIsActiveTrueAndApprovalStatus(
                 targetUser, currentUser, Guardian.ApprovalStatus.APPROVED);
     }
 
     /**
      * 해당 보호자 관계를 승인할 수 있는지 확인
+     *
+     * <p>Best Practice: Guardian의 user, guardianUser에 접근하므로 트랜잭션 필요</p>
      */
+    @Transactional(readOnly = true)
     public boolean canApproveGuardian(Long guardianId) {
         Guardian guardian = guardianRepository.findById(guardianId)
                 .orElse(null);
-        
+
         if (guardian == null) return false;
-        
+
         User currentUser = getCurrentUser();
-        return guardian.getGuardianUser().getUserId().equals(currentUser.getUserId()) 
+        // guardianUser는 LAZY이므로 트랜잭션 필요
+        return guardian.getGuardianUser().getUserId().equals(currentUser.getUserId())
                 && guardian.getApprovalStatus() == Guardian.ApprovalStatus.PENDING;
     }
 
     /**
      * 해당 보호자 관계를 거절할 수 있는지 확인
+     *
+     * <p>Best Practice: Guardian의 Lazy 필드 접근을 위해 트랜잭션 필요</p>
      */
+    @Transactional(readOnly = true)
     public boolean canRejectGuardian(Long guardianId) {
         return canApproveGuardian(guardianId);
     }
 
     /**
      * 나의 보호자인지 확인
+     *
+     * <p>Best Practice: Guardian의 user에 접근하므로 트랜잭션 필요</p>
      */
+    @Transactional(readOnly = true)
     public boolean isMyGuardian(Long guardianId) {
         Guardian guardian = guardianRepository.findById(guardianId)
                 .orElse(null);
-        
+
         if (guardian == null) return false;
-        
+
         User currentUser = getCurrentUser();
+        // user는 LAZY이므로 트랜잭션 필요
         return guardian.getUser().getUserId().equals(currentUser.getUserId());
     }
 
     /**
      * 보호 관계를 해제할 수 있는지 확인
+     *
+     * <p>Best Practice: Guardian의 guardianUser에 접근하므로 트랜잭션 필요</p>
      */
+    @Transactional(readOnly = true)
     public boolean canRemoveRelationship(Long guardianId) {
         Guardian guardian = guardianRepository.findById(guardianId)
                 .orElse(null);
-        
+
         if (guardian == null) return false;
-        
+
         User currentUser = getCurrentUser();
-        return guardian.getGuardianUser().getUserId().equals(currentUser.getUserId()) 
+        // guardianUser는 LAZY이므로 트랜잭션 필요
+        return guardian.getGuardianUser().getUserId().equals(currentUser.getUserId())
                 && guardian.getIsActive();
     }
 

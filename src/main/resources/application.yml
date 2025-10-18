@@ -199,7 +199,7 @@ google:
     vision:
       enabled: ${GOOGLE_VISION_ENABLED:false}
       max-results: ${GOOGLE_VISION_MAX_RESULTS:10}
-      confidence-threshold: ${GOOGLE_VISION_CONFIDENCE:0.7}
+      confidence-threshold: ${GOOGLE_VISION_CONFIDENCE:0.5}
     credentials:
       path: ${GOOGLE_CLOUD_CREDENTIALS_PATH:}
     project-id: ${GOOGLE_CLOUD_PROJECT_ID:}

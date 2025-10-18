@@ -219,16 +219,20 @@ public class EmergencyService extends BaseService {
 
   /**
    * 보호자에게 알림 전송
-   * 
+   *
    * <p>긴급 상황 발생 시 모든 활성 보호자에게 알림을 전송합니다.
    * 알림 전송에 성공한 보호자 정보를 기록합니다.</p>
-   * 
+   *
+   * <p>Best Practice: @EntityGraph를 통해 Guardian의 user, guardianUser를 함께 페치하여
+   * LazyInitializationException 방지</p>
+   *
    * @param emergency 긴급 상황 엔티티
    */
+  @Transactional
   private void notifyGuardians(Emergency emergency) {
-    // 활성 보호자 목록 조회
+    // 활성 보호자 목록 조회 (user, guardianUser 함께 페치)
     List<Guardian> guardians = guardianRepository.findActiveGuardiansByUserId(emergency.getUser().getId());
-    
+
     if (guardians.isEmpty()) {
       log.warn("알림을 받을 보호자가 없습니다: userId={}", emergency.getUser().getId());
       return;
@@ -239,6 +243,7 @@ public class EmergencyService extends BaseService {
         .map(guardian -> {
           try {
             notificationService.sendEmergencyNotification(guardian, emergency);
+            // guardianUser는 이미 페치되어 있으므로 LazyInitializationException 발생 안 함
             return guardian.getGuardianUser().getEmail();
           } catch (Exception e) {
             log.error("보호자 알림 전송 실패: guardianId={}", guardian.getId(), e);

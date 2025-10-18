@@ -5,6 +5,7 @@ import com.bifai.reminder.bifai_backend.entity.Emergency.EmergencyStatus;
 import com.bifai.reminder.bifai_backend.entity.Emergency.EmergencyType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,8 +29,11 @@ public interface EmergencyRepository extends JpaRepository<Emergency, Long> {
 
   /**
    * 사용자의 모든 긴급 상황 조회 (최신순)
+   * User를 함께 페치하여 N+1 문제 방지
    */
-  Page<Emergency> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+  @EntityGraph(attributePaths = {"user"})
+  @Query("SELECT e FROM Emergency e WHERE e.user.userId = :userId ORDER BY e.createdAt DESC")
+  Page<Emergency> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
   /**
    * 특정 기간 동안의 긴급 상황 조회
@@ -42,7 +46,9 @@ public interface EmergencyRepository extends JpaRepository<Emergency, Long> {
 
   /**
    * 활성 상태의 모든 긴급 상황 조회
+   * User를 함께 페치하여 N+1 문제 방지
    */
+  @EntityGraph(attributePaths = {"user"})
   @Query("SELECT e FROM Emergency e WHERE e.status IN :statuses ORDER BY e.createdAt DESC")
   List<Emergency> findActiveEmergencies(@Param("statuses") List<EmergencyStatus> statuses);
 

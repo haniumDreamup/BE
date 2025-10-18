@@ -3,8 +3,7 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration
-      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
-      - org.springframework.ai.autoconfigure.openai.OpenAiChatAutoConfiguration
+      # OpenAI AutoConfiguration 활성화 (GPT-4o Vision 사용)
 
   # Multipart File Upload Configuration (스마트폰 사진 지원)
   servlet:
@@ -128,9 +127,11 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:sk-dummy-key-for-missing-config}
-      model: gpt-4
-      temperature: 0.3
-      max-tokens: 500
+      chat:
+        options:
+          model: gpt-4o  # GPT-4o Vision 사용
+          temperature: 0.3  # BIF 친화적 일관성
+          max-tokens: 1000  # Vision 분석 결과가 길 수 있음
       
 # Server Configuration
 server:
