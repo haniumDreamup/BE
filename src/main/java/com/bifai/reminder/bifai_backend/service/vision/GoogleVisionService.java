@@ -214,17 +214,41 @@ public class GoogleVisionService {
   private String generateSimpleDescription(VisionAnalysisResult result) {
     StringBuilder description = new StringBuilder();
 
+    // 🚨 0. 응급/위험 상황 최우선 감지
+    List<String> emergencyKeywords = Arrays.asList("불", "연기", "피", "부상", "구급차", "경찰차", "위험", "응급");
+    List<DetectedObject> emergencyObjects = result.getObjects().stream()
+        .filter(obj -> emergencyKeywords.contains(obj.getName()))
+        .collect(Collectors.toList());
+
+    if (!emergencyObjects.isEmpty()) {
+      description.append("⚠️⚠️⚠️ 위험할 수 있어요!\n");
+      description.append("🚨 발견: ");
+      description.append(emergencyObjects.stream()
+          .map(DetectedObject::getName)
+          .distinct()
+          .collect(Collectors.joining(", ")));
+      description.append("\n안전한 곳으로 이동하세요!\n\n");
+    }
+
     // 1. 신뢰도별로 객체 분류
     List<DetectedObject> highConfidence = result.getObjects().stream()
         .filter(obj -> obj.getConfidence() >= highConfidenceThreshold)
+        .filter(obj -> !emergencyKeywords.contains(obj.getName())) // 응급 객체 제외
         .collect(Collectors.toList());
 
     List<DetectedObject> mediumConfidence = result.getObjects().stream()
         .filter(obj -> obj.getConfidence() >= confidenceThreshold
             && obj.getConfidence() < highConfidenceThreshold)
+        .filter(obj -> !emergencyKeywords.contains(obj.getName())) // 응급 객체 제외
         .collect(Collectors.toList());
 
-    // 2. 확실하게 보이는 것 (85% 이상)
+    // 2. 상황 컨텍스트 이해 (교통/도로 상황)
+    String situationContext = detectSituationContext(result);
+    if (situationContext != null) {
+      description.append("📍 상황: ").append(situationContext).append("\n\n");
+    }
+
+    // 3. 확실하게 보이는 것 (85% 이상)
     if (!highConfidence.isEmpty()) {
       Map<String, Integer> counts = new HashMap<>();
       for (DetectedObject obj : highConfidence) {
@@ -243,7 +267,7 @@ public class GoogleVisionService {
       description.append(String.join(", ", items)).append("\n");
     }
 
-    // 3. 아마도 있을 것 같은 것 (60-85%)
+    // 4. 아마도 있을 것 같은 것 (60-85%)
     if (!mediumConfidence.isEmpty()) {
       Map<String, Integer> counts = new HashMap<>();
       for (DetectedObject obj : mediumConfidence) {
@@ -262,27 +286,41 @@ public class GoogleVisionService {
       description.append(String.join(", ", items)).append("\n");
     }
 
-    // 4. 사람 정보 + 감정 (있다면)
+    // 5. 사람 정보 + 감정 (모든 사람의 감정 요약)
     if (!result.getFaces().isEmpty()) {
       description.append("👤 사람 ").append(result.getFaces().size()).append("명");
 
-      // 첫 번째 사람의 감정이 뚜렷하면 추가
-      FaceInfo mainFace = result.getFaces().get(0);
-      if ("VERY_LIKELY".equals(mainFace.getJoy())) {
-        description.append(" (웃고 있어요 😊)");
-      } else if ("LIKELY".equals(mainFace.getJoy())) {
-        description.append(" (기분이 좋아 보여요)");
-      } else if ("VERY_LIKELY".equals(mainFace.getSorrow())) {
-        description.append(" (슬퍼 보여요 😢)");
-      } else if ("VERY_LIKELY".equals(mainFace.getAnger())) {
-        description.append(" (화나 보여요 😠)");
-      } else if ("VERY_LIKELY".equals(mainFace.getSurprise())) {
-        description.append(" (놀란 것 같아요 😮)");
+      // 모든 사람의 감정 분석
+      Map<String, Integer> emotionCounts = new HashMap<>();
+      for (FaceInfo face : result.getFaces()) {
+        if ("VERY_LIKELY".equals(face.getJoy()) || "LIKELY".equals(face.getJoy())) {
+          emotionCounts.merge("기분 좋음 😊", 1, Integer::sum);
+        } else if ("VERY_LIKELY".equals(face.getSorrow())) {
+          emotionCounts.merge("슬픔 😢", 1, Integer::sum);
+        } else if ("VERY_LIKELY".equals(face.getAnger())) {
+          emotionCounts.merge("화남 😠", 1, Integer::sum);
+        } else if ("VERY_LIKELY".equals(face.getSurprise())) {
+          emotionCounts.merge("놀람 😮", 1, Integer::sum);
+        }
+      }
+
+      if (!emotionCounts.isEmpty()) {
+        description.append(" (");
+        List<String> emotions = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : emotionCounts.entrySet()) {
+          if (entry.getValue() == 1) {
+            emotions.add(entry.getKey());
+          } else {
+            emotions.add(entry.getValue() + "명 " + entry.getKey());
+          }
+        }
+        description.append(String.join(", ", emotions));
+        description.append(")");
       }
       description.append("\n");
     }
 
-    // 5. 텍스트가 있으면
+    // 6. 텍스트가 있으면 (50자 제한)
     if (result.getText() != null && !result.getText().isEmpty()) {
       String text = result.getText().trim();
       if (text.length() > 50) {
@@ -291,17 +329,57 @@ public class GoogleVisionService {
       description.append("📝 글자: ").append(text).append("\n");
     }
 
-    // 6. ⚠️ 안전성 경고 (가장 중요하므로 마지막에 강조)
+    // 7. ⚠️ 안전성 경고
     if (result.getSafetyInfo() != null && isUnsafe(result.getSafetyInfo())) {
       description.append("\n⚠️ 주의: 조심해야 할 내용이 있어요!\n");
     }
 
-    // 7. 아무것도 없으면
+    // 8. 아무것도 없으면
     if (description.length() == 0) {
       return "사진을 확인했지만 특별한 것을 찾지 못했어요";
     }
 
     return description.toString().trim();
+  }
+
+  /**
+   * 상황 컨텍스트 감지 (객체 조합으로 상황 이해)
+   */
+  private String detectSituationContext(VisionAnalysisResult result) {
+    Set<String> objectNames = result.getObjects().stream()
+        .map(DetectedObject::getName)
+        .collect(Collectors.toSet());
+
+    // 도로 횡단 상황
+    if (objectNames.contains("횡단보도") && objectNames.contains("신호등")) {
+      return "길을 건널 수 있는 곳이에요. 신호를 확인하세요!";
+    }
+    if (objectNames.contains("횡단보도")) {
+      return "횡단보도가 보여요. 좌우를 살펴보세요!";
+    }
+
+    // 실내 휴식 상황
+    if (objectNames.contains("침대") && objectNames.contains("사람")) {
+      return "휴식 중인 것 같아요";
+    }
+
+    // 식사 상황
+    if ((objectNames.contains("음식") || objectNames.contains("밥") || objectNames.contains("빵"))
+        && (objectNames.contains("테이블") || objectNames.contains("접시"))) {
+      return "식사 중이에요";
+    }
+
+    // 교통 상황
+    if (objectNames.contains("자동차") && objectNames.contains("길")) {
+      return "도로에 차량이 있어요. 조심하세요!";
+    }
+
+    // 의료 상황
+    if (objectNames.contains("병원") || (objectNames.contains("구급차"))) {
+      return "의료 관련 장소예요";
+    }
+
+    return null; // 특별한 상황 없음
   }
   
   /**
