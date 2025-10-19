@@ -1,34 +1,41 @@
 package com.bifai.reminder.bifai_backend.service.vision;
 
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 /**
  * GPT-4o Vision 기반 이미지 분석 서비스
- * (기존 GoogleVisionService를 GPT-4o로 교체)
+ * RestTemplate 직접 사용 (Spring AI ChatClient 타임아웃 이슈 해결)
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @org.springframework.context.annotation.Profile("!test")
 public class GoogleVisionService {
 
-  private final ChatClient.Builder chatClientBuilder;
+  private final RestTemplate restTemplate;
+
+  @Value("${spring.ai.openai.api-key}")
+  private String openaiApiKey;
 
   @Value("${spring.ai.openai.chat.options.model:gpt-4o-mini}")
   private String model;
+
+  public GoogleVisionService(RestTemplateBuilder restTemplateBuilder) {
+    this.restTemplate = restTemplateBuilder
+        .setConnectTimeout(Duration.ofSeconds(30))
+        .setReadTimeout(Duration.ofSeconds(60))  // Vision 분석은 최대 60초
+        .build();
+  }
 
   /**
    * 이미지 종합 분석 (기존 API 호환)
@@ -86,39 +93,82 @@ public class GoogleVisionService {
           - 이모지 사용 (😊😢😠😮 등)
           """;
 
-      // 이미지를 Resource로 변환
-      log.debug("이미지를 ByteArrayResource로 변환 중...");
+      // 이미지를 Base64로 인코딩
+      log.debug("이미지를 Base64로 인코딩 중...");
       byte[] imageBytes = imageFile.getBytes();
-      ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
+      String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
-      // ChatClient로 요청 (Spring AI 1.0.0-M7 방식)
-      log.info("ChatClient 생성 및 GPT-4o-mini API 호출 시작...");
-      ChatClient chatClient = chatClientBuilder.build();
+      // OpenAI API 요청 본문 구성
+      Map<String, Object> requestBody = new HashMap<>();
+      requestBody.put("model", model);
+      requestBody.put("max_tokens", 1000);
 
-      log.debug("API 요청 전송 중...");
-      String gptDescription = null;
-      try {
-        gptDescription = chatClient.prompt()
-            .user(u -> u.text(prompt)
-                .media(MimeTypeUtils.IMAGE_JPEG, imageResource))
-            .call()
-            .content();
-        log.info("✅ OpenAI API 응답 수신 완료");
-      } catch (Exception apiError) {
-        log.error("❌ OpenAI API 호출 실패 - 에러 타입: {}, 메시지: {}",
-            apiError.getClass().getName(), apiError.getMessage());
-        throw apiError;
-      }
+      List<Map<String, Object>> messages = new ArrayList<>();
+      Map<String, Object> message = new HashMap<>();
+      message.put("role", "user");
+
+      List<Object> content = new ArrayList<>();
+
+      // 텍스트 파트
+      Map<String, String> textPart = new HashMap<>();
+      textPart.put("type", "text");
+      textPart.put("text", prompt);
+      content.add(textPart);
+
+      // 이미지 파트
+      Map<String, Object> imagePart = new HashMap<>();
+      imagePart.put("type", "image_url");
+      Map<String, String> imageUrl = new HashMap<>();
+      imageUrl.put("url", "data:image/jpeg;base64," + base64Image);
+      imagePart.put("image_url", imageUrl);
+      content.add(imagePart);
+
+      message.put("content", content);
+      messages.add(message);
+      requestBody.put("messages", messages);
+
+      // HTTP 헤더 설정
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      headers.set("Authorization", "Bearer " + openaiApiKey);
+
+      HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+      // OpenAI API 호출
+      log.info("OpenAI API 호출 중... (모델: {})", model);
+      ResponseEntity<Map> response = restTemplate.postForEntity(
+          "https://api.openai.com/v1/chat/completions",
+          request,
+          Map.class
+      );
 
       long duration = System.currentTimeMillis() - startTime;
 
-      log.info("GPT-4o-mini Vision 분석 완료 - 소요시간: {}ms, 응답길이: {}자",
+      // 응답 파싱
+      Map<String, Object> responseBody = response.getBody();
+      if (responseBody == null) {
+        throw new IOException("OpenAI API 응답이 비어있습니다");
+      }
+
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+      if (choices == null || choices.isEmpty()) {
+        throw new IOException("OpenAI API 응답에 choices가 없습니다");
+      }
+
+      @SuppressWarnings("unchecked")
+      Map<String, Object> firstChoice = choices.get(0);
+      @SuppressWarnings("unchecked")
+      Map<String, Object> messageObj = (Map<String, Object>) firstChoice.get("message");
+      String gptDescription = (String) messageObj.get("content");
+
+      log.info("✅ GPT-4o-mini Vision 분석 완료 - 소요시간: {}ms, 응답길이: {}자",
           duration, gptDescription != null ? gptDescription.length() : 0);
 
       // 기존 VisionAnalysisResult 형식으로 변환
       return VisionAnalysisResult.builder()
           .simpleDescription(gptDescription)
-          .objects(new ArrayList<>())  // GPT는 구조화된 객체 리스트 안줌
+          .objects(new ArrayList<>())
           .labels(new ArrayList<>())
           .faces(new ArrayList<>())
           .build();
