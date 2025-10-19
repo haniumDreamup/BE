@@ -96,15 +96,39 @@ public class GoogleVisionService {
       // 이미지 최적화 및 Base64 인코딩
       log.debug("이미지 처리 중...");
       byte[] imageBytes = imageFile.getBytes();
+      long originalSize = imageBytes.length;
 
-      // 2MB 이상 이미지는 리사이즈 (OpenAI API 성능 최적화)
-      if (imageBytes.length > 2 * 1024 * 1024) {
-        log.info("이미지 크기가 큽니다 ({}bytes). 리사이즈 중...", imageBytes.length);
-        imageBytes = resizeImage(imageBytes, 1024, 1024);  // 최대 1024x1024로 리사이즈
-        log.info("리사이즈 완료: {}bytes", imageBytes.length);
+      // 적응적 리사이즈 (이미지 크기에 따라 다른 해상도 적용)
+      if (originalSize > 10 * 1024 * 1024) {
+        // 10MB 이상: 2048x2048 (고화질 유지하면서 압축)
+        log.info("매우 큰 이미지 ({}MB). 2048x2048로 리사이즈 중...", originalSize / 1024 / 1024);
+        imageBytes = resizeImage(imageBytes, 2048, 2048);
+      } else if (originalSize > 5 * 1024 * 1024) {
+        // 5-10MB: 1536x1536
+        log.info("큰 이미지 ({}MB). 1536x1536로 리사이즈 중...", originalSize / 1024 / 1024);
+        imageBytes = resizeImage(imageBytes, 1536, 1536);
+      } else if (originalSize > 2 * 1024 * 1024) {
+        // 2-5MB: 1024x1024
+        log.info("중간 크기 이미지 ({}MB). 1024x1024로 리사이즈 중...", originalSize / 1024 / 1024);
+        imageBytes = resizeImage(imageBytes, 1024, 1024);
+      }
+
+      if (imageBytes.length != originalSize) {
+        log.info("리사이즈 완료: {}MB → {}KB",
+            originalSize / 1024 / 1024, imageBytes.length / 1024);
       }
 
       String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+      // Base64 인코딩 후 크기 체크 (OpenAI API는 약 20MB 제한)
+      long base64Size = base64Image.length();
+      if (base64Size > 15 * 1024 * 1024) {  // 15MB로 안전하게 제한
+        log.warn("Base64 인코딩 후 이미지가 너무 큽니다 ({}MB). 추가 압축 중...", base64Size / 1024 / 1024);
+        // 재귀적으로 더 작게 리사이즈
+        imageBytes = resizeImage(imageBytes, 800, 800);
+        base64Image = Base64.getEncoder().encodeToString(imageBytes);
+        log.info("추가 압축 완료: {}KB", imageBytes.length / 1024);
+      }
 
       // OpenAI API 요청 본문 구성
       Map<String, Object> requestBody = new HashMap<>();
