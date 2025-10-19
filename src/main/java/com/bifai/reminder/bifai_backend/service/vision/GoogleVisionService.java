@@ -93,9 +93,17 @@ public class GoogleVisionService {
           - 이모지 사용 (😊😢😠😮 등)
           """;
 
-      // 이미지를 Base64로 인코딩
-      log.debug("이미지를 Base64로 인코딩 중...");
+      // 이미지 최적화 및 Base64 인코딩
+      log.debug("이미지 처리 중...");
       byte[] imageBytes = imageFile.getBytes();
+
+      // 2MB 이상 이미지는 리사이즈 (OpenAI API 성능 최적화)
+      if (imageBytes.length > 2 * 1024 * 1024) {
+        log.info("이미지 크기가 큽니다 ({}bytes). 리사이즈 중...", imageBytes.length);
+        imageBytes = resizeImage(imageBytes, 1024, 1024);  // 최대 1024x1024로 리사이즈
+        log.info("리사이즈 완료: {}bytes", imageBytes.length);
+      }
+
       String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
       // OpenAI API 요청 본문 구성
@@ -183,6 +191,52 @@ public class GoogleVisionService {
       }
 
       throw new IOException("이미지 분석 실패: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * 이미지 리사이즈 (성능 최적화)
+   */
+  private byte[] resizeImage(byte[] imageBytes, int maxWidth, int maxHeight) throws IOException {
+    try {
+      // BufferedImage로 변환
+      java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes);
+      java.awt.image.BufferedImage originalImage = javax.imageio.ImageIO.read(bais);
+
+      if (originalImage == null) {
+        log.warn("이미지를 읽을 수 없습니다. 원본 사용");
+        return imageBytes;
+      }
+
+      int width = originalImage.getWidth();
+      int height = originalImage.getHeight();
+
+      // 이미 작으면 리사이즈 안함
+      if (width <= maxWidth && height <= maxHeight) {
+        return imageBytes;
+      }
+
+      // 비율 유지하면서 리사이즈
+      double ratio = Math.min((double) maxWidth / width, (double) maxHeight / height);
+      int newWidth = (int) (width * ratio);
+      int newHeight = (int) (height * ratio);
+
+      log.debug("이미지 리사이즈: {}x{} -> {}x{}", width, height, newWidth, newHeight);
+
+      java.awt.Image resizedImage = originalImage.getScaledInstance(newWidth, newHeight, java.awt.Image.SCALE_SMOOTH);
+      java.awt.image.BufferedImage bufferedResized = new java.awt.image.BufferedImage(newWidth, newHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
+      java.awt.Graphics2D g2d = bufferedResized.createGraphics();
+      g2d.drawImage(resizedImage, 0, 0, null);
+      g2d.dispose();
+
+      // JPEG로 변환
+      java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+      javax.imageio.ImageIO.write(bufferedResized, "jpg", baos);
+      return baos.toByteArray();
+
+    } catch (Exception e) {
+      log.error("이미지 리사이즈 실패: {}", e.getMessage());
+      return imageBytes;  // 실패시 원본 사용
     }
   }
 
