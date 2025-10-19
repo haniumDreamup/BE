@@ -126,8 +126,10 @@ spring:
   # AI Configuration
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:sk-dummy-key-for-missing-config}
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com
       chat:
+        enabled: true
         options:
           model: gpt-4o-mini  # GPT-4o-mini: 2배 빠름, 10배 저렴
           temperature: 0.3  # BIF 친화적 일관성
