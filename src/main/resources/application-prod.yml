@@ -134,6 +134,10 @@ spring:
           model: gpt-4o-mini  # GPT-4o-mini: 2배 빠름, 10배 저렴
           temperature: 0.3  # BIF 친화적 일관성
           max-tokens: 1000  # Vision 분석 결과가 길 수 있음
+      # HTTP 클라이언트 타임아웃 설정
+      client:
+        connect-timeout: 30000  # 연결 타임아웃: 30초
+        read-timeout: 90000     # 읽기 타임아웃: 90초 (Vision 분석 대기)
       
 # Server Configuration
 server:

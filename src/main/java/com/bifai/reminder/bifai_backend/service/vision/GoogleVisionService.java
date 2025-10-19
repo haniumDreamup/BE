@@ -95,11 +95,20 @@ public class GoogleVisionService {
       log.info("ChatClient 생성 및 GPT-4o-mini API 호출 시작...");
       ChatClient chatClient = chatClientBuilder.build();
 
-      String gptDescription = chatClient.prompt()
-          .user(u -> u.text(prompt)
-              .media(MimeTypeUtils.IMAGE_JPEG, imageResource))
-          .call()
-          .content();
+      log.debug("API 요청 전송 중...");
+      String gptDescription = null;
+      try {
+        gptDescription = chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .media(MimeTypeUtils.IMAGE_JPEG, imageResource))
+            .call()
+            .content();
+        log.info("✅ OpenAI API 응답 수신 완료");
+      } catch (Exception apiError) {
+        log.error("❌ OpenAI API 호출 실패 - 에러 타입: {}, 메시지: {}",
+            apiError.getClass().getName(), apiError.getMessage());
+        throw apiError;
+      }
 
       long duration = System.currentTimeMillis() - startTime;
 
