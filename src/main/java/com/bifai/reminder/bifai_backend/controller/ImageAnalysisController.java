@@ -288,10 +288,10 @@ public class ImageAnalysisController {
   }
 
   /**
-   * Google Vision API를 통한 직접 이미지 분석
+   * Google Vision API를 통한 직접 이미지 분석 (1단계: 빠른 요약)
    */
   @PostMapping(value = "/vision-analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Vision API 이미지 분석", description = "Google Vision API로 직접 이미지를 분석합니다")
+  @Operation(summary = "Vision API 이미지 분석 (빠름)", description = "Google Vision API로 빠른 이미지 요약 분석 (3-5초)")
   public ResponseEntity<BifApiResponse<VisionAnalysisResult>> visionAnalyze(
       @AuthenticationPrincipal UserDetails userDetails,
       @Parameter(description = "분석할 이미지 파일", required = true)
@@ -308,7 +308,7 @@ public class ImageAnalysisController {
           ));
     }
 
-    log.info("Vision API 분석 요청 - 파일명: {}, 크기: {} bytes",
+    log.info("Vision API 빠른 분석 요청 - 파일명: {}, 크기: {} bytes",
         imageFile.getOriginalFilename(), imageFile.getSize());
 
     try {
@@ -324,13 +324,14 @@ public class ImageAnalysisController {
             ));
       }
 
-      VisionAnalysisResult result = googleVisionService.analyzeImage(imageFile);
+      // 1단계: 빠른 요약 (Chain-of-Thought)
+      VisionAnalysisResult result = googleVisionService.analyzeImageQuick(imageFile);
 
-      log.info("Vision API 분석 완료 - 객체: {}개, 텍스트: {}",
+      log.info("Vision API 빠른 분석 완료 - 객체: {}개, 텍스트: {}",
           result.getObjects().size(),
           result.getText() != null ? "있음" : "없음");
 
-      return ResponseEntity.ok(BifApiResponse.success(result, "이미지 분석이 완료되었습니다"));
+      return ResponseEntity.ok(BifApiResponse.success(result, "빠른 분석이 완료되었습니다"));
 
     } catch (IllegalArgumentException e) {
       log.warn("이미지 검증 실패: {}", e.getMessage());
@@ -346,6 +347,72 @@ public class ImageAnalysisController {
           .body(BifApiResponse.error(
               "VISION_ANALYSIS_ERROR",
               "이미지 분석 중 오류가 발생했습니다",
+              "잠시 후 다시 시도해주세요"
+          ));
+    }
+  }
+
+  /**
+   * Google Vision API 상세 분석 (2단계: 완벽한 정보)
+   */
+  @PostMapping(value = "/vision-analyze-detailed", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Vision API 상세 분석 (느림)", description = "CoT + Few-Shot으로 상세한 이미지 분석 (10-15초)")
+  public ResponseEntity<BifApiResponse<VisionAnalysisResult>> visionAnalyzeDetailed(
+      @AuthenticationPrincipal UserDetails userDetails,
+      @Parameter(description = "분석할 이미지 파일", required = true)
+      @RequestPart("image") @NotNull MultipartFile imageFile) {
+
+    Long userId = jwtAuthUtils.getCurrentUserId();
+    if (userId == null) {
+      log.warn("인증되지 않은 사용자의 Vision 상세 분석 시도");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(BifApiResponse.error(
+              "UNAUTHORIZED",
+              "로그인이 필요합니다",
+              "다시 로그인해주세요"
+          ));
+    }
+
+    log.info("Vision API 상세 분석 요청 - 파일명: {}, 크기: {} bytes",
+        imageFile.getOriginalFilename(), imageFile.getSize());
+
+    try {
+      validateImageFile(imageFile);
+
+      if (googleVisionService == null) {
+        log.warn("GoogleVisionService가 사용 불가능합니다 (테스트 환경)");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(BifApiResponse.error(
+                "SERVICE_UNAVAILABLE",
+                "Vision 분석 서비스를 사용할 수 없습니다",
+                "나중에 다시 시도해주세요"
+            ));
+      }
+
+      // 2단계: 상세 분석 (CoT + Few-Shot + Structured Output)
+      VisionAnalysisResult result = googleVisionService.analyzeImageDetailed(imageFile);
+
+      log.info("Vision API 상세 분석 완료 - 객체: {}개, 텍스트: {}, 설명 길이: {}자",
+          result.getObjects().size(),
+          result.getText() != null ? "있음" : "없음",
+          result.getSimpleDescription() != null ? result.getSimpleDescription().length() : 0);
+
+      return ResponseEntity.ok(BifApiResponse.success(result, "상세 분석이 완료되었습니다"));
+
+    } catch (IllegalArgumentException e) {
+      log.warn("이미지 검증 실패: {}", e.getMessage());
+      return ResponseEntity.badRequest()
+          .body(BifApiResponse.error(
+              "IMAGE_VALIDATION_ERROR",
+              e.getMessage(),
+              "올바른 이미지 파일을 선택해주세요"
+          ));
+    } catch (IOException e) {
+      log.error("Vision API 상세 분석 오류", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(BifApiResponse.error(
+              "VISION_DETAILED_ERROR",
+              "상세 분석 중 오류가 발생했습니다",
               "잠시 후 다시 시도해주세요"
           ));
     }

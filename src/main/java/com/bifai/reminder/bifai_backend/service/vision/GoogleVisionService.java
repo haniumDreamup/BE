@@ -38,9 +38,32 @@ public class GoogleVisionService {
   }
 
   /**
-   * 이미지 종합 분석 (기존 API 호환)
+   * 1단계: 빠른 요약 분석 (3-5초)
+   * Chain-of-Thought 방식으로 즉각적인 안전 정보 제공
+   */
+  public VisionAnalysisResult analyzeImageQuick(MultipartFile imageFile) throws IOException {
+    return analyzeImageInternal(imageFile, false);
+  }
+
+  /**
+   * 2단계: 상세 분석 (10-15초)
+   * CoT + Few-Shot + Structured Output으로 완벽한 정보 제공
+   */
+  public VisionAnalysisResult analyzeImageDetailed(MultipartFile imageFile) throws IOException {
+    return analyzeImageInternal(imageFile, true);
+  }
+
+  /**
+   * 이미지 종합 분석 (기존 API 호환 - 1단계 빠른 분석)
    */
   public VisionAnalysisResult analyzeImage(MultipartFile imageFile) throws IOException {
+    return analyzeImageQuick(imageFile);
+  }
+
+  /**
+   * 내부 분석 메서드
+   */
+  private VisionAnalysisResult analyzeImageInternal(MultipartFile imageFile, boolean detailed) throws IOException {
     if (imageFile == null || imageFile.isEmpty()) {
       log.warn("Empty or null image file provided");
       throw new IllegalArgumentException("이미지 파일이 필요합니다");
@@ -57,41 +80,15 @@ public class GoogleVisionService {
       log.info("GPT-4o-mini Vision 분석 시작 - 파일: {}, 크기: {}bytes",
           imageFile.getOriginalFilename(), imageFile.getSize());
 
-      String prompt = """
-          당신은 인지 능력이 낮은 사용자(IQ 70-85)를 돕는 AI 비서입니다.
+      String prompt;
 
-          이 사진을 분석하고 아래 형식으로 설명해주세요:
-
-          **🚨 위험 상황** (있을 경우만)
-          - 불, 연기, 피, 날카로운 물건 등 발견시
-          - "⚠️⚠️⚠️ 위험할 수 있어요! [발견된 것]: 안전한 곳으로 이동하세요!"
-
-          **📍 지금 상황**
-          - 한 문장으로 무슨 상황인지 (예: "실내에서 식사 중이에요", "길을 건널 준비를 하고 있어요")
-
-          **✓ 확실히 보이는 것**
-          - 85% 이상 확신하는 물건들 쉼표로 나열 (예: "테이블, 의자, 사람 2명")
-
-          **? 아마도 있는 것**
-          - 60-85% 확신하는 것들 (예: "컵, 접시")
-
-          **👤 사람 정보**
-          - 몇 명인지 + 표정/감정 (예: "사람 2명 (웃고 있어요 😊)")
-
-          **📝 글자** (사진에 텍스트가 있으면)
-          - 50자 이내로 요약
-
-          **💡 도움말** (유용한 조언이 있으면)
-          - 예: "빨간불이에요. 초록불을 기다리세요"
-          - 예: "횡단보도가 보여요. 좌우를 살펴보세요"
-
-          규칙:
-          - 초등학교 5학년이 이해할 수 있는 쉬운 말
-          - 한 문장은 15단어 이하
-          - 위험은 최상단에 ⚠️로 강조
-          - 없는 섹션은 생략
-          - 이모지 사용 (😊😢😠😮 등)
-          """;
+      if (!detailed) {
+        // 1단계: 빠른 요약 (Chain-of-Thought)
+        prompt = getQuickAnalysisPrompt();
+      } else {
+        // 2단계: 상세 분석 (CoT + Few-Shot + Structured Output)
+        prompt = getDetailedAnalysisPrompt();
+      }
 
       // 이미지 최적화 및 Base64 인코딩
       log.debug("이미지 처리 중...");
@@ -262,6 +259,126 @@ public class GoogleVisionService {
       log.error("이미지 리사이즈 실패: {}", e.getMessage());
       return imageBytes;  // 실패시 원본 사용
     }
+  }
+
+  /**
+   * 1단계: 빠른 요약 프롬프트 (Chain-of-Thought)
+   */
+  private String getQuickAnalysisPrompt() {
+    return """
+        당신은 경계선 지능 사용자(IQ 70-85)의 눈입니다.
+        단계별로 생각하고 빠르게 요약하세요.
+
+        사고 과정:
+        1. See (관찰): 무엇이 보이나요?
+        2. Think (분석): 위험한 것은? 주요 상황은?
+        3. Confirm (결론): 사용자가 알아야 할 핵심은?
+
+        응답 형식:
+
+        📌 한 줄 요약
+        [장소]. [주요 활동]
+
+        ⚠️ 위험 (있으면)
+        - [위험물] ([위치]): [즉시 행동]
+
+        📍 주요 물건
+        - [객체 3-5개] (위치, 색상, 상태)
+
+        💬 지금 상황
+        [2-3문장으로 전체 상황 설명]
+
+        🎯 다음 행동
+        [구체적 행동 1-2개]
+
+        규칙:
+        - 85% 이상 확신만
+        - 추측 금지
+        - 구체적 거리/시간
+        - 안전 최우선
+        - 짧고 명확하게
+        """;
+  }
+
+  /**
+   * 2단계: 상세 분석 프롬프트 (CoT + Few-Shot)
+   */
+  private String getDetailedAnalysisPrompt() {
+    return """
+        당신은 경계선 지능 사용자(IQ 70-85)의 눈입니다.
+        Be My AI, Google Lookout처럼 상세하고 정확하게 설명하세요.
+
+        예시 1 - 주방:
+        📌 실내 주방. 요리 중
+
+        ⚠️ 위험
+        - 가스불 (왼쪽 50cm): 1m 떨어지세요
+        - 뜨거운 김 (앞쪽 30cm): 얼굴 가까이 대지 마세요
+
+        📍 있는 것
+        앞쪽:
+        - 조리대 1개 (깨끗함)
+
+        왼쪽 (50cm):
+        - 가스레인지 1개 (불 켜짐 🔥)
+        - 냄비 1개 (검은색, 김 나옴)
+
+        오른쪽 (70cm):
+        - 도마 1개 (나무)
+        - 당근 3개 (통째로)
+        - 칼 1개 (은색)
+
+        👤 사람
+        사람 없음
+
+        💬 지금 상황
+        주방 조리대 앞입니다. 왼쪽 가스레인지에 검은 냄비가 있고 김이 모락모락 나고 있어요. 오른쪽에는 당근 3개가 도마 위에 준비되어 있습니다.
+
+        🎯 다음 행동
+        1. 물이 충분히 끓었어요
+        2. 오른쪽 도마로 가세요 (70cm)
+        3. 당근을 썰어서 냄비에 넣으세요 (2-3분)
+        4. 타이머 5분 맞추세요
+
+        ---
+
+        예시 2 - 횡단보도:
+        📌 횡단보도 앞. 신호 대기
+
+        ⚠️ 위험
+        - 빨간불: 멈추세요
+        - 차 2대 (오른쪽): 지나갈 때까지 대기
+
+        📍 있는 것
+        앞쪽 (1m):
+        - 횡단보도 (흰색 줄무늬)
+        - 신호등 1개 (빨간불)
+
+        오른쪽:
+        - 차 2대 (검은색, 흰색)
+        - 사람 1명 (대기 중)
+
+        💬 지금 상황
+        횡단보도 앞에 있습니다. 신호등이 빨간불이에요. 오른쪽에서 차 2대가 지나가고 있습니다.
+
+        🎯 다음 행동
+        1. 초록불 기다리세요 (약 30초)
+        2. 초록불 되면 좌우 확인하세요
+        3. 천천히 건너세요 (15초 걸려요)
+
+        ---
+
+        이제 이 형식으로 사진을 분석하세요.
+
+        중요 원칙:
+        1. 85% 이상 확신만 말하기
+        2. 추측 금지 ("아마도", "~같아요" ❌)
+        3. 구체적 수치 (3개, 50cm, 5분)
+        4. 공간별 정리 (앞/뒤/좌/우)
+        5. 색상, 상태 필수
+        6. 단계별 행동 가이드
+        7. 안전이 최우선
+        """;
   }
 
   /**
