@@ -348,16 +348,18 @@ public class GuardianRelationshipService {
   
   /**
    * 보호자 계정 생성 (대기 상태)
+   *
+   * 이메일 초대 시 guardian_user_id는 NULL
+   * 초대 수락 시 acceptInvitation()에서 guardianUser 연결
    */
   private Guardian createPendingGuardian(GuardianInvitationRequest request) {
     Guardian guardian = Guardian.builder()
       .email(request.getGuardianEmail())
       .name(request.getGuardianName())
-      // TODO: phoneNumber 필드 설정 필요
-      // .phoneNumber(request.getGuardianPhone())
+      .guardianUser(null) // 초대 시에는 NULL, 수락 후 설정
       .isActive(false) // 초대 수락 전까지 비활성
       .build();
-    
+
     return guardianRepository.save(guardian);
   }
   

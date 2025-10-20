@@ -44,8 +44,9 @@ public class Guardian extends BaseEntity {
     private User user;
     
     // 보호자 사용자 (보호를 제공하는 사람)
+    // NULL 허용: 이메일 초대 시 아직 계정이 없을 수 있음
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "guardian_user_id", nullable = false)
+    @JoinColumn(name = "guardian_user_id", nullable = true)
     private User guardianUser;
     
     @Column(nullable = false, length = 100)
