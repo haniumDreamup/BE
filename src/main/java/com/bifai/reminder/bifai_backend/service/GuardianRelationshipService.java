@@ -354,14 +354,38 @@ public class GuardianRelationshipService {
    * 초대 수락 시 acceptInvitation()에서 guardianUser 연결
    */
   private Guardian createPendingGuardian(GuardianInvitationRequest request) {
+    // 사용자 조회 (user 필수 필드)
+    User user = userRepository.findById(request.getUserId())
+      .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+    // GuardianRelationship.RelationshipType → Guardian.RelationshipType 변환
+    Guardian.RelationshipType guardianRelType = convertToGuardianRelationshipType(request.getRelationshipType());
+
     Guardian guardian = Guardian.builder()
+      .user(user) // 필수: 보호받는 사용자
       .email(request.getGuardianEmail())
       .name(request.getGuardianName())
+      .primaryPhone(request.getGuardianPhone()) // 필수: 전화번호
+      .relationship(request.getRelationshipType().getDescription()) // 필수: 관계 설명
+      .relationshipType(guardianRelType)
       .guardianUser(null) // 초대 시에는 NULL, 수락 후 설정
       .isActive(false) // 초대 수락 전까지 비활성
       .build();
 
     return guardianRepository.save(guardian);
+  }
+
+  /**
+   * GuardianRelationship.RelationshipType → Guardian.RelationshipType 변환
+   */
+  private Guardian.RelationshipType convertToGuardianRelationshipType(
+      GuardianRelationship.RelationshipType relType) {
+    return switch (relType) {
+      case PARENT -> Guardian.RelationshipType.PARENT;
+      case SIBLING -> Guardian.RelationshipType.SIBLING;
+      case CAREGIVER, PROFESSIONAL -> Guardian.RelationshipType.CAREGIVER;
+      default -> Guardian.RelationshipType.OTHER;
+    };
   }
   
   /**
