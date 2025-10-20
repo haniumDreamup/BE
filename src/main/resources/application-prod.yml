@@ -111,7 +111,7 @@ spring:
             
   # Flyway Configuration
   flyway:
-    enabled: false  # cognitive_level은 ddl-auto=update로 자동 추가
+    enabled: true  # 프로덕션 마이그레이션 활성화
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
