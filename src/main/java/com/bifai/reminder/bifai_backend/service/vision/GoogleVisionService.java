@@ -163,13 +163,9 @@ public class GoogleVisionService {
 
       HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-      // OpenAI API 호출
+      // OpenAI API 호출 (재시도 로직 포함)
       log.info("OpenAI API 호출 중... (모델: {})", model);
-      ResponseEntity<Map> response = restTemplate.postForEntity(
-          "https://api.openai.com/v1/chat/completions",
-          request,
-          Map.class
-      );
+      ResponseEntity<Map> response = callOpenAIWithRetry(request, 3);
 
       long duration = System.currentTimeMillis() - startTime;
 
@@ -259,6 +255,62 @@ public class GoogleVisionService {
       log.error("이미지 리사이즈 실패: {}", e.getMessage());
       return imageBytes;  // 실패시 원본 사용
     }
+  }
+
+  /**
+   * OpenAI API 호출 (재시도 로직)
+   */
+  private ResponseEntity<Map> callOpenAIWithRetry(HttpEntity<Map<String, Object>> request, int maxRetries) throws IOException {
+    int attempt = 0;
+    IOException lastException = null;
+
+    while (attempt < maxRetries) {
+      attempt++;
+      try {
+        log.info("OpenAI API 호출 시도 {}/{}", attempt, maxRetries);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+            "https://api.openai.com/v1/chat/completions",
+            request,
+            Map.class
+        );
+
+        // 성공
+        log.info("✅ OpenAI API 호출 성공 (시도 {}회)", attempt);
+        return response;
+
+      } catch (org.springframework.web.client.HttpServerErrorException e) {
+        // 5xx 에러 - 재시도 가능
+        lastException = new IOException("OpenAI API 서버 오류: " + e.getMessage(), e);
+        log.warn("⚠️ OpenAI API 서버 오류 (시도 {}/{}): {}", attempt, maxRetries, e.getStatusCode());
+
+        if (attempt < maxRetries) {
+          try {
+            // 지수 백오프: 1초 → 2초 → 4초
+            long waitTime = (long) Math.pow(2, attempt - 1) * 1000;
+            log.info("{}ms 후 재시도...", waitTime);
+            Thread.sleep(waitTime);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IOException("재시도 대기 중 인터럽트 발생", ie);
+          }
+        }
+
+      } catch (org.springframework.web.client.HttpClientErrorException e) {
+        // 4xx 에러 - 재시도 불가능 (인증, 요청 오류 등)
+        log.error("❌ OpenAI API 클라이언트 오류 (재시도 불가): {}", e.getStatusCode());
+        throw new IOException("OpenAI API 요청 오류: " + e.getMessage(), e);
+
+      } catch (Exception e) {
+        // 기타 오류
+        log.error("❌ OpenAI API 호출 중 예상치 못한 오류: {}", e.getMessage());
+        throw new IOException("OpenAI API 호출 실패: " + e.getMessage(), e);
+      }
+    }
+
+    // 모든 재시도 실패
+    log.error("❌ OpenAI API 호출 실패 - {}회 시도 모두 실패", maxRetries);
+    throw lastException != null ? lastException : new IOException("OpenAI API 호출 실패");
   }
 
   /**
