@@ -21,8 +21,8 @@ public class Reminder extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reminderId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "schedule_id", nullable = false)
     private Schedule schedule;
     
     @Column(nullable = false)
@@ -94,6 +94,20 @@ public class Reminder extends BaseEntity {
     // 관계 매핑
     // Notification은 Schedule과 연결되어 있으므로 Reminder와의 직접 관계 제거
     
+    /**
+     * 엔티티 저장 전 검증
+     */
+    @PrePersist
+    @PreUpdate
+    private void validateEntity() {
+        if (schedule == null) {
+            throw new IllegalStateException("Reminder는 반드시 Schedule과 연결되어야 합니다");
+        }
+        if (reminderTime == null) {
+            throw new IllegalStateException("reminderTime은 필수입니다");
+        }
+    }
+
     /**
      * 알림 전송 처리
      */

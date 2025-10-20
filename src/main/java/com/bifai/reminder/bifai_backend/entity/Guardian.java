@@ -23,7 +23,8 @@ import java.util.List;
            @Index(name = "idx_guardian_location_view", columnList = "can_view_location, is_active, user_id")
        },
        uniqueConstraints = {
-           @UniqueConstraint(name = "uk_user_guardian", columnNames = {"user_id", "guardian_user_id"})
+           @UniqueConstraint(name = "uk_user_guardian", columnNames = {"user_id", "guardian_user_id"}),
+           @UniqueConstraint(name = "uk_user_email", columnNames = {"user_id", "email"})
        })
 @Getter
 @Setter

@@ -114,6 +114,7 @@ public class Schedule extends BaseTimeEntity {
      * 반복 간격 (매 N일, 매 N주 등)
      */
     @Column(name = "interval_value")
+    @Builder.Default
     private Integer intervalValue = 1;
 
     /**
@@ -133,12 +134,14 @@ public class Schedule extends BaseTimeEntity {
      * 스케줄 활성화 상태
      */
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     /**
      * 우선순위 (1=낮음, 2=보통, 3=높음, 4=매우 높음)
      */
     @Column(name = "priority", nullable = false)
+    @Builder.Default
     private Integer priority = 2;
 
     /**
@@ -157,6 +160,7 @@ public class Schedule extends BaseTimeEntity {
      * 완료 확인 필요 여부
      */
     @Column(name = "requires_confirmation")
+    @Builder.Default
     private Boolean requiresConfirmation = false;
 
     /**
@@ -164,6 +168,7 @@ public class Schedule extends BaseTimeEntity {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "created_by_type", length = 20)
+    @Builder.Default
     private CreatorType createdByType = CreatorType.USER;
 
     /**

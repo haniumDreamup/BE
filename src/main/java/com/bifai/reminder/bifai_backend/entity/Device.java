@@ -12,7 +12,10 @@ import java.util.List;
  * 디바이스 엔티티 - 사용자가 사용하는 디바이스 정보 관리
  */
 @Entity
-@Table(name = "devices")
+@Table(name = "devices",
+       uniqueConstraints = {
+           @UniqueConstraint(name = "uk_user_device", columnNames = {"user_id", "device_id"})
+       })
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,8 +33,8 @@ public class Device extends BaseEntity {
     @JsonIgnore
     private User user;
     
-    @Column(name = "device_id", nullable = false, unique = true, length = 255)
-    private String deviceId; // 모바일 디바이스 고유 ID
+    @Column(name = "device_id", nullable = false, length = 255)
+    private String deviceId; // 모바일 디바이스 고유 ID (user_id와 조합하여 unique)
     
     @Column(name = "device_identifier", unique = true, length = 255)
     private String deviceIdentifier; // MAC 주소 등 고유 식별자

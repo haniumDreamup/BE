@@ -59,8 +59,9 @@ public class GuardianRelationshipService {
     
     // 중복 관계 확인
     if (relationshipRepository.existsByGuardian_IdAndUser_UserIdAndStatusNot(
-        guardian.getId(), user.getId(), RelationshipStatus.TERMINATED)) {
-      throw new IllegalStateException("이미 존재하거나 대기 중인 관계입니다");
+        guardian.getId(), user.getUserId(), RelationshipStatus.TERMINATED)) {
+      log.warn("중복 보호자 관계 시도 - 보호자: {}, 사용자: {}", guardian.getId(), user.getUserId());
+      throw new IllegalStateException("이미 존재하거나 대기 중인 보호자 관계입니다");
     }
     
     // 초대 토큰 생성
