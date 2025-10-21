@@ -122,3 +122,4 @@ src/main/resources/firebase-service-account.json
 
 # Flutter web build files (불필요)
 src/main/resources/static/
+.local/
