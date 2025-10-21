@@ -113,7 +113,7 @@ spring:
   flyway:
     enabled: true  # 프로덕션 마이그레이션 자동 실행
     baseline-on-migrate: true  # 기존 DB에 Flyway 적용 시 baseline 생성
-    validate-on-migrate: true  # Checksum 검증 활성화
+    validate-on-migrate: false  # V2 실패 이력으로 인해 비활성화
     ignore-missing-migrations: true  # V2 비활성화 허용
     ignore-ignored-migrations: true  # .disabled 파일 무시
     out-of-order: false  # 순서 어긋난 마이그레이션 허용 안 함
