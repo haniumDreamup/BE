@@ -31,10 +31,13 @@ public class GoogleVisionService {
   private String model;
 
   public GoogleVisionService(RestTemplateBuilder restTemplateBuilder) {
+    // 명시적 타임아웃 설정 (ClientHttpRequestFactory 사용)
     this.restTemplate = restTemplateBuilder
-        .setConnectTimeout(Duration.ofSeconds(30))
-        .setReadTimeout(Duration.ofSeconds(60))  // Vision 분석은 최대 60초
+        .setConnectTimeout(Duration.ofSeconds(15))   // 연결 타임아웃: 15초
+        .setReadTimeout(Duration.ofSeconds(30))      // 읽기 타임아웃: 30초 (앱 타임아웃보다 짧게)
         .build();
+
+    log.info("GoogleVisionService 초기화 - 타임아웃: 연결 15초, 읽기 30초");
   }
 
   /**
@@ -301,9 +304,25 @@ public class GoogleVisionService {
         log.error("❌ OpenAI API 클라이언트 오류 (재시도 불가): {}", e.getStatusCode());
         throw new IOException("OpenAI API 요청 오류: " + e.getMessage(), e);
 
+      } catch (org.springframework.web.client.ResourceAccessException e) {
+        // 타임아웃 또는 네트워크 오류
+        lastException = new IOException("OpenAI API 타임아웃 또는 네트워크 오류: " + e.getMessage(), e);
+        log.warn("⚠️ OpenAI API 타임아웃/네트워크 오류 (시도 {}/{}): {}", attempt, maxRetries, e.getMessage());
+
+        if (attempt < maxRetries) {
+          try {
+            long waitTime = (long) Math.pow(2, attempt - 1) * 1000;
+            log.info("{}ms 후 재시도...", waitTime);
+            Thread.sleep(waitTime);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IOException("재시도 대기 중 인터럽트 발생", ie);
+          }
+        }
+
       } catch (Exception e) {
         // 기타 오류
-        log.error("❌ OpenAI API 호출 중 예상치 못한 오류: {}", e.getMessage());
+        log.error("❌ OpenAI API 호출 중 예상치 못한 오류: {}", e.getClass().getName() + " - " + e.getMessage());
         throw new IOException("OpenAI API 호출 실패: " + e.getMessage(), e);
       }
     }
