@@ -111,7 +111,7 @@ spring:
             
   # Flyway Configuration (Best Practices 2025)
   flyway:
-    enabled: true  # 프로덕션 마이그레이션 자동 실행
+    enabled: false  # 수동 마이그레이션으로 전환 (V3 문법 오류로 인해 비활성화)
     baseline-on-migrate: true  # 기존 DB에 Flyway 적용 시 baseline 생성
     validate-on-migrate: false  # V2 실패 이력으로 인해 비활성화
     ignore-missing-migrations: true  # V2 비활성화 허용
