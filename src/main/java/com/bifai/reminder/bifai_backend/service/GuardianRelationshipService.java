@@ -365,8 +365,10 @@ public class GuardianRelationshipService {
       .user(user) // 필수: 보호받는 사용자
       .email(request.getGuardianEmail())
       .name(request.getGuardianName())
-      .primaryPhone(request.getGuardianPhone()) // 필수: 전화번호
-      .relationship(request.getRelationshipType().getDescription()) // 필수: 관계 설명
+      .primaryPhone(request.getGuardianPhone()) // 선택: 전화번호 (이메일만 사용)
+      .relationship(request.getRelationshipType() != null
+          ? request.getRelationshipType().getDescription()
+          : null) // 선택: 관계 설명
       .relationshipType(guardianRelType)
       .guardianUser(null) // 초대 시에는 NULL, 수락 후 설정
       .isActive(false) // 초대 수락 전까지 비활성

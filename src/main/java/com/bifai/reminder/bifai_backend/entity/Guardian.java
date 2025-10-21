@@ -53,7 +53,7 @@ public class Guardian extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String name;
     
-    @Column(length = 50, nullable = false)
+    @Column(length = 50, nullable = true)
     private String relationship; // 자유 텍스트 관계 설명
     
     @Column(name = "relationship_type", length = 20)
@@ -61,7 +61,7 @@ public class Guardian extends BaseEntity {
     @Builder.Default
     private RelationshipType relationshipType = RelationshipType.OTHER;
     
-    @Column(name = "primary_phone", nullable = false, length = 20)
+    @Column(name = "primary_phone", nullable = true, length = 20)
     private String primaryPhone;
     
     @Column(name = "secondary_phone", length = 20)

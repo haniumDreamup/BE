@@ -123,3 +123,11 @@ src/main/resources/firebase-service-account.json
 # Flutter web build files (불필요)
 src/main/resources/static/
 .local/
+
+# Documentation & Reports (프로젝트 루트 정리)
+*.md
+!README.md
+!CLAUDE.md
+docs/
+reports/
+troubleshooting/

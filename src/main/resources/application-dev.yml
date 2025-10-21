@@ -88,7 +88,7 @@ flyway:
 # Development Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-secret-key-for-testing-only-change-in-production}
+    secret: ${JWT_SECRET:dev-secret-key-for-testing-only-change-in-production-must-be-64-bytes-or-longer-for-hs512-algorithm}
     access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
     refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
   cors:
