@@ -56,13 +56,23 @@ public class GuardianRelationshipController {
       GuardianInvitationResponse response = relationshipService.inviteGuardian(request);
       return ResponseEntity.ok(ApiResponse.success(response, "보호자 초대가 발송되었습니다"));
     } catch (IllegalArgumentException e) {
+      log.warn("보호자 초대 실패 - 잘못된 요청: {}", e.getMessage());
       return ResponseEntity.badRequest()
         .body(ApiResponse.error("BAD_REQUEST", e.getMessage()));
     } catch (IllegalStateException e) {
+      log.warn("보호자 초대 실패 - 중복 또는 상태 오류: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ApiResponse.error("CONFLICT", e.getMessage()));
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      log.warn("보호자 초대 실패 - 데이터 무결성 위반: {}", e.getMessage());
+      String message = "이미 등록된 보호자입니다";
+      if (e.getMessage() != null && e.getMessage().contains("Duplicate entry")) {
+        message = "이미 같은 이메일로 등록된 보호자가 있습니다";
+      }
+      return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ApiResponse.error("DUPLICATE_GUARDIAN", message));
     } catch (Exception e) {
-      log.error("보호자 초대 중 예상치 못한 오류: {}", e.getMessage());
+      log.error("보호자 초대 중 예상치 못한 오류: {}", e.getMessage(), e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(ApiResponse.error("INVITE_ERROR", "보호자 초대 중 오류가 발생했습니다"));
     }

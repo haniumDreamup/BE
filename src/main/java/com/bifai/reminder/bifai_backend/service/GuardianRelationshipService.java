@@ -52,9 +52,9 @@ public class GuardianRelationshipService {
     // 사용자 확인
     User user = userRepository.findById(request.getUserId())
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
-    
-    // 보호자 계정 확인 또는 생성
-    Guardian guardian = guardianRepository.findByEmail(request.getGuardianEmail())
+
+    // 보호자 계정 확인 또는 생성 (user와 email 조합으로 확인)
+    Guardian guardian = guardianRepository.findByUserAndEmail(user, request.getGuardianEmail())
       .orElseGet(() -> createPendingGuardian(request));
     
     // 중복 관계 확인

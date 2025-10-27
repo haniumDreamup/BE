@@ -40,7 +40,13 @@ public interface GuardianRepository extends JpaRepository<Guardian, Long> {
     
     @Query("SELECT g FROM Guardian g WHERE g.email = :email AND g.isActive = true")
     Optional<Guardian> findByEmail(@Param("email") String email);
-    
+
+    /**
+     * 사용자와 이메일로 보호자 조회 (중복 체크용)
+     */
+    @Query("SELECT g FROM Guardian g WHERE g.user = :user AND g.email = :email")
+    Optional<Guardian> findByUserAndEmail(@Param("user") User user, @Param("email") String email);
+
     /**
      * 이름으로 보호자 검색 (부분 매치)
      */
