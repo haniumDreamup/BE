@@ -19,9 +19,14 @@ import java.util.Optional;
 public interface GuardianRelationshipRepository extends JpaRepository<GuardianRelationship, Long> {
   
   /**
-   * 특정 보호자와 사용자 간의 관계 조회
+   * 특정 보호자와 사용자 간의 관계 조회 (단일)
    */
   Optional<GuardianRelationship> findByGuardian_IdAndUser_UserId(Long guardianId, Long userId);
+
+  /**
+   * 특정 보호자와 사용자 간의 모든 관계 조회 (중복 체크용)
+   */
+  List<GuardianRelationship> findAllByGuardian_IdAndUser_UserId(Long guardianId, Long userId);
   
   /**
    * 특정 사용자의 모든 보호자 관계 조회

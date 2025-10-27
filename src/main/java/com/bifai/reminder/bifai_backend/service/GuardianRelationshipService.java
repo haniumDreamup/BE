@@ -48,18 +48,29 @@ public class GuardianRelationshipService {
    */
   public GuardianInvitationResponse inviteGuardian(GuardianInvitationRequest request) {
     log.info("보호자 초대 시작 - 사용자: {}, 보호자 이메일: {}", request.getUserId(), request.getGuardianEmail());
-    
+
     // 사용자 확인
     User user = userRepository.findById(request.getUserId())
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
 
     // 보호자 계정 확인 또는 생성 (user와 email 조합으로 확인)
-    Guardian guardian = guardianRepository.findByUserAndEmail(user, request.getGuardianEmail())
-      .orElseGet(() -> createPendingGuardian(request));
-    
-    // 중복 관계 확인
-    if (relationshipRepository.existsByGuardian_IdAndUser_UserIdAndStatusNot(
-        guardian.getId(), user.getUserId(), RelationshipStatus.TERMINATED)) {
+    // synchronized로 동시성 문제 방지
+    Guardian guardian;
+    synchronized (this) {
+      guardian = guardianRepository.findByUserAndEmail(user, request.getGuardianEmail())
+        .orElseGet(() -> createPendingGuardian(request));
+    }
+
+    // 중복 관계 확인 (TERMINATED, REJECTED, EXPIRED 제외 - 재초대 허용)
+    List<GuardianRelationship> existingRelationships = relationshipRepository
+      .findAllByGuardian_IdAndUser_UserId(guardian.getId(), user.getUserId());
+
+    boolean hasActiveRelationship = existingRelationships.stream()
+      .anyMatch(rel -> rel.getStatus() == RelationshipStatus.ACTIVE ||
+                       rel.getStatus() == RelationshipStatus.PENDING ||
+                       rel.getStatus() == RelationshipStatus.SUSPENDED);
+
+    if (hasActiveRelationship) {
       log.warn("중복 보호자 관계 시도 - 보호자: {}, 사용자: {}", guardian.getId(), user.getUserId());
       throw new IllegalStateException("이미 존재하거나 대기 중인 보호자 관계입니다");
     }
@@ -108,30 +119,41 @@ public class GuardianRelationshipService {
   /**
    * 초대 수락
    */
-  public GuardianRelationshipDto acceptInvitation(String invitationToken, Long guardianId) {
-    log.info("초대 수락 - 토큰: {}, 보호자: {}", invitationToken, guardianId);
-    
+  public GuardianRelationshipDto acceptInvitation(String invitationToken, Long guardianUserId) {
+    log.info("초대 수락 - 토큰: {}, 보호자 사용자 ID: {}", invitationToken, guardianUserId);
+
     GuardianRelationship relationship = relationshipRepository.findByInvitationToken(invitationToken)
       .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 초대 토큰입니다"));
-    
+
     // 만료 확인
     if (relationship.isInvitationExpired()) {
       relationship.setStatus(RelationshipStatus.EXPIRED);
       relationshipRepository.save(relationship);
       throw new IllegalStateException("초대가 만료되었습니다");
     }
-    
-    // 보호자 확인
-    if (!relationship.getGuardian().getId().equals(guardianId)) {
-      throw new IllegalArgumentException("권한이 없습니다");
+
+    // 보호자 사용자 조회
+    User guardianUser = userRepository.findById(guardianUserId)
+      .orElseThrow(() -> new IllegalArgumentException("보호자 사용자를 찾을 수 없습니다"));
+
+    Guardian guardian = relationship.getGuardian();
+
+    // Guardian 엔티티에 guardianUser 연결 (초대 시 NULL이었던 필드)
+    if (guardian.getGuardianUser() == null) {
+      guardian.setGuardianUser(guardianUser);
+      guardian.setIsActive(true); // 수락 시 활성화
+      guardianRepository.save(guardian);
+      log.info("Guardian 엔티티에 guardianUser 연결 완료 - Guardian ID: {}, User ID: {}",
+        guardian.getId(), guardianUserId);
     }
-    
+
     // 관계 활성화
-    relationship.activate("guardian:" + guardianId);
+    relationship.activate("guardian:" + guardianUserId);
     relationship = relationshipRepository.save(relationship);
-    
-    log.info("초대 수락 완료 - 관계 ID: {}", relationship.getRelationshipId());
-    
+
+    log.info("초대 수락 완료 - 관계 ID: {}, Guardian ID: {}",
+      relationship.getRelationshipId(), guardian.getId());
+
     return convertToDto(relationship);
   }
   
