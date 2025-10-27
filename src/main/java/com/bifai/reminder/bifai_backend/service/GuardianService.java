@@ -44,7 +44,8 @@ public class GuardianService {
     @Transactional(readOnly = true)
     public List<Guardian> getMyGuardians() {
         User currentUser = getCurrentUser();
-        return guardianRepository.findByUserAndIsActiveTrue(currentUser);
+        // PENDING 상태의 Guardian도 포함하여 조회 (isActive 필터 제거)
+        return guardianRepository.findByUser(currentUser);
     }
 
     /**
