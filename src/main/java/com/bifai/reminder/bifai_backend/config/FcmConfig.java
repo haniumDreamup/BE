@@ -89,25 +89,39 @@ public class FcmConfig {
    * @throws IOException 파일 읽기 실패
    */
   private GoogleCredentials getGoogleCredentials() throws IOException {
-    // 먼저 classpath에서 시도
+    // 1. 절대 경로로 파일 시스템에서 시도 (프로덕션 환경)
+    java.io.File credentialsFile = new java.io.File(credentialsPath);
+    if (credentialsFile.exists() && credentialsFile.isFile()) {
+      log.info("파일 시스템에서 Firebase 자격증명 로드: {}", credentialsPath);
+      try (InputStream inputStream = new java.io.FileInputStream(credentialsFile)) {
+        return GoogleCredentials.fromStream(inputStream);
+      }
+    }
+
+    // 2. Classpath에서 시도 (로컬 개발 환경)
     try {
       ClassPathResource resource = new ClassPathResource(credentialsPath);
-      try (InputStream inputStream = resource.getInputStream()) {
-        return GoogleCredentials.fromStream(inputStream);
+      if (resource.exists()) {
+        log.info("Classpath에서 Firebase 자격증명 로드: {}", credentialsPath);
+        try (InputStream inputStream = resource.getInputStream()) {
+          return GoogleCredentials.fromStream(inputStream);
+        }
       }
     } catch (Exception e) {
       log.debug("Classpath에서 자격 증명 파일을 찾을 수 없습니다: {}", e.getMessage());
     }
-    
-    // 환경 변수에서 시도 (프로덕션 환경)
+
+    // 3. 환경 변수에서 시도 (JSON 문자열)
     String fcmCredentials = System.getenv("FCM_CREDENTIALS_JSON");
     if (fcmCredentials != null && !fcmCredentials.isEmpty()) {
+      log.info("환경변수에서 Firebase 자격증명 로드");
       return GoogleCredentials.fromStream(
           new java.io.ByteArrayInputStream(fcmCredentials.getBytes())
       );
     }
-    
-    // 기본 자격 증명 사용 (Google Cloud 환경)
+
+    // 4. 기본 자격 증명 사용 (Google Cloud 환경)
+    log.warn("기본 Application Default Credentials 사용 시도");
     return GoogleCredentials.getApplicationDefault();
   }
   
