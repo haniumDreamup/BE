@@ -91,6 +91,16 @@ public class NotificationService {
    * 일반 푸시 알림 전송
    */
   public void sendPushNotification(Long userId, String title, String message) {
+    sendPushNotification(userId, title, message, null, DEFAULT_CATEGORY, DEFAULT_PRIORITY);
+  }
+
+  /**
+   * 커스텀 데이터와 카테고리를 포함한 푸시 알림 전송
+   */
+  public void sendPushNotification(Long userId, String title, String message,
+                                   java.util.Map<String, String> data,
+                                   com.bifai.reminder.bifai_backend.service.mobile.FcmService.NotificationCategory category,
+                                   com.bifai.reminder.bifai_backend.service.mobile.FcmService.Priority priority) {
     try {
       if (fcmService == null) {
         log.warn("FCM 서비스가 비활성화되어 푸시 알림을 전송할 수 없습니다: userId={}", userId);
@@ -99,8 +109,8 @@ public class NotificationService {
 
       String fcmToken = getFcmTokenForUser(userId);
       if (fcmToken != null) {
-        fcmService.sendNotification(fcmToken, title, message, null, DEFAULT_CATEGORY, DEFAULT_PRIORITY);
-        log.info("푸시 알림 전송 완료: userId={}, title={}", userId, title);
+        fcmService.sendNotification(fcmToken, title, message, data, category, priority);
+        log.info("푸시 알림 전송 완료: userId={}, title={}, category={}", userId, title, category);
       } else {
         log.warn("FCM 토큰을 찾을 수 없음: userId={}", userId);
       }

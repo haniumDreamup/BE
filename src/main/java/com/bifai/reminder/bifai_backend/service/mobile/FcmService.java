@@ -49,7 +49,8 @@ public class FcmService {
     EMERGENCY("긴급", "🚨"),
     REMINDER("알림", "🔔"),
     HEALTH("건강", "❤️"),
-    LOCATION("위치", "📍");
+    LOCATION("위치", "📍"),
+    GUARDIAN("보호자", "👥");
     
     private final String korean;
     private final String emoji;
