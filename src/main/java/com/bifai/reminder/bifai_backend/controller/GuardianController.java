@@ -35,16 +35,19 @@ public class GuardianController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<List<Guardian>>> getMyGuardians() {
         log.info("나의 보호자 목록 조회 요청");
-        
+
         try {
             List<Guardian> guardians = guardianService.getMyGuardians();
+            // 빈 목록도 정상 응답으로 처리
             return ResponseEntity.ok(
-                ApiResponse.success(guardians, "보호자 목록을 가져왔습니다")
+                ApiResponse.success(guardians, guardians.isEmpty()
+                    ? "등록된 보호자가 없습니다"
+                    : "보호자 목록을 가져왔습니다")
             );
         } catch (Exception e) {
             log.error("보호자 목록 조회 실패", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("UNAUTHORIZED", "인증이 필요합니다"));
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("INTERNAL_ERROR", "보호자 목록 조회 중 오류가 발생했습니다"));
         }
     }
 
