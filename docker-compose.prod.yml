@@ -37,6 +37,9 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: false
+      FCM_ENABLED: ${FCM_ENABLED:-true}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-bif-ai}
+      FCM_CREDENTIALS_PATH: /app/firebase-service-account.json
       JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
     depends_on:
       redis:
@@ -44,6 +47,7 @@ services:
     volumes:
       - app-logs:/var/log/bifai
       - app-files:/var/bifai/files
+      - /home/ubuntu/firebase-service-account.json:/app/firebase-service-account.json:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
       interval: 30s
