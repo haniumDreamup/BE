@@ -36,6 +36,7 @@ public class GuardianRelationshipService {
   private final UserRepository userRepository;
   private final JavaMailSender mailSender;
   private final ObjectMapper objectMapper;
+  private final NotificationService notificationService;
   
   @Value("${app.base-url:http://localhost:8080}")
   private String baseUrl;
@@ -453,30 +454,38 @@ public class GuardianRelationshipService {
    */
   private void sendInvitationEmail(Guardian guardian, User user, String invitationToken) {
     try {
-      SimpleMailMessage message = new SimpleMailMessage();
-      message.setTo(guardian.getEmail());
-      message.setSubject("BIF-AI 보호자 초대");
-      message.setText(String.format(
-        "안녕하세요, %s님.\n\n" +
-        "%s님이 BIF-AI 서비스의 보호자로 초대했습니다.\n\n" +
-        "아래 링크를 클릭하여 초대를 수락해주세요:\n" +
-        "%s/guardian/accept-invitation?token=%s\n\n" +
-        "이 링크는 %d시간 후 만료됩니다.\n\n" +
-        "감사합니다.\n" +
-        "BIF-AI 팀",
-        guardian.getName(),
-        user.getUsername(),
-        baseUrl,
-        invitationToken,
-        invitationExpiryHours
-      ));
-      
-      mailSender.send(message);
-      log.info("초대 이메일 발송 완료 - 수신자: {}", guardian.getEmail());
-      
+      // 보호자 이메일로 등록된 사용자 찾기
+      User guardianUser = userRepository.findByEmail(guardian.getEmail()).orElse(null);
+
+      if (guardianUser != null) {
+        // FCM 푸시 알림 전송 (타입 포함)
+        String title = "보호자 초대";
+        String message = String.format("%s님이 보호자로 초대했습니다", user.getUsername());
+
+        // 알림 데이터에 타입 포함
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "GUARDIAN_INVITATION");
+        data.put("invitationToken", invitationToken);
+
+        notificationService.sendPushNotification(
+          guardianUser.getUserId(),
+          title,
+          message,
+          data,
+          com.bifai.reminder.bifai_backend.service.mobile.FcmService.NotificationCategory.GUARDIAN,
+          com.bifai.reminder.bifai_backend.service.mobile.FcmService.Priority.HIGH
+        );
+        log.info("초대 푸시 알림 발송 완료 - 수신자: {} (userId: {})", guardian.getEmail(), guardianUser.getUserId());
+      } else {
+        log.warn("보호자 이메일에 해당하는 사용자를 찾을 수 없음: {}", guardian.getEmail());
+      }
+
+      // 이메일 발송은 설정되지 않았으므로 생략
+      // 초대는 생성되고, 앱 내에서 초대 목록으로 확인 가능
+
     } catch (Exception e) {
-      log.error("초대 이메일 발송 실패", e);
-      // 이메일 발송 실패해도 초대는 생성됨 (수동으로 토큰 전달 가능)
+      log.error("초대 알림 발송 실패", e);
+      // 알림 발송 실패해도 초대는 생성됨 (앱 내에서 확인 가능)
     }
   }
   
@@ -513,22 +522,40 @@ public class GuardianRelationshipService {
     dto.setStatus(relationship.getStatus());
     dto.setEmergencyPriority(relationship.getEmergencyPriority());
     dto.setNotes(relationship.getNotes());
+    dto.setInvitationToken(relationship.getInvitationToken());
+    dto.setInvitationExpiresAt(relationship.getInvitationExpiresAt());
     dto.setLastActiveAt(relationship.getLastActiveAt());
     dto.setCreatedAt(relationship.getCreatedAt());
-    
+    dto.setApprovedAt(relationship.getApprovedAt());
+
     // 권한 설정 파싱
     if (relationship.getPermissionSettings() != null) {
       try {
         Map<String, Boolean> permissions = objectMapper.readValue(
-          relationship.getPermissionSettings(), 
+          relationship.getPermissionSettings(),
           objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, Boolean.class)
         );
         dto.setPermissionSettings(permissions);
+
+        // Flutter 호환 필드 설정
+        dto.setPermissions(
+          permissions.entrySet().stream()
+            .filter(Map.Entry::getValue)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList())
+        );
+
+        dto.setCanViewLocation(permissions.getOrDefault("VIEW_LOCATION", false));
+        dto.setCanReceiveEmergencyAlerts(permissions.getOrDefault("RECEIVE_EMERGENCY_ALERTS", true));
+        dto.setCanViewMedicalInfo(permissions.getOrDefault("VIEW_MEDICAL_INFO", false));
+        dto.setCanViewSchedule(permissions.getOrDefault("VIEW_SCHEDULE", false));
+        dto.setCanModifySettings(permissions.getOrDefault("MODIFY_SETTINGS", false));
+
       } catch (Exception e) {
         log.error("권한 설정 파싱 실패", e);
       }
     }
-    
+
     return dto;
   }
   

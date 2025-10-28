@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,7 +36,18 @@ public class GuardianRelationshipDto {
   
   private Integer emergencyPriority;
   private String notes;
-  
+
+  private String invitationToken;
+  private LocalDateTime invitationExpiresAt;
+
+  // Flutter 호환 필드
+  private List<String> permissions;
+  private Boolean canViewLocation;
+  private Boolean canReceiveEmergencyAlerts;
+  private Boolean canViewMedicalInfo;
+  private Boolean canViewSchedule;
+  private Boolean canModifySettings;
+
   private LocalDateTime lastActiveAt;
   private LocalDateTime createdAt;
   private LocalDateTime approvedAt;
