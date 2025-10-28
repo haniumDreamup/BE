@@ -44,8 +44,14 @@ public class GuardianService {
     @Transactional(readOnly = true)
     public List<Guardian> getMyGuardians() {
         User currentUser = getCurrentUser();
-        // 활성 상태(isActive=true)인 Guardian만 조회 (PENDING 상태 포함, 삭제된 보호자는 제외)
-        return guardianRepository.findByUserAndIsActiveTrue(currentUser);
+        // 모든 Guardian 조회 (초대 중, 활성, 대기 중 포함)
+        // terminatedAt이 null인 경우만 조회 (명시적으로 삭제되지 않은 보호자)
+        List<Guardian> allGuardians = guardianRepository.findByUser(currentUser);
+
+        // terminatedAt이 없는 보호자만 반환 (삭제되지 않은 보호자)
+        return allGuardians.stream()
+            .filter(g -> g.getTerminatedAt() == null)
+            .toList();
     }
 
     /**

@@ -62,13 +62,15 @@ public class GuardianRelationshipService {
     }
 
     // 중복 관계 확인 (TERMINATED, REJECTED, EXPIRED 제외 - 재초대 허용)
+    // Guardian이 삭제된 경우(isActive=false)는 재초대 허용
     List<GuardianRelationship> existingRelationships = relationshipRepository
       .findAllByGuardian_IdAndUser_UserId(guardian.getId(), user.getUserId());
 
     boolean hasActiveRelationship = existingRelationships.stream()
-      .anyMatch(rel -> rel.getStatus() == RelationshipStatus.ACTIVE ||
-                       rel.getStatus() == RelationshipStatus.PENDING ||
-                       rel.getStatus() == RelationshipStatus.SUSPENDED);
+      .anyMatch(rel -> (rel.getStatus() == RelationshipStatus.ACTIVE ||
+                        rel.getStatus() == RelationshipStatus.PENDING ||
+                        rel.getStatus() == RelationshipStatus.SUSPENDED) &&
+                       rel.getGuardian().getIsActive()); // Guardian이 활성 상태인 경우만 중복으로 간주
 
     if (hasActiveRelationship) {
       log.warn("중복 보호자 관계 시도 - 보호자: {}, 사용자: {}", guardian.getId(), user.getUserId());
@@ -115,7 +117,34 @@ public class GuardianRelationshipService {
       .status("INVITATION_SENT")
       .build();
   }
-  
+
+  /**
+   * 받은 초대 목록 조회
+   */
+  @Transactional(readOnly = true)
+  public List<GuardianRelationshipDto> getMyInvitations(Long userId) {
+    log.info("받은 초대 목록 조회 - 사용자 ID: {}", userId);
+
+    // 사용자 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+    // 이 사용자가 보호자로 초대된 관계들 조회 (guardianUser가 null이거나 현재 사용자인 경우)
+    // Guardian 테이블에서 guardianUser가 null인 경우 = 아직 수락 안 한 초대
+    List<GuardianRelationship> pendingInvitations = relationshipRepository.findAll().stream()
+        .filter(rel -> rel.getStatus() == RelationshipStatus.PENDING &&
+                       rel.getGuardian().getGuardianUser() == null &&
+                       rel.getGuardian().getEmail() != null &&
+                       rel.getGuardian().getEmail().equals(user.getEmail()))
+        .toList();
+
+    log.info("PENDING 상태 초대 {}건 발견", pendingInvitations.size());
+
+    return pendingInvitations.stream()
+        .map(this::convertToDto)
+        .toList();
+  }
+
   /**
    * 초대 수락
    */

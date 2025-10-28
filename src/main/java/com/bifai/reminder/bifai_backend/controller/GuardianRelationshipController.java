@@ -79,6 +79,34 @@ public class GuardianRelationshipController {
   }
   
   /**
+   * 받은 초대 목록 조회
+   */
+  @GetMapping("/my-invitations")
+  @PreAuthorize("hasRole('USER') or hasRole('GUARDIAN')")
+  @Operation(summary = "받은 초대 목록", description = "내가 받은 보호자 초대 목록을 조회합니다")
+  public ResponseEntity<ApiResponse<List<GuardianRelationshipDto>>> getMyInvitations(
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    Long currentUserId = jwtAuthUtils.getCurrentUserId();
+    if (currentUserId == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error("UNAUTHORIZED", "로그인이 필요합니다"));
+    }
+
+    log.info("받은 초대 목록 조회 요청 - 사용자 ID: {}", currentUserId);
+
+    try {
+      List<GuardianRelationshipDto> invitations = relationshipService.getMyInvitations(currentUserId);
+      return ResponseEntity.ok(ApiResponse.success(invitations,
+          invitations.isEmpty() ? "받은 초대가 없습니다" : "초대 목록을 가져왔습니다"));
+    } catch (Exception e) {
+      log.error("받은 초대 목록 조회 실패: {}", e.getMessage(), e);
+      return ResponseEntity.internalServerError()
+          .body(ApiResponse.error("INTERNAL_ERROR", "초대 목록 조회 중 오류가 발생했습니다"));
+    }
+  }
+
+  /**
    * 초대 수락
    */
   @PostMapping("/accept-invitation")
@@ -86,9 +114,9 @@ public class GuardianRelationshipController {
   public ResponseEntity<ApiResponse<GuardianRelationshipDto>> acceptInvitation(
       @RequestParam String token,
       @RequestParam Long guardianId) {
-    
+
     log.info("초대 수락 요청 - 토큰: {}, 보호자: {}", token, guardianId);
-    
+
     try {
       GuardianRelationshipDto relationship = relationshipService.acceptInvitation(token, guardianId);
       return ResponseEntity.ok(ApiResponse.success(relationship, "초대가 수락되었습니다"));
