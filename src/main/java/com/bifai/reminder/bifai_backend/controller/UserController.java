@@ -1,6 +1,7 @@
 package com.bifai.reminder.bifai_backend.controller;
 
 import com.bifai.reminder.bifai_backend.dto.ApiResponse;
+import com.bifai.reminder.bifai_backend.dto.user.ChangePasswordRequest;
 import com.bifai.reminder.bifai_backend.dto.user.UserUpdateRequest;
 import com.bifai.reminder.bifai_backend.dto.user.RoleUpdateRequest;
 import com.bifai.reminder.bifai_backend.entity.User;
@@ -174,6 +175,36 @@ public class UserController {
             log.error("사용자 역할 수정 실패: userId={}", userId, e);
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("INTERNAL_ERROR", "사용자 역할 수정 중 오류가 발생했습니다"));
+        }
+    }
+
+    /**
+     * 비밀번호 변경
+     * PUT /api/v1/users/change-password
+     */
+    @PutMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        log.info("비밀번호 변경 요청");
+
+        try {
+            userService.changePassword(request);
+            return ResponseEntity.ok(
+                ApiResponse.success(null, "비밀번호가 변경되었습니다")
+            );
+        } catch (IllegalStateException e) {
+            log.warn("소셜 로그인 사용자 비밀번호 변경 시도");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("SOCIAL_LOGIN_USER", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("비밀번호 변경 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("INVALID_PASSWORD", e.getMessage()));
+        } catch (Exception e) {
+            log.error("비밀번호 변경 실패", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("INTERNAL_ERROR", "비밀번호 변경 중 오류가 발생했습니다"));
         }
     }
 

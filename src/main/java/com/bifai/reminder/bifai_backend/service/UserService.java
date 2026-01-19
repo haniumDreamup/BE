@@ -1,5 +1,6 @@
 package com.bifai.reminder.bifai_backend.service;
 
+import com.bifai.reminder.bifai_backend.dto.user.ChangePasswordRequest;
 import com.bifai.reminder.bifai_backend.dto.user.UserUpdateRequest;
 import com.bifai.reminder.bifai_backend.entity.User;
 import com.bifai.reminder.bifai_backend.entity.Role;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 현재 로그인한 사용자 정보 조회
@@ -226,5 +229,34 @@ public class UserService {
         
         user.setRoles(newRoles);
         return userRepository.save(user);
+    }
+
+    /**
+     * 비밀번호 변경
+     */
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        User currentUser = getCurrentUser();
+
+        // 소셜 로그인 사용자는 비밀번호 변경 불가
+        if (currentUser.getProvider() != null && !currentUser.getProvider().isEmpty()) {
+            throw new IllegalStateException("소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다");
+        }
+
+        // 현재 비밀번호 확인
+        if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPasswordHash())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다");
+        }
+
+        // 새 비밀번호가 현재 비밀번호와 동일한지 확인
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다");
+        }
+
+        // 비밀번호 업데이트
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+
+        log.info("비밀번호 변경 완료: userId={}", currentUser.getUserId());
     }
 }

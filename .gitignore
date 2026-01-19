@@ -131,3 +131,17 @@ src/main/resources/static/
 docs/
 reports/
 troubleshooting/
+/local-only/
+*.log
+*_results_*/
+
+# IDE & Tool Configurations (로컬 전용)
+.claude/
+.cursor/
+.research/
+.taskmaster/
+.roomodes
+
+# Personal Documents
+documents/
+personal-documents/
