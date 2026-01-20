@@ -37,6 +37,22 @@
 
 • GitHub Actions CI/CD 파이프라인 구축
 
+### 성능 최적화 & 트러블슈팅
+
+• **N+1 쿼리 최적화** (JOIN FETCH + @EntityGraph 적용, 쿼리 응답 170ms, TPS 109)
+
+• **보호자 초대 동시성 제어** (synchronized + DB UNIQUE 제약, 100 VU 동시 요청 시 중복 0건)
+
+• **Vision API 타임아웃 문제 해결** (이미지 리사이즈 + 타임아웃 설정, 3MB → 300KB 압축)
+
+• **Circuit Breaker 패턴 적용** (Resilience4j, 외부 API 장애 격리 및 폴백 처리)
+
+• **Event-Driven 아키텍처** (사용자 행동 로깅 비동기 처리, 메인 로직 영향 0ms)
+
+• **Guardian 중복 생성 방지** (synchronized 블록 + DB 제약 조건, 중복 등록 0건)
+
+• **Redis 다계층 캐싱** (자주 접근하는 데이터 사전 로드, 응답 속도 개선)
+
 ## 🛠️ 기술 스택
 
 ```
