@@ -4,22 +4,46 @@
 
 ## 📋 프로젝트 개요
 
+| **항목** | **내용** |
+| --- | --- |
+| **개발 기간** | 2025.05 ~ 2026.01 (8개월) |
+| **팀 구성** | Backend 1명 (본인), Frontend 1명 |
+| **배포 환경** | AWS EC2, RDS, S3 |
+| **서비스 대상** | 경계선 지능 대상자 190만 명 (전체 인구 3.7%) |
+
 한국 내 약 190만 명(전체 인구의 3.7%)에 해당하는 경계선 지능 대상자들의 일상생활을 지원하는 **Spring Boot 기반 백엔드 시스템**입니다.
 
-### 주요 기능
-- 🧠 **AI 이미지 분석**: GPT-4o Vision을 활용한 실시간 상황 인식
-- 📅 **패턴 학습 리마인더**: 사용자 행동 패턴 기반 지능형 알림
-- 🚨 **낙상 감지**: WebSocket + FCM을 통한 실시간 긴급 알림
-- 🗺️ **안전 구역 모니터링**: Geofence 기반 이탈 감지
-- 💬 **보호자 대시보드**: 실시간 활동/건강/위치 모니터링
+### 기능 구현
+
+• GPT-4o Vision 이미지 분석 시스템 (실시간 상황 인식, 위험 감지, 음성 가이드)
+
+• JWT + OAuth2 인증 시스템 (Google/Kakao/Naver 소셜 로그인, Refresh Token)
+
+• 낙상 감지 및 긴급 알림 시스템 (WebSocket + FCM, 실시간 보호자 알림)
+
+• Geofence 안전 구역 모니터링 (Redis GeoHash, 구역 이탈 감지)
+
+• 패턴 학습 리마인더 (Spring Batch, 행동 패턴 분석)
+
+• 보호자 대시보드 (활동/건강/위치 실시간 모니터링)
+
+• Google TTS 음성 안내 기능 (5학년 수준 간단한 언어)
+
+• Spring Security 역할 기반 접근 제어 (USER/GUARDIAN/ADMIN)
+
+• Flyway 데이터베이스 마이그레이션 및 스키마 관리
+
+• Docker Compose 기반 로컬 개발 환경 구축
+
+• GitHub Actions CI/CD 파이프라인 구축
 
 ## 🛠️ 기술 스택
 
 ```
-Backend    : Spring Boot 3.5.0, Java 17
-Database   : MySQL 8.0, Redis
+Backend    : Spring Boot 3.5.3, Java 17
+Database   : MySQL 8.0, Redis 7
 Cloud      : AWS (EC2, RDS, S3), Docker
-Security   : Spring Security, JWT
+Security   : Spring Security, JWT, OAuth2
 AI/ML      : OpenAI GPT-4o Vision API
 Monitoring : Firebase Cloud Messaging (FCM)
 CI/CD      : GitHub Actions, AWS ECR
