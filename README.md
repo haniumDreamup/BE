@@ -19,8 +19,6 @@
 
 • **JWT + OAuth2 인증** (Google/Kakao/Naver 소셜 로그인, Refresh Token)
 
-• **낙상 감지 및 긴급 알림** (WebSocket + FCM, 실시간 보호자 알림)
-
 • **Geofence 안전 구역 모니터링** (Haversine 거리 계산, 구역 이탈 감지)
 
 • **패턴 학습 리마인더** (Spring Batch, 행동 패턴 분석)
@@ -35,7 +33,7 @@
 
 • **Redis 다계층 캐싱** (자주 접근 데이터 사전 로드, 16개 서비스 적용)
 
-• **Spring Security 역할 기반 접근 제어** (USER/GUARDIAN/MEDICAL_STAFF)
+• **Spring Security 역할 기반 접근 제어** (USER/GUARDIAN/MEDICAL_STAFF 3단계 권한)
 
 • **Flyway DB 마이그레이션** (29개 마이그레이션 스크립트 관리)
 
