@@ -15,39 +15,19 @@
 
 ### 기능 구현
 
-• **GPT-4o Vision 이미지 분석** (실시간 상황 인식, 위험 감지, 음성 가이드)
+- GPT-4o Vision 이미지 분석 시스템 (실시간 상황 인식, 위험 감지, 음성 가이드)
+- JWT + OAuth2 인증 시스템 (Google/Kakao/Naver 소셜 로그인, Refresh Token)
+- Geofence 안전 구역 모니터링 (Haversine 거리 계산, 구역 이탈 감지)
+- 보호자 대시보드 (활동/건강/위치 실시간 모니터링)
+- Google TTS 음성 안내 기능
+- Spring Security 역할 기반 접근 제어 (USER/GUARDIAN/MEDICAL_STAFF)
+- GitHub Actions CI/CD 파이프라인 구축
 
-• **JWT + OAuth2 인증** (Google/Kakao/Naver 소셜 로그인, Refresh Token)
+### 성능 최적화 & 트러블슈팅
 
-• **Geofence 안전 구역 모니터링** (Haversine 거리 계산, 구역 이탈 감지)
-
-• **패턴 학습 리마인더** (Spring Batch, 행동 패턴 분석)
-
-• **보호자 대시보드** (활동/건강/위치 실시간 모니터링)
-
-• **Google TTS 음성 안내** (5학년 수준 간단한 언어)
-
-• **Circuit Breaker 패턴** (Resilience4j, 외부 API 장애 격리 및 폴백)
-
-• **Event-Driven 아키텍처** (사용자 행동 로깅 비동기 처리)
-
-• **Redis 다계층 캐싱** (자주 접근 데이터 사전 로드, 16개 서비스 적용)
-
-• **Spring Security 역할 기반 접근 제어** (USER/GUARDIAN/MEDICAL_STAFF 3단계 권한)
-
-• **Flyway DB 마이그레이션** (29개 마이그레이션 스크립트 관리)
-
-• **Docker Compose 로컬 환경** (MySQL, Redis 자동 구성)
-
-• **GitHub Actions CI/CD** (자동 테스트, 빌드, AWS ECR 배포)
-
-### 성능 최적화 & 트러블슈팅 (실측)
-
-• **N+1 쿼리 최적화** (JOIN FETCH 적용, 쿼리 170ms, TPS 109) ✅
-
-• **보호자 초대 동시성 제어** (synchronized + DB UNIQUE, 100 VU 중복 0건) ✅
-
-• **Vision API 타임아웃 해결** (이미지 리사이즈, 3MB → 300KB 압축) ✅
+- **N+1 쿼리 최적화** (JOIN FETCH 적용, 쿼리 170ms, TPS 109)
+- **보호자 초대 동시성 제어** (synchronized + DB UNIQUE, 100 VU 중복 0건)
+- **Vision API 타임아웃 해결** (이미지 리사이즈, 3MB → 300KB 압축)
 
 ## 🛠️ 기술 스택
 
